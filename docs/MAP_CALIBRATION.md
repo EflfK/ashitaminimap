@@ -74,11 +74,12 @@ separate structure, label, and landmark layers when the source permits it.
 4. Prefer collision OBJ geometry for a new walkable-area structure. Use the
    matching Detour navmesh to exclude flat but unreachable collision surfaces
    such as roofs. Select the connected navmesh component from one verified
-   walkable world-coordinate seed; never render every disconnected polygon
-   island. If geometry is unavailable, split structure from labels with
-   `tools/split_map_layers.py`, then split known static landmark symbols from
-   ordinary text. Every output must have identical dimensions and pixel
-   coordinates.
+   walkable world-coordinate seed. Add another verified seed when a legitimate
+   walkable region is separated by a model seam; never render every
+   disconnected polygon island. If geometry is unavailable, split structure
+   from labels with `tools/split_map_layers.py`, then split known static
+   landmark symbols from ordinary text. Every output must have identical
+   dimensions and pixel coordinates.
 5. Obtain the map's scale metadata. For known vanilla maps,
    `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
    repository-wide default as calibration.

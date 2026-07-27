@@ -16,6 +16,16 @@ from pathlib import Path
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 
+def parse_seed(value: str) -> tuple[float, float]:
+    parts = value.split(",")
+    if len(parts) != 2:
+        raise argparse.ArgumentTypeError("seed must be world-x,world-y")
+    try:
+        return float(parts[0]), float(parts[1])
+    except ValueError as exception:
+        raise argparse.ArgumentTypeError("seed must contain two numbers") from exception
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("obj", type=Path, help="decompressed zone collision OBJ")
@@ -28,8 +38,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pixels-per-yalm", type=float, required=True)
     parser.add_argument("--supersample", type=int, default=4)
     parser.add_argument("--minimum-hole-area", type=float, default=18.0)
-    parser.add_argument("--seed-x", type=float)
-    parser.add_argument("--seed-y", type=float)
+    parser.add_argument(
+        "--seed",
+        action="append",
+        type=parse_seed,
+        default=[],
+        help="verified walkable world-x,world-y; repeat for disconnected regions",
+    )
     parser.add_argument("--maximum-step", type=float, default=0.65)
     parser.add_argument("--fill-alpha", type=int, default=76)
     parser.add_argument("--edge-alpha", type=int, default=235)
@@ -278,16 +293,20 @@ def main() -> None:
     obj_bounds = read_obj_bounds(args.obj)
     nav_origin, polygons = read_navmesh(args.nav)
     validate_sources(obj_bounds, nav_origin)
-    if (args.seed_x is None) != (args.seed_y is None):
-        raise ValueError("--seed-x and --seed-y must be supplied together")
     total_polygons = len(polygons)
-    if args.seed_x is not None:
-        polygons = connected_component(
-            polygons,
-            args.seed_x,
-            args.seed_y,
-            args.maximum_step,
-        )
+    if args.seed:
+        selected_ids = set()
+        for seed_x, seed_y in args.seed:
+            selected_ids.update(
+                id(polygon)
+                for polygon in connected_component(
+                    polygons,
+                    seed_x,
+                    seed_y,
+                    args.maximum_step,
+                )
+            )
+        polygons = [polygon for polygon in polygons if id(polygon) in selected_ids]
 
     scale = args.supersample
     mask = Image.new("L", (args.width * scale, args.height * scale), 0)
