@@ -56,6 +56,7 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - player, NPC, monster, and entity-name markers.
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
+- per-zone, per-page X/Y origin calibration with immediate Apply and Reset.
 
 Unlock the map in the configuration window or with `/aminimap unlock`, then
 left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.
@@ -82,6 +83,11 @@ share this camera transform.
 Changes are saved automatically to `ashitaminimap_config.lua` after a short
 delay. The **Save** button and `/aminimap save` command save immediately.
 You can still edit the Lua configuration manually and run `/aminimap reload`.
+
+For a stock fallback whose geometry is uniformly displaced, use the **Map
+calibration** X/Y source-pixel controls. The adjustment is scoped to the
+current zone and vanilla page. **Apply calibration** saves it immediately;
+**Reset calibration** removes that page's correction.
 
 If the transparent map linework is difficult to see, raise **Structure
 visibility**. This composites its alpha layer more strongly than an ordinary

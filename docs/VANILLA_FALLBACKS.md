@@ -89,3 +89,22 @@ After each import:
 Fallback origin `(255,256)` is intentionally provisional. A production
 walkable structure still requires the full calibration and multi-position
 validation in `MAP_CALIBRATION.md`.
+
+## Correcting a provisional fallback origin
+
+Open `/aminimap config` while standing in the affected zone. The **Map
+calibration** section exposes X and Y source-image pixel adjustments for the
+active zone and active vanilla page. Ctrl-click either slider to type an exact
+value, then choose **Apply calibration**. Apply writes the adjustment
+immediately to `ashitaminimap_config.lua`; **Reset calibration** removes it.
+
+Adjustments are stored per zone and page because separate floors can use
+different source origins. They change the navigation origin while leaving the
+underlying PNG and its recorded printed-grid anchor unchanged. This lets the
+Lua grid continue to align with the stock artwork as the world-to-image
+calibration changes. Because the values are source-image pixels, they remain
+valid across display sizes and user zoom levels.
+
+Use this as a user-level correction for a uniformly displaced fallback. An
+error that grows with distance is a scale problem, and a regional mismatch is
+usually a wrong floor/page; neither should be hidden with an origin adjustment.

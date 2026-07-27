@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.1.0';
+addon.version   = '1.2.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -42,6 +42,7 @@ local DEFAULTS = {
     scale_markers_with_zoom = true,
     marker_size = 1.00,
     map_pages = {},
+    origin_adjustments = {},
     colors = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
@@ -73,6 +74,12 @@ local state = {
     dragging = false,
     drag_offset_x = 0,
     drag_offset_y = 0,
+    origin_editor = {
+        zone_id = nil,
+        page_key = nil,
+        x = 0,
+        y = 0,
+    },
 };
 
 local function safe_read(callback, fallback)
@@ -152,6 +159,57 @@ local function number_map_text(value)
     return '{ ' .. table.concat(parts, ', ') .. ' }';
 end
 
+local function origin_adjustments_text(value)
+    local zones = {};
+    if (type(value) == 'table') then
+        for zone_key, pages in pairs(value) do
+            local zone_id = tonumber(zone_key);
+            if (zone_id ~= nil and type(pages) == 'table') then
+                local page_entries = {};
+                for page_key, adjustment in pairs(pages) do
+                    local page_id = tonumber(page_key);
+                    local x = type(adjustment) == 'table' and tonumber(adjustment.x) or nil;
+                    local y = type(adjustment) == 'table' and tonumber(adjustment.y) or nil;
+                    if (page_id ~= nil and x ~= nil and y ~= nil) then
+                        page_entries[#page_entries + 1] = {
+                            page_id = math.floor(page_id),
+                            x = x,
+                            y = y,
+                        };
+                    end
+                end
+                table.sort(page_entries, function (left, right)
+                    return left.page_id < right.page_id;
+                end);
+                if (#page_entries > 0) then
+                    zones[#zones + 1] = {
+                        zone_id = math.floor(zone_id),
+                        pages = page_entries,
+                    };
+                end
+            end
+        end
+    end
+    table.sort(zones, function (left, right) return left.zone_id < right.zone_id; end);
+
+    local zone_parts = {};
+    for _, zone in ipairs(zones) do
+        local page_parts = {};
+        for _, page in ipairs(zone.pages) do
+            page_parts[#page_parts + 1] = string.format(
+                '[%d] = { x = %.3f, y = %.3f }',
+                page.page_id,
+                page.x,
+                page.y);
+        end
+        zone_parts[#zone_parts + 1] = string.format(
+            '[%d] = { %s }',
+            zone.zone_id,
+            table.concat(page_parts, ', '));
+    end
+    return '{ ' .. table.concat(zone_parts, ', ') .. ' }';
+end
+
 local function config_text()
     local settings = state.settings;
     local colors = settings.colors or DEFAULTS.colors;
@@ -187,6 +245,11 @@ local function config_text()
         string.format('    scale_markers_with_zoom = %s,', bool_text(settings.scale_markers_with_zoom)),
         string.format('    marker_size = %.2f,', clamp(settings.marker_size, 0.25, 2.00)),
         string.format('    map_pages = %s,', number_map_text(settings.map_pages)),
+        '',
+        '    -- Per-zone and per-page source-image calibration offsets, in pixels.',
+        string.format(
+            '    origin_adjustments = %s,',
+            origin_adjustments_text(settings.origin_adjustments)),
         '',
         '    colors = {',
         string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
@@ -280,10 +343,15 @@ local function load_configuration()
     state.settings.map_pages = type(state.settings.map_pages) == 'table'
         and state.settings.map_pages
         or {};
+    state.settings.origin_adjustments = type(state.settings.origin_adjustments) == 'table'
+        and state.settings.origin_adjustments
+        or {};
     state.config_dirty = loaded_zoom ~= state.settings.pixels_per_yalm
         or obsolete_layer_settings;
     state.config_changed_at = 0;
     state.dragging = false;
+    state.origin_editor.zone_id = nil;
+    state.origin_editor.page_key = nil;
     if (settings_error ~= nil) then
         log('Config warning: ' .. tostring(settings_error));
     end
@@ -514,6 +582,36 @@ local function fallback_page(zone_id)
     };
 end
 
+local function map_page_key(map)
+    local page_id = map ~= nil and tonumber(map.page_id) or nil;
+    return page_id ~= nil and math.floor(page_id) or -1;
+end
+
+local function saved_origin_adjustment(zone_id, page_key)
+    local zones = state.settings.origin_adjustments;
+    local pages = type(zones) == 'table' and zones[zone_id] or nil;
+    local adjustment = type(pages) == 'table' and pages[page_key] or nil;
+    return {
+        x = type(adjustment) == 'table' and tonumber(adjustment.x) or 0,
+        y = type(adjustment) == 'table' and tonumber(adjustment.y) or 0,
+    };
+end
+
+local function apply_origin_adjustment(map, zone_id)
+    if (map == nil) then
+        return nil;
+    end
+    local page_key = map_page_key(map);
+    local adjustment = saved_origin_adjustment(zone_id, page_key);
+    map.base_origin_x = tonumber(map.origin_x) or 0;
+    map.base_origin_y = tonumber(map.origin_y) or 0;
+    map.origin_adjustment_x = adjustment.x;
+    map.origin_adjustment_y = adjustment.y;
+    map.origin_x = map.base_origin_x + adjustment.x;
+    map.origin_y = map.base_origin_y + adjustment.y;
+    return map;
+end
+
 local function map_for_player(player)
     if (player == nil) then
         return nil;
@@ -521,12 +619,14 @@ local function map_for_player(player)
     local authored = state.maps[player.zone_id];
     local fallback = fallback_page(player.zone_id);
     if (authored == nil) then
-        return fallback;
+        return apply_origin_adjustment(fallback, player.zone_id);
     end
     if (fallback == nil) then
-        return authored;
+        return apply_origin_adjustment(copy_table(authored), player.zone_id);
     end
-    return merge_table(copy_table(fallback), authored);
+    return apply_origin_adjustment(
+        merge_table(copy_table(fallback), authored),
+        player.zone_id);
 end
 
 local function map_grid_yalms(map)
@@ -1207,6 +1307,98 @@ local function render_config_window()
                     'Vanilla page: %d (%s)',
                     config_map.page_id,
                     manual_page ~= nil and 'manual' or 'automatic'));
+        end
+
+        if (config_player ~= nil and config_map ~= nil) then
+            local page_key = map_page_key(config_map);
+            if (state.origin_editor.zone_id ~= config_player.zone_id
+                    or state.origin_editor.page_key ~= page_key) then
+                local adjustment = saved_origin_adjustment(
+                    config_player.zone_id,
+                    page_key);
+                state.origin_editor.zone_id = config_player.zone_id;
+                state.origin_editor.page_key = page_key;
+                state.origin_editor.x = adjustment.x;
+                state.origin_editor.y = adjustment.y;
+            end
+
+            imgui.Text('Map calibration');
+            imgui.Separator();
+            imgui.Text(string.format(
+                '%s / %s',
+                config_map.name or zone_name(config_player.zone_id),
+                page_key >= 0 and ('page ' .. tostring(page_key)) or 'authored map'));
+            local origin_x_buffer = { clamp(state.origin_editor.x, -512, 512) };
+            if (imgui.SliderFloat(
+                    'Origin X adjustment##ashitaminimap_origin_x',
+                    origin_x_buffer,
+                    -512,
+                    512,
+                    '%.1f px')) then
+                state.origin_editor.x = origin_x_buffer[1];
+            end
+            local origin_y_buffer = { clamp(state.origin_editor.y, -512, 512) };
+            if (imgui.SliderFloat(
+                    'Origin Y adjustment##ashitaminimap_origin_y',
+                    origin_y_buffer,
+                    -512,
+                    512,
+                    '%.1f px')) then
+                state.origin_editor.y = origin_y_buffer[1];
+            end
+            imgui.TextColored(
+                { 0.65, 0.68, 0.70, 1.00 },
+                'Ctrl-click a slider to type an exact source-pixel value.');
+            imgui.TextColored(
+                { 0.65, 0.68, 0.70, 1.00 },
+                string.format(
+                    'Base origin %.1f, %.1f  |  Applied %.1f, %.1f',
+                    tonumber(config_map.base_origin_x) or 0,
+                    tonumber(config_map.base_origin_y) or 0,
+                    tonumber(config_map.origin_adjustment_x) or 0,
+                    tonumber(config_map.origin_adjustment_y) or 0));
+
+            if (imgui.Button('Apply calibration##ashitaminimap_origin_apply', { 140, 0 })) then
+                local zones = state.settings.origin_adjustments;
+                zones[config_player.zone_id] = type(zones[config_player.zone_id]) == 'table'
+                    and zones[config_player.zone_id]
+                    or {};
+                zones[config_player.zone_id][page_key] = {
+                    x = state.origin_editor.x,
+                    y = state.origin_editor.y,
+                };
+                mark_configuration_changed();
+                local ok, message = save_configuration();
+                log(ok
+                    and string.format(
+                        'Saved %s page %s origin adjustment: x %.1f px, y %.1f px.',
+                        config_map.name or zone_name(config_player.zone_id),
+                        page_key >= 0 and tostring(page_key) or 'authored',
+                        state.origin_editor.x,
+                        state.origin_editor.y)
+                    or ('Could not save calibration: ' .. message));
+            end
+            imgui.SameLine(0, 8);
+            if (imgui.Button('Reset calibration##ashitaminimap_origin_reset', { 140, 0 })) then
+                local zones = state.settings.origin_adjustments;
+                local pages = type(zones) == 'table' and zones[config_player.zone_id] or nil;
+                if (type(pages) == 'table') then
+                    pages[page_key] = nil;
+                    if (next(pages) == nil) then
+                        zones[config_player.zone_id] = nil;
+                    end
+                end
+                state.origin_editor.x = 0;
+                state.origin_editor.y = 0;
+                mark_configuration_changed();
+                local ok, message = save_configuration();
+                log(ok
+                    and string.format(
+                        'Reset %s page %s origin adjustment.',
+                        config_map.name or zone_name(config_player.zone_id),
+                        page_key >= 0 and tostring(page_key) or 'authored')
+                    or ('Could not save calibration reset: ' .. message));
+            end
         end
 
         imgui.Text('Static layers');
