@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.3.1';
+addon.version   = '0.3.2';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -359,16 +359,19 @@ local letters = {
     'Y', 'Z',
 };
 
-local GRID_YALMS = 20;
+local function map_grid_yalms(map)
+    return clamp(map ~= nil and map.grid_yalms or 40, 10, 1000);
+end
 
-local function grid_coordinate(x, y)
-    local half_cell = GRID_YALMS / 2;
-    local column = math.floor(((tonumber(x) or 0) + half_cell) / GRID_YALMS) + 8;
-    local row = math.floor((-(tonumber(y) or 0) + half_cell) / GRID_YALMS) + 8;
+local function grid_coordinate(x, y, map)
+    local grid_yalms = map_grid_yalms(map);
+    local half_cell = grid_yalms / 2;
+    local column = math.floor(((tonumber(x) or 0) + half_cell) / grid_yalms) + 8;
+    local row = math.floor((-(tonumber(y) or 0) + half_cell) / grid_yalms) + 8;
     return string.format('%s-%d', letters[column] or '?', row);
 end
 
-local function draw_grid(draw_list, left, top, size, player, scale)
+local function draw_grid(draw_list, left, top, size, player, map, scale)
     if (state.settings.show_grid ~= true) then
         return;
     end
@@ -381,18 +384,19 @@ local function draw_grid(draw_list, left, top, size, player, scale)
     local text_color = color('grid_text', { 0.82, 0.71, 0.51, 0.88 });
     local shadow = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local world_radius = (size / 2) / scale;
+    local grid_yalms = map_grid_yalms(map);
 
-    local half_cell = GRID_YALMS / 2;
-    local first_column = math.floor((player.x - world_radius + half_cell) / GRID_YALMS) + 8;
-    local last_column = math.floor((player.x + world_radius + half_cell) / GRID_YALMS) + 8;
+    local half_cell = grid_yalms / 2;
+    local first_column = math.floor((player.x - world_radius + half_cell) / grid_yalms) + 8;
+    local last_column = math.floor((player.x + world_radius + half_cell) / grid_yalms) + 8;
     for column = first_column, last_column do
-        local boundary_world_x = ((column - 8) * GRID_YALMS) - half_cell;
+        local boundary_world_x = ((column - 8) * grid_yalms) - half_cell;
         local screen_x = center_x + ((boundary_world_x - player.x) * scale);
         if (screen_x >= left and screen_x <= right) then
             draw_list:AddLine({ screen_x, top }, { screen_x, bottom }, line_color, 1.0);
         end
 
-        local cell_center_world_x = ((column - 8) * GRID_YALMS);
+        local cell_center_world_x = ((column - 8) * grid_yalms);
         local label_x = center_x + ((cell_center_world_x - player.x) * scale);
         local label = letters[column] or '?';
         if (label_x >= left + 9 and label_x <= right - 9) then
@@ -401,16 +405,16 @@ local function draw_grid(draw_list, left, top, size, player, scale)
         end
     end
 
-    local first_row = math.floor((-(player.y + world_radius) + half_cell) / GRID_YALMS) + 8;
-    local last_row = math.floor((-(player.y - world_radius) + half_cell) / GRID_YALMS) + 8;
+    local first_row = math.floor((-(player.y + world_radius) + half_cell) / grid_yalms) + 8;
+    local last_row = math.floor((-(player.y - world_radius) + half_cell) / grid_yalms) + 8;
     for row = first_row, last_row do
-        local boundary_world_y = half_cell - ((row - 8) * GRID_YALMS);
+        local boundary_world_y = half_cell - ((row - 8) * grid_yalms);
         local screen_y = center_y - ((boundary_world_y - player.y) * scale);
         if (screen_y >= top and screen_y <= bottom) then
             draw_list:AddLine({ left, screen_y }, { right, screen_y }, line_color, 1.0);
         end
 
-        local cell_center_world_y = -((row - 8) * GRID_YALMS);
+        local cell_center_world_y = -((row - 8) * grid_yalms);
         local label_y = center_y - ((cell_center_world_y - player.y) * scale);
         if (label_y >= top + 9 and label_y <= bottom - 9) then
             local label = tostring(row);
@@ -550,7 +554,7 @@ local function draw_badge(draw_list, left, top, player, map)
     if (state.settings.show_coordinate ~= true) then
         return;
     end
-    local coordinate = grid_coordinate(player.x, player.y);
+    local coordinate = grid_coordinate(player.x, player.y, map);
     local label = string.format('%s  %s', coordinate, map.name or ('Zone ' .. tostring(player.zone_id)));
     local width = math.max(66, (#label * 7) + 16);
     local badge_color = color('badge', { 0.025, 0.055, 0.070, 0.88 });
@@ -784,7 +788,7 @@ local function render_minimap()
                 state.settings.label_opacity,
                 state.settings.label_visibility_boost);
         end
-        draw_grid(draw_list, left, top, size, player, scale);
+        draw_grid(draw_list, left, top, size, player, map, scale);
         draw_entities(draw_list, left, top, size, player, scale, visual_scale);
         draw_player(
             draw_list,

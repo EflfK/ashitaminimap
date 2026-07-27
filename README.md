@@ -8,7 +8,7 @@ The first prototype includes:
 - a transparent PNG map layer;
 - a Lua-rendered player arrow;
 - visible player, NPC, monster, and current-target dots;
-- a north-up 20-yalm coordinate grid with edge labels;
+- a north-up, zone-calibrated coordinate grid with edge labels;
 - a live `H-8`-style coordinate badge;
 - an in-game configuration window with persistent settings;
 - unlock-and-drag positioning;
@@ -91,6 +91,9 @@ image_y = origin_y - world_y * image_pixels_per_yalm
 ```
 
 This calibration is independent of the user's on-screen zoom.
+`grid_yalms` is also stored per map because FFXI zones do not all use the same
+world distance per coordinate cell. For example, Metalworks and Port Bastok use
+40-yalm cells, while South Gustaberg uses 100-yalm cells.
 
 ## Map asset status
 
