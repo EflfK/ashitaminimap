@@ -10,6 +10,9 @@ The first prototype includes:
 - visible player, NPC, monster, and current-target dots;
 - a north-up 20-yalm coordinate grid with edge labels;
 - a live `H-8`-style coordinate badge;
+- an in-game configuration window with persistent settings;
+- unlock-and-drag positioning;
+- mouse-wheel zoom while the pointer is over the map;
 - deterministic world-coordinate-to-image calibration;
 - initial map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
   and Metalworks (zone 237).
@@ -20,6 +23,10 @@ The first prototype includes:
 /aminimap show
 /aminimap hide
 /aminimap toggle
+/aminimap config
+/aminimap lock
+/aminimap unlock
+/aminimap save
 /aminimap zoomin
 /aminimap zoomout
 /aminimap grid
@@ -31,7 +38,19 @@ The first prototype includes:
 
 ## Configuration
 
-Edit `ashitaminimap_config.lua`, then run `/aminimap reload`.
+Run `/aminimap config` to open the in-game configuration window. It controls:
+
+- map visibility, position lock, size, zoom, and opacity;
+- coordinate grid and coordinate badge visibility;
+- player, NPC, monster, and entity-name markers.
+
+Unlock the map in the configuration window or with `/aminimap unlock`, then
+left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.
+Move the mouse over the map and scroll the wheel to zoom in or out.
+
+Changes are saved automatically to `ashitaminimap_config.lua` after a short
+delay. The **Save** button and `/aminimap save` command save immediately.
+You can still edit the Lua configuration manually and run `/aminimap reload`.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:

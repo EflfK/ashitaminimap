@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.1.0';
+addon.version   = '0.2.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -14,6 +14,10 @@ local commands = T{
     ['/aminimap'] = true,
     ['/ashitaminimap'] = true,
 };
+
+local ZOOM_MIN = 0.25;
+local ZOOM_MAX = 20.00;
+local ZOOM_STEP = 1.12;
 
 local DEFAULTS = {
     visible = true,
@@ -49,6 +53,12 @@ local state = {
     textures = {},
     device = nil,
     warned_zones = {},
+    config_visible = { false },
+    config_dirty = false,
+    config_changed_at = 0,
+    dragging = false,
+    drag_offset_x = 0,
+    drag_offset_y = 0,
 };
 
 local function safe_read(callback, fallback)
@@ -88,6 +98,96 @@ local function merge_table(target, source)
     return target;
 end
 
+local function bool_text(value)
+    return value == true and 'true' or 'false';
+end
+
+local function clamp(value, minimum, maximum)
+    return math.max(minimum, math.min(maximum, tonumber(value) or minimum));
+end
+
+local function color_text(value, fallback)
+    value = type(value) == 'table' and value or fallback;
+    return string.format(
+        '{ %.3f, %.3f, %.3f, %.3f }',
+        tonumber(value[1]) or fallback[1],
+        tonumber(value[2]) or fallback[2],
+        tonumber(value[3]) or fallback[3],
+        tonumber(value[4]) or fallback[4]);
+end
+
+local function config_text()
+    local settings = state.settings;
+    local colors = settings.colors or DEFAULTS.colors;
+    local lines = {
+        'return {',
+        string.format('    visible = %s,', bool_text(settings.visible)),
+        string.format('    locked = %s,', bool_text(settings.locked)),
+        '',
+        '    -- Screen placement and viewport size.',
+        string.format('    x = %d,', math.floor((tonumber(settings.x) or DEFAULTS.x) + 0.5)),
+        string.format('    y = %d,', math.floor((tonumber(settings.y) or DEFAULTS.y) + 0.5)),
+        string.format('    size = %d,', math.floor(clamp(settings.size, 120, 700) + 0.5)),
+        '',
+        '    -- Lua renderer scale. Higher values zoom in.',
+        string.format('    pixels_per_yalm = %.4f,', clamp(settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX)),
+        string.format('    map_opacity = %.3f,', clamp(settings.map_opacity, 0, 1)),
+        '',
+        string.format('    show_grid = %s,', bool_text(settings.show_grid)),
+        string.format('    show_coordinate = %s,', bool_text(settings.show_coordinate)),
+        string.format('    show_players = %s,', bool_text(settings.show_players)),
+        string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
+        string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
+        string.format('    show_names = %s,', bool_text(settings.show_names)),
+        '',
+        '    colors = {',
+        string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
+        string.format('        grid = %s,', color_text(colors.grid, DEFAULTS.colors.grid)),
+        string.format('        grid_text = %s,', color_text(colors.grid_text, DEFAULTS.colors.grid_text)),
+        string.format('        player = %s,', color_text(colors.player, DEFAULTS.colors.player)),
+        string.format('        other_player = %s,', color_text(colors.other_player, DEFAULTS.colors.other_player)),
+        string.format('        npc = %s,', color_text(colors.npc, DEFAULTS.colors.npc)),
+        string.format('        monster = %s,', color_text(colors.monster, DEFAULTS.colors.monster)),
+        string.format('        target = %s,', color_text(colors.target, DEFAULTS.colors.target)),
+        string.format('        shadow = %s,', color_text(colors.shadow, DEFAULTS.colors.shadow)),
+        string.format('        badge = %s,', color_text(colors.badge, DEFAULTS.colors.badge)),
+        '    },',
+        '}',
+        '',
+    };
+    return table.concat(lines, '\n');
+end
+
+local function save_configuration()
+    local path = string.format('%s%s', addon.path, 'ashitaminimap_config.lua');
+    local file, error_message = io.open(path, 'w');
+    if (file == nil) then
+        return false, tostring(error_message or 'open failed');
+    end
+    file:write(config_text());
+    file:close();
+    state.config_dirty = false;
+    return true, path;
+end
+
+local function mark_configuration_changed()
+    state.config_dirty = true;
+    state.config_changed_at = os.clock();
+end
+
+local function save_configuration_if_due(force)
+    if (state.config_dirty ~= true) then
+        return;
+    end
+    if (force ~= true and (os.clock() - state.config_changed_at) < 0.75) then
+        return;
+    end
+    local ok, message = save_configuration();
+    if (not ok) then
+        log('Could not save configuration: ' .. message);
+    end
+end
+
 local function load_module_file(filename)
     local path = string.format('%s%s', addon.path, filename);
     local chunk, error_message = loadfile(path);
@@ -104,6 +204,11 @@ end
 local function load_configuration()
     local settings, settings_error = load_module_file('ashitaminimap_config.lua');
     state.settings = merge_table(copy_table(DEFAULTS), settings or {});
+    state.settings.size = clamp(state.settings.size, 120, 700);
+    state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+    state.settings.map_opacity = clamp(state.settings.map_opacity, 0, 1);
+    state.config_dirty = false;
+    state.dragging = false;
     if (settings_error ~= nil) then
         log('Config warning: ' .. tostring(settings_error));
     end
@@ -113,10 +218,6 @@ local function load_configuration()
     if (maps_error ~= nil) then
         log('Map calibration warning: ' .. tostring(maps_error));
     end
-end
-
-local function clamp(value, minimum, maximum)
-    return math.max(minimum, math.min(maximum, tonumber(value) or minimum));
 end
 
 local function color(name, fallback)
@@ -405,6 +506,88 @@ local function draw_map_texture(draw_list, left, top, size, player, map, texture
         imgui.GetColorU32({ 1, 1, 1, opacity }));
 end
 
+local function mouse_over_map(left, top, size)
+    local mouse_x, mouse_y = imgui.GetMousePos();
+    mouse_x = tonumber(mouse_x);
+    mouse_y = tonumber(mouse_y);
+    if (mouse_x == nil or mouse_y == nil) then
+        return false, 0, 0;
+    end
+    return mouse_x >= left and mouse_x <= left + size
+        and mouse_y >= top and mouse_y <= top + size,
+        mouse_x,
+        mouse_y;
+end
+
+local function handle_map_input(left, top, size)
+    local hovered, mouse_x, mouse_y = mouse_over_map(left, top, size);
+    local wheel = hovered
+        and safe_read(function () return tonumber(imgui.GetIO().MouseWheel) or 0; end, 0)
+        or 0;
+    if (wheel ~= 0) then
+        local factor = ZOOM_STEP ^ math.abs(wheel);
+        local current = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+        state.settings.pixels_per_yalm = clamp(
+            wheel > 0 and (current * factor) or (current / factor),
+            ZOOM_MIN,
+            ZOOM_MAX);
+        mark_configuration_changed();
+    end
+
+    if (state.settings.locked == true) then
+        state.dragging = false;
+        return hovered;
+    end
+
+    if (hovered and safe_read(function () return imgui.IsMouseClicked(0); end, false) == true) then
+        state.dragging = true;
+        state.drag_offset_x = mouse_x - (tonumber(state.settings.x) or DEFAULTS.x);
+        state.drag_offset_y = mouse_y - (tonumber(state.settings.y) or DEFAULTS.y);
+    end
+
+    if (state.dragging == true) then
+        if (safe_read(function () return imgui.IsMouseDown(0); end, false) == true) then
+            local next_x = math.floor((mouse_x - state.drag_offset_x) + 0.5);
+            local next_y = math.floor((mouse_y - state.drag_offset_y) + 0.5);
+            if (next_x ~= state.settings.x or next_y ~= state.settings.y) then
+                state.settings.x = next_x;
+                state.settings.y = next_y;
+                mark_configuration_changed();
+            end
+        else
+            state.dragging = false;
+        end
+    end
+
+    return hovered;
+end
+
+local function draw_unlocked_hint(draw_list, left, top, size)
+    if (state.settings.locked == true) then
+        return;
+    end
+    local label = 'UNLOCKED - DRAG TO MOVE';
+    local width = 174;
+    local x = left + ((size - width) / 2);
+    local y = top + size - 27;
+    draw_list:AddRectFilled(
+        { x, y },
+        { x + width, y + 21 },
+        color('badge', { 0.025, 0.055, 0.070, 0.88 }),
+        3.0);
+    draw_list:AddRect(
+        { x, y },
+        { x + width, y + 21 },
+        color('border', { 0.67, 0.47, 0.22, 0.90 }),
+        3.0,
+        0,
+        1.0);
+    draw_list:AddText(
+        { x + 10, y + 3 },
+        color('grid_text', { 0.82, 0.71, 0.51, 0.88 }),
+        label);
+end
+
 local function render_minimap()
     if (state.settings.visible ~= true) then
         return;
@@ -430,20 +613,19 @@ local function render_minimap()
     end
 
     local size = clamp(state.settings.size, 120, 700);
-    local scale = clamp(state.settings.pixels_per_yalm, 0.10, 5.00);
+    local scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
     local window_flags = bit.bor(
         bit.lshift(1, 0),  -- NoTitleBar
         bit.lshift(1, 1),  -- NoResize
+        bit.lshift(1, 2),  -- NoMove (movement is handled explicitly)
         bit.lshift(1, 3),  -- NoScrollbar
         bit.lshift(1, 7),  -- NoBackground
         bit.lshift(1, 8),  -- NoSavedSettings
+        bit.lshift(1, 9),  -- NoMouseInputs (read hover/wheel without blocking the game)
         bit.lshift(1, 12), -- NoFocusOnAppearing
         bit.lshift(1, 13), -- NoBringToFrontOnFocus
         bit.lshift(1, 18), -- NoNavInputs
         bit.lshift(1, 19));-- NoNavFocus
-    if (state.settings.locked == true) then
-        window_flags = bit.bor(window_flags, bit.lshift(1, 2), bit.lshift(1, 9));
-    end
 
     imgui.SetNextWindowPos({ tonumber(state.settings.x) or 18, tonumber(state.settings.y) or 128 }, 0);
     -- The Ashita ImGui binding applies 8 px of default window padding. Account
@@ -455,12 +637,15 @@ local function render_minimap()
 
     if (imgui.Begin('##ashitaminimap_overlay', true, window_flags)) then
         local left, top = imgui.GetCursorScreenPos();
+        handle_map_input(left, top, size);
+        scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
         local draw_list = imgui.GetWindowDrawList();
         draw_map_texture(draw_list, left, top, size, player, map, texture, scale);
         draw_grid(draw_list, left, top, size, player, scale);
         draw_entities(draw_list, left, top, size, player, scale);
         draw_player(draw_list, left + (size / 2), top + (size / 2), player.yaw);
         draw_badge(draw_list, left, top, player, map);
+        draw_unlocked_hint(draw_list, left, top, size);
         draw_list:AddRect(
             { left, top },
             { left + size, top + size },
@@ -473,9 +658,97 @@ local function render_minimap()
     imgui.End();
 end
 
+local function config_checkbox(label, key)
+    local value = state.settings[key] == true;
+    if (imgui.Checkbox(label, { value })) then
+        state.settings[key] = not value;
+        if (key == 'locked' and state.settings.locked == true) then
+            state.dragging = false;
+        end
+        mark_configuration_changed();
+    end
+end
+
+local function render_config_window()
+    if (state.config_visible[1] ~= true) then
+        return;
+    end
+
+    local first_use = rawget(_G, 'ImGuiCond_FirstUseEver') or 0;
+    imgui.SetNextWindowSize({ 410, 0 }, first_use);
+    local flags = bit.lshift(1, 5); -- NoCollapse
+    if (imgui.Begin('AshitaMinimap Config###AshitaMinimapConfig', state.config_visible, flags)) then
+        imgui.Text('Map');
+        imgui.Separator();
+        config_checkbox('Show minimap##ashitaminimap_visible', 'visible');
+        config_checkbox('Lock map position##ashitaminimap_locked', 'locked');
+        if (state.settings.locked == true) then
+            imgui.TextColored({ 0.65, 0.68, 0.70, 1.00 }, 'Unlock to drag the map.');
+        else
+            imgui.TextColored({ 1.00, 0.71, 0.20, 1.00 }, 'Drag anywhere on the map to move it.');
+        end
+        imgui.Text(string.format(
+            'Position: %d, %d',
+            math.floor(tonumber(state.settings.x) or DEFAULTS.x),
+            math.floor(tonumber(state.settings.y) or DEFAULTS.y)));
+
+        local size_buffer = { math.floor(clamp(state.settings.size, 120, 700) + 0.5) };
+        if (imgui.SliderInt('Map size##ashitaminimap_size', size_buffer, 120, 700, '%d px')) then
+            state.settings.size = size_buffer[1];
+            mark_configuration_changed();
+        end
+
+        local zoom_buffer = { clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX) };
+        if (imgui.SliderFloat(
+                'Zoom##ashitaminimap_zoom',
+                zoom_buffer,
+                ZOOM_MIN,
+                ZOOM_MAX,
+                '%.2f px/yalm')) then
+            state.settings.pixels_per_yalm = zoom_buffer[1];
+            mark_configuration_changed();
+        end
+        imgui.TextColored({ 0.65, 0.68, 0.70, 1.00 }, 'Mouse wheel over the map also changes zoom.');
+
+        local opacity_buffer = { math.floor(clamp(state.settings.map_opacity, 0, 1) * 100 + 0.5) };
+        if (imgui.SliderInt(
+                'Map opacity##ashitaminimap_opacity',
+                opacity_buffer,
+                0,
+                100,
+                '%d%%')) then
+            state.settings.map_opacity = opacity_buffer[1] / 100;
+            mark_configuration_changed();
+        end
+
+        imgui.Text('Markers');
+        imgui.Separator();
+        config_checkbox('Coordinate grid##ashitaminimap_grid', 'show_grid');
+        config_checkbox('Coordinate badge##ashitaminimap_coordinate', 'show_coordinate');
+        config_checkbox('Players##ashitaminimap_players', 'show_players');
+        config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
+        config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');
+        config_checkbox('Entity names##ashitaminimap_names', 'show_names');
+
+        if (imgui.Button('Save##ashitaminimap_save', { 92, 0 })) then
+            local ok, message = save_configuration();
+            log(ok and ('Saved configuration to ' .. message .. '.') or ('Could not save configuration: ' .. message));
+        end
+        imgui.SameLine(0, 8);
+        if (imgui.Button('Reset position##ashitaminimap_reset_position', { 120, 0 })) then
+            state.settings.x = DEFAULTS.x;
+            state.settings.y = DEFAULTS.y;
+            mark_configuration_changed();
+        end
+    end
+    imgui.End();
+end
+
 local function print_help()
     log('Commands:');
     log('/aminimap show | hide | toggle');
+    log('/aminimap config [show | hide | toggle]');
+    log('/aminimap lock | unlock | save');
     log('/aminimap zoomin | zoomout');
     log('/aminimap grid | names | reload');
 end
@@ -491,18 +764,52 @@ local function handle_command(e)
     local action = args[2] and args[2]:lower() or 'help';
     if (action == 'show') then
         state.settings.visible = true;
+        mark_configuration_changed();
     elseif (action == 'hide') then
         state.settings.visible = false;
+        mark_configuration_changed();
     elseif (action == 'toggle') then
         state.settings.visible = not state.settings.visible;
+        mark_configuration_changed();
+    elseif (action == 'config') then
+        local mode = args[3] and args[3]:lower() or 'toggle';
+        if (mode == 'show') then
+            state.config_visible[1] = true;
+        elseif (mode == 'hide') then
+            state.config_visible[1] = false;
+        elseif (mode == 'toggle') then
+            state.config_visible[1] = not state.config_visible[1];
+        else
+            log('Usage: /aminimap config [show | hide | toggle]');
+        end
+    elseif (action == 'lock') then
+        state.settings.locked = true;
+        state.dragging = false;
+        mark_configuration_changed();
+    elseif (action == 'unlock') then
+        state.settings.locked = false;
+        mark_configuration_changed();
+    elseif (action == 'save') then
+        local ok, message = save_configuration();
+        log(ok and ('Saved configuration to ' .. message .. '.') or ('Could not save configuration: ' .. message));
     elseif (action == 'zoomin' or action == 'in') then
-        state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm * 1.20, 0.10, 5.00);
+        state.settings.pixels_per_yalm = clamp(
+            state.settings.pixels_per_yalm * ZOOM_STEP,
+            ZOOM_MIN,
+            ZOOM_MAX);
+        mark_configuration_changed();
     elseif (action == 'zoomout' or action == 'out') then
-        state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm / 1.20, 0.10, 5.00);
+        state.settings.pixels_per_yalm = clamp(
+            state.settings.pixels_per_yalm / ZOOM_STEP,
+            ZOOM_MIN,
+            ZOOM_MAX);
+        mark_configuration_changed();
     elseif (action == 'grid') then
         state.settings.show_grid = not state.settings.show_grid;
+        mark_configuration_changed();
     elseif (action == 'names') then
         state.settings.show_names = not state.settings.show_names;
+        mark_configuration_changed();
     elseif (action == 'reload') then
         state.textures = {};
         load_configuration();
@@ -518,8 +825,10 @@ ashita.events.register('load', 'load_cb', function ()
 end);
 
 ashita.events.register('unload', 'unload_cb', function ()
+    save_configuration_if_due(true);
     state.textures = {};
     state.device = nil;
+    state.config_visible[1] = false;
 end);
 
 ashita.events.register('command', 'command_cb', function (e)
@@ -528,4 +837,6 @@ end);
 
 ashita.events.register('d3d_present', 'present_cb', function ()
     render_minimap();
+    render_config_window();
+    save_configuration_if_due(false);
 end);
