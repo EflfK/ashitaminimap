@@ -15,8 +15,8 @@ The first prototype includes:
 - mouse-wheel zoom while the pointer is over the map;
 - independently composited structure and label layers;
 - deterministic world-coordinate-to-image calibration;
-- initial map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
-  and Metalworks (zone 237).
+- map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
+  Metalworks (zone 237), and Windurst Woods (zone 241).
 
 ## Commands
 
@@ -80,10 +80,10 @@ The renderer draws map content in this order:
 5. live entities and player arrow;
 6. coordinate badge and unlocked-state hint.
 
-Metalworks is the first fully split sample. Its structure and label PNGs come
-from the same decoded vanilla DAT texture and share one origin and scale.
-South Gustaberg and Port Bastok still use flattened prototype assets, so their
-embedded labels cannot yet be hidden independently.
+Metalworks and Windurst Woods have fully split structure and annotation layers.
+Each pair comes from one decoded vanilla DAT texture and shares one origin and
+scale. South Gustaberg and Port Bastok still use flattened prototype assets, so
+their embedded labels cannot yet be hidden independently.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:
@@ -105,11 +105,12 @@ tuning.
 
 ## Map asset status
 
-Metalworks now uses the exact vanilla DAT pixels, unwrapped into north-up map
-space and split into structure and label layers before transparency is applied.
-The other bundled images remain flattened transparency and calibration
-prototypes generated from locally installed reference maps. They are not yet
-precision-traced walkable-area masks.
+Metalworks and Windurst Woods use exact vanilla DAT pixels, split into
+structure and annotation layers before transparency is applied. Metalworks is
+horizontally unwrapped; Windurst Woods uses its original no-wrap page layout.
+The South Gustaberg and Port Bastok images remain flattened transparency and
+calibration prototypes generated from locally installed reference maps. They
+are not yet precision-traced walkable-area masks.
 
 Production map packs should use hand-authored or deterministic vector masks tied
 to verified map calibration. AI-generated artwork should never be used as the

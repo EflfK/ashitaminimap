@@ -39,4 +39,18 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
     },
+    [241] = {
+        name = 'Windurst Woods',
+        structure_image = 'assets/maps/241_structure.png',
+        labels_image = 'assets/maps/241_labels.png',
+        width = 512,
+        height = 512,
+        -- Source: ROM/18/72.DAT, internal page m_241_00. This page does not
+        -- wrap. Its H-8 center is (109.5, 255.5), and its 32 px grid cells
+        -- represent 40 yalms.
+        origin_x = 109.5,
+        origin_y = 255.5,
+        grid_yalms = 40,
+        image_pixels_per_yalm = 0.80,
+    },
 }
