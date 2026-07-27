@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.2.0';
+addon.version   = '0.2.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -27,6 +27,8 @@ local DEFAULTS = {
     size = 330,
     pixels_per_yalm = 4.41,
     map_opacity = 0.82,
+    map_visibility_boost = 4,
+    backdrop_opacity = 0.12,
     show_grid = true,
     show_coordinate = true,
     show_players = true,
@@ -44,6 +46,7 @@ local DEFAULTS = {
         target = { 1.00, 0.71, 0.20, 1.00 },
         shadow = { 0.01, 0.02, 0.025, 0.94 },
         badge = { 0.025, 0.055, 0.070, 0.88 },
+        backdrop = { 0.010, 0.030, 0.040, 1.00 },
     },
 };
 
@@ -132,6 +135,10 @@ local function config_text()
         '    -- Lua renderer scale. Higher values zoom in.',
         string.format('    pixels_per_yalm = %.4f,', clamp(settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX)),
         string.format('    map_opacity = %.3f,', clamp(settings.map_opacity, 0, 1)),
+        string.format(
+            '    map_visibility_boost = %d,',
+            math.floor(clamp(settings.map_visibility_boost, 1, 12) + 0.5)),
+        string.format('    backdrop_opacity = %.3f,', clamp(settings.backdrop_opacity, 0, 0.75)),
         '',
         string.format('    show_grid = %s,', bool_text(settings.show_grid)),
         string.format('    show_coordinate = %s,', bool_text(settings.show_coordinate)),
@@ -151,6 +158,7 @@ local function config_text()
         string.format('        target = %s,', color_text(colors.target, DEFAULTS.colors.target)),
         string.format('        shadow = %s,', color_text(colors.shadow, DEFAULTS.colors.shadow)),
         string.format('        badge = %s,', color_text(colors.badge, DEFAULTS.colors.badge)),
+        string.format('        backdrop = %s,', color_text(colors.backdrop, DEFAULTS.colors.backdrop)),
         '    },',
         '}',
         '',
@@ -207,6 +215,8 @@ local function load_configuration()
     state.settings.size = clamp(state.settings.size, 120, 700);
     state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
     state.settings.map_opacity = clamp(state.settings.map_opacity, 0, 1);
+    state.settings.map_visibility_boost = math.floor(clamp(state.settings.map_visibility_boost, 1, 12) + 0.5);
+    state.settings.backdrop_opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
     state.config_dirty = false;
     state.dragging = false;
     if (settings_error ~= nil) then
@@ -497,13 +507,35 @@ local function draw_map_texture(draw_list, left, top, size, player, map, texture
     local u1 = (player_image_x + source_half_pixels) / width;
     local v1 = (player_image_y + source_half_pixels) / height;
     local opacity = clamp(state.settings.map_opacity, 0, 1);
-    draw_list:AddImage(
-        texture.handle,
+    local passes = math.floor(clamp(state.settings.map_visibility_boost, 1, 12) + 0.5);
+    local tint = imgui.GetColorU32({ 1, 1, 1, opacity });
+    for _ = 1, passes do
+        draw_list:AddImage(
+            texture.handle,
+            { left, top },
+            { left + size, top + size },
+            { u0, v0 },
+            { u1, v1 },
+            tint);
+    end
+end
+
+local function draw_map_backdrop(draw_list, left, top, size)
+    local opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
+    if (opacity <= 0) then
+        return;
+    end
+    local configured = state.settings.colors and state.settings.colors.backdrop or DEFAULTS.colors.backdrop;
+    draw_list:AddRectFilled(
         { left, top },
         { left + size, top + size },
-        { u0, v0 },
-        { u1, v1 },
-        imgui.GetColorU32({ 1, 1, 1, opacity }));
+        imgui.GetColorU32({
+            tonumber(configured[1]) or DEFAULTS.colors.backdrop[1],
+            tonumber(configured[2]) or DEFAULTS.colors.backdrop[2],
+            tonumber(configured[3]) or DEFAULTS.colors.backdrop[3],
+            opacity,
+        }),
+        0);
 end
 
 local function mouse_over_map(left, top, size)
@@ -640,6 +672,7 @@ local function render_minimap()
         handle_map_input(left, top, size);
         scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
         local draw_list = imgui.GetWindowDrawList();
+        draw_map_backdrop(draw_list, left, top, size);
         draw_map_texture(draw_list, left, top, size, player, map, texture, scale);
         draw_grid(draw_list, left, top, size, player, scale);
         draw_entities(draw_list, left, top, size, player, scale);
@@ -720,6 +753,38 @@ local function render_config_window()
             state.settings.map_opacity = opacity_buffer[1] / 100;
             mark_configuration_changed();
         end
+
+        local visibility_buffer = {
+            math.floor(clamp(state.settings.map_visibility_boost, 1, 12) + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Map visibility##ashitaminimap_visibility',
+                visibility_buffer,
+                1,
+                12,
+                '%d x')) then
+            state.settings.map_visibility_boost = visibility_buffer[1];
+            mark_configuration_changed();
+        end
+        imgui.TextColored(
+            { 0.65, 0.68, 0.70, 1.00 },
+            'Raise visibility to strengthen faint transparent map lines.');
+
+        local backdrop_buffer = {
+            math.floor(clamp(state.settings.backdrop_opacity, 0, 0.75) * 100 + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Dark backdrop##ashitaminimap_backdrop',
+                backdrop_buffer,
+                0,
+                75,
+                '%d%%')) then
+            state.settings.backdrop_opacity = backdrop_buffer[1] / 100;
+            mark_configuration_changed();
+        end
+        imgui.TextColored(
+            { 0.65, 0.68, 0.70, 1.00 },
+            'Set backdrop to 0% to keep the unused map area fully clear.');
 
         imgui.Text('Markers');
         imgui.Separator();

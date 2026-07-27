@@ -40,7 +40,8 @@ The first prototype includes:
 
 Run `/aminimap config` to open the in-game configuration window. It controls:
 
-- map visibility, position lock, size, zoom, and opacity;
+- map visibility, position lock, size, zoom, opacity, and line-strength boost;
+- an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
 - player, NPC, monster, and entity-name markers.
 
@@ -51,6 +52,11 @@ Move the mouse over the map and scroll the wheel to zoom in or out.
 Changes are saved automatically to `ashitaminimap_config.lua` after a short
 delay. The **Save** button and `/aminimap save` command save immediately.
 You can still edit the Lua configuration manually and run `/aminimap reload`.
+
+If the transparent map linework is difficult to see, raise **Map visibility**.
+This composites the alpha layer more strongly than the ordinary opacity control
+can. **Dark backdrop** adds contrast behind the entire viewport and can be set
+back to `0%` whenever a completely clear background is preferred.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:

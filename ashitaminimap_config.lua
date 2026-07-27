@@ -12,6 +12,10 @@ return {
     -- 210 px mask * 0.70 zoom / 100 * 3.00 UI scale = 4.41.
     pixels_per_yalm = 4.41,
     map_opacity = 0.82,
+    -- Re-renders the alpha map layer to strengthen faint extracted lines.
+    map_visibility_boost = 4,
+    -- Optional dark square behind the map; set to 0 for fully transparent.
+    backdrop_opacity = 0.12,
 
     show_grid = true,
     show_coordinate = true,
@@ -31,5 +35,6 @@ return {
         target = { 1.00, 0.71, 0.20, 1.00 },
         shadow = { 0.01, 0.02, 0.025, 0.94 },
         badge = { 0.025, 0.055, 0.070, 0.88 },
+        backdrop = { 0.010, 0.030, 0.040, 1.00 },
     },
 }
