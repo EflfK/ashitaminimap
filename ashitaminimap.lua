@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.3.0';
+addon.version   = '0.3.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -18,6 +18,7 @@ local commands = T{
 local ZOOM_MIN = 0.25;
 local ZOOM_MAX = 20.00;
 local ZOOM_STEP = 1.12;
+local MARKER_REFERENCE_ZOOM = 4.41;
 
 local DEFAULTS = {
     visible = true,
@@ -39,6 +40,7 @@ local DEFAULTS = {
     show_npcs = true,
     show_monsters = true,
     show_names = false,
+    scale_markers_with_zoom = true,
     colors = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
@@ -158,6 +160,7 @@ local function config_text()
         string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
         string.format('    show_names = %s,', bool_text(settings.show_names)),
+        string.format('    scale_markers_with_zoom = %s,', bool_text(settings.scale_markers_with_zoom)),
         '',
         '    colors = {',
         string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
@@ -440,7 +443,14 @@ local function entity_kind(entity, index)
     return 'npc';
 end
 
-local function draw_entities(draw_list, left, top, size, player, scale)
+local function marker_visual_scale(world_scale)
+    if (state.settings.scale_markers_with_zoom ~= true) then
+        return 1.0;
+    end
+    return clamp(world_scale / MARKER_REFERENCE_ZOOM, 0.50, 2.50);
+end
+
+local function draw_entities(draw_list, left, top, size, player, scale, visual_scale)
     local entity = player.entity;
     local count = math.min(tonumber(safe_read(function () return entity:GetEntityMapSize(); end, 0)) or 0, 0x8FF);
     local center_x = left + (size / 2);
@@ -466,15 +476,39 @@ local function draw_entities(draw_list, left, top, size, player, scale)
                             and screen_y >= top + 3 and screen_y <= top + size - 3) then
                         local dot_color = color(kind == 'player' and 'other_player' or kind,
                             { 0.88, 0.82, 0.62, 0.90 });
-                        draw_list:AddCircleFilled({ screen_x, screen_y }, 6.0, shadow, 16);
-                        draw_list:AddCircleFilled({ screen_x, screen_y }, 4.5, dot_color, 16);
+                        draw_list:AddCircleFilled(
+                            { screen_x, screen_y },
+                            6.0 * visual_scale,
+                            shadow,
+                            16);
+                        draw_list:AddCircleFilled(
+                            { screen_x, screen_y },
+                            4.5 * visual_scale,
+                            dot_color,
+                            16);
                         if (index == target_index) then
-                            draw_list:AddCircle({ screen_x, screen_y }, 7.0,
-                                color('target', { 1.00, 0.71, 0.20, 1.00 }), 20, 2.0);
+                            draw_list:AddCircle(
+                                { screen_x, screen_y },
+                                7.0 * visual_scale,
+                                color('target', { 1.00, 0.71, 0.20, 1.00 }),
+                                20,
+                                math.max(1.0, 2.0 * visual_scale));
                         end
                         if (state.settings.show_names == true) then
-                            draw_list:AddText({ screen_x + 6, screen_y - 7 }, shadow, name);
-                            draw_list:AddText({ screen_x + 5, screen_y - 8 }, dot_color, name);
+                            draw_list:AddText(
+                                {
+                                    screen_x + (6 * visual_scale),
+                                    screen_y - (7 * visual_scale),
+                                },
+                                shadow,
+                                name);
+                            draw_list:AddText(
+                                {
+                                    screen_x + (5 * visual_scale),
+                                    screen_y - (8 * visual_scale),
+                                },
+                                dot_color,
+                                name);
                         end
                     end
                 end
@@ -483,16 +517,19 @@ local function draw_entities(draw_list, left, top, size, player, scale)
     end
 end
 
-local function draw_player(draw_list, center_x, center_y, yaw)
+local function draw_player(draw_list, center_x, center_y, yaw, visual_scale)
     local heading_x = math.cos(yaw);
     local heading_y = math.sin(yaw);
     local side_x = -heading_y;
     local side_y = heading_x;
-    local tip = { center_x + (heading_x * 13), center_y + (heading_y * 13) };
-    local back_x = center_x - (heading_x * 7);
-    local back_y = center_y - (heading_y * 7);
-    local left = { back_x + (side_x * 7), back_y + (side_y * 7) };
-    local right = { back_x - (side_x * 7), back_y - (side_y * 7) };
+    local tip_length = 13 * visual_scale;
+    local back_length = 7 * visual_scale;
+    local half_width = 7 * visual_scale;
+    local tip = { center_x + (heading_x * tip_length), center_y + (heading_y * tip_length) };
+    local back_x = center_x - (heading_x * back_length);
+    local back_y = center_y - (heading_y * back_length);
+    local left = { back_x + (side_x * half_width), back_y + (side_y * half_width) };
+    local right = { back_x - (side_x * half_width), back_y - (side_y * half_width) };
     local shadow = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local player_color = color('player', { 0.18, 0.88, 0.90, 1.00 });
     draw_list:AddTriangleFilled(
@@ -501,7 +538,12 @@ local function draw_player(draw_list, center_x, center_y, yaw)
         { right[1] + 1, right[2] + 1 },
         shadow);
     draw_list:AddTriangleFilled(tip, left, right, player_color);
-    draw_list:AddCircle({ center_x, center_y }, 4.0, player_color, 16, 1.5);
+    draw_list:AddCircle(
+        { center_x, center_y },
+        4.0 * visual_scale,
+        player_color,
+        16,
+        math.max(1.0, 1.5 * visual_scale));
 end
 
 local function draw_badge(draw_list, left, top, player, map)
@@ -713,6 +755,7 @@ local function render_minimap()
         local left, top = imgui.GetCursorScreenPos();
         handle_map_input(left, top, size);
         scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+        local visual_scale = marker_visual_scale(scale);
         local draw_list = imgui.GetWindowDrawList();
         draw_map_backdrop(draw_list, left, top, size);
         if (structure_texture ~= nil) then
@@ -742,8 +785,13 @@ local function render_minimap()
                 state.settings.label_visibility_boost);
         end
         draw_grid(draw_list, left, top, size, player, scale);
-        draw_entities(draw_list, left, top, size, player, scale);
-        draw_player(draw_list, left + (size / 2), top + (size / 2), player.yaw);
+        draw_entities(draw_list, left, top, size, player, scale, visual_scale);
+        draw_player(
+            draw_list,
+            left + (size / 2),
+            top + (size / 2),
+            player.yaw,
+            visual_scale);
         draw_badge(draw_list, left, top, player, map);
         draw_unlocked_hint(draw_list, left, top, size);
         draw_list:AddRect(
@@ -893,6 +941,12 @@ local function render_config_window()
         config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
         config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');
         config_checkbox('Entity names##ashitaminimap_names', 'show_names');
+        config_checkbox(
+            'Scale dynamic markers with zoom##ashitaminimap_scale_markers',
+            'scale_markers_with_zoom');
+        imgui.TextColored(
+            { 0.65, 0.68, 0.70, 1.00 },
+            'Controls entity dots, target rings, and the player arrow.');
 
         if (imgui.Button('Save##ashitaminimap_save', { 92, 0 })) then
             local ok, message = save_configuration();

@@ -29,6 +29,7 @@ return {
     show_npcs = true,
     show_monsters = true,
     show_names = false,
+    scale_markers_with_zoom = true,
 
     colors = {
         border = { 0.67, 0.47, 0.22, 0.90 },

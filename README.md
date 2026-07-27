@@ -46,10 +46,15 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
 - player, NPC, monster, and entity-name markers.
+- zoom-scaled entity dots, target rings, and player arrow.
 
 Unlock the map in the configuration window or with `/aminimap unlock`, then
 left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.
 Move the mouse over the map and scroll the wheel to zoom in or out.
+Dynamic marker positions always follow the world zoom. By default their visual
+size also scales relative to the original `4.41 px/yalm` zoom, clamped to a
+usable range. Disable **Scale dynamic markers with zoom** if constant-size
+icons are preferred.
 
 Changes are saved automatically to `ashitaminimap_config.lua` after a short
 delay. The **Save** button and `/aminimap save` command save immediately.
