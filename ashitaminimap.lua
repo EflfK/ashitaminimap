@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.2.0';
+addon.version   = '1.2.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -597,12 +597,23 @@ local function saved_origin_adjustment(zone_id, page_key)
     };
 end
 
+local function runtime_origin_adjustment(zone_id, page_key)
+    if (state.origin_editor.zone_id == zone_id
+            and state.origin_editor.page_key == page_key) then
+        return {
+            x = tonumber(state.origin_editor.x) or 0,
+            y = tonumber(state.origin_editor.y) or 0,
+        };
+    end
+    return saved_origin_adjustment(zone_id, page_key);
+end
+
 local function apply_origin_adjustment(map, zone_id)
     if (map == nil) then
         return nil;
     end
     local page_key = map_page_key(map);
-    local adjustment = saved_origin_adjustment(zone_id, page_key);
+    local adjustment = runtime_origin_adjustment(zone_id, page_key);
     map.base_origin_x = tonumber(map.origin_x) or 0;
     map.base_origin_y = tonumber(map.origin_y) or 0;
     map.origin_adjustment_x = adjustment.x;
@@ -1352,13 +1363,13 @@ local function render_config_window()
             imgui.TextColored(
                 { 0.65, 0.68, 0.70, 1.00 },
                 string.format(
-                    'Base origin %.1f, %.1f  |  Applied %.1f, %.1f',
+                    'Base origin %.1f, %.1f  |  Live %.1f, %.1f',
                     tonumber(config_map.base_origin_x) or 0,
                     tonumber(config_map.base_origin_y) or 0,
                     tonumber(config_map.origin_adjustment_x) or 0,
                     tonumber(config_map.origin_adjustment_y) or 0));
 
-            if (imgui.Button('Apply calibration##ashitaminimap_origin_apply', { 140, 0 })) then
+            if (imgui.Button('Save calibration##ashitaminimap_origin_save', { 140, 0 })) then
                 local zones = state.settings.origin_adjustments;
                 zones[config_player.zone_id] = type(zones[config_player.zone_id]) == 'table'
                     and zones[config_player.zone_id]
@@ -1378,27 +1389,9 @@ local function render_config_window()
                         state.origin_editor.y)
                     or ('Could not save calibration: ' .. message));
             end
-            imgui.SameLine(0, 8);
-            if (imgui.Button('Reset calibration##ashitaminimap_origin_reset', { 140, 0 })) then
-                local zones = state.settings.origin_adjustments;
-                local pages = type(zones) == 'table' and zones[config_player.zone_id] or nil;
-                if (type(pages) == 'table') then
-                    pages[page_key] = nil;
-                    if (next(pages) == nil) then
-                        zones[config_player.zone_id] = nil;
-                    end
-                end
-                state.origin_editor.x = 0;
-                state.origin_editor.y = 0;
-                mark_configuration_changed();
-                local ok, message = save_configuration();
-                log(ok
-                    and string.format(
-                        'Reset %s page %s origin adjustment.',
-                        config_map.name or zone_name(config_player.zone_id),
-                        page_key >= 0 and tostring(page_key) or 'authored')
-                    or ('Could not save calibration reset: ' .. message));
-            end
+            imgui.TextColored(
+                { 0.65, 0.68, 0.70, 1.00 },
+                'Sliders preview live. Reload discards changes until saved.');
         end
 
         imgui.Text('Static layers');

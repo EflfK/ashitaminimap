@@ -95,8 +95,10 @@ validation in `MAP_CALIBRATION.md`.
 Open `/aminimap config` while standing in the affected zone. The **Map
 calibration** section exposes X and Y source-image pixel adjustments for the
 active zone and active vanilla page. Ctrl-click either slider to type an exact
-value, then choose **Apply calibration**. Apply writes the adjustment
-immediately to `ashitaminimap_config.lua`; **Reset calibration** removes it.
+value. Slider changes preview immediately in the current session but do not
+alter `ashitaminimap_config.lua`. Choose **Save calibration** to persist the
+current values across addon reloads. Reloading before saving restores the last
+saved calibration.
 
 Adjustments are stored per zone and page because separate floors can use
 different source origins. They change the navigation origin while leaving the
