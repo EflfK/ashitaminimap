@@ -95,6 +95,11 @@ This calibration is independent of the user's on-screen zoom.
 world distance per coordinate cell. For example, Metalworks and Port Bastok use
 40-yalm cells, while South Gustaberg uses 100-yalm cells.
 
+See [Map import and calibration](docs/MAP_CALIBRATION.md) for the required
+source-data, layer-splitting, calibration, and multi-position validation
+procedure. New maps must use deterministic calibration rather than visual
+tuning.
+
 ## Map asset status
 
 Metalworks now uses the exact vanilla DAT pixels, unwrapped into north-up map
