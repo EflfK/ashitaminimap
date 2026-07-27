@@ -31,9 +31,10 @@ return {
         labels_image = 'assets/maps/237_labels.png',
         width = 512,
         height = 512,
-        -- The vanilla texture's H-8 cell center is at pixel 253 after unwrap.
+        -- Metalworks' post-unwrap world origin was verified against the stock
+        -- map and live entity control points at matching display scale.
         origin_x = 253,
-        origin_y = 253,
+        origin_y = 254,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
     },

@@ -93,7 +93,7 @@ separate structure and label layers.
 Metalworks is the reference example:
 
 ```text
-origin                = (253, 253)
+origin                = (253, 254)
 grid_yalms            = 40
 image_pixels_per_yalm = 0.80
 ```
@@ -154,4 +154,3 @@ The desired future importer should:
 
 Even after automation, unusual multi-floor and composite maps must fail for
 review instead of silently falling back to guessed constants.
-
