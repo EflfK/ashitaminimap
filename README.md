@@ -61,8 +61,9 @@ independently of map zoom; smaller values are useful for calibration
 screenshots without making the player arrow harder to see.
 
 Maximum zoom is `20.00 px/yalm`. The minimum is calculated from the current
-viewport size, map scale, and `view_bounds`, so maximum zoom-out fits the full
-calibrated page along its largest axis but never shrinks it into a thumbnail.
+viewport size, map scale, and `view_bounds`, so maximum zoom-out is exactly the
+complete vanilla map page, including its coordinate strips and border, and
+never shrinks it into a thumbnail.
 Grid labels outside FFXI's valid `A–Z / 1–16` range are not drawn.
 
 At overview scales, the camera follows the player until centering them would

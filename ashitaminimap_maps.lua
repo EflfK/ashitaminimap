@@ -47,9 +47,11 @@ return {
         landmarks_image = 'assets/maps/241_landmarks.png',
         width = 512,
         height = 512,
-        -- The DAT contains another composite page to the right. Clamp the
-        -- overview camera to the actual Windurst Woods page.
-        view_bounds = { left = 0, top = 0, right = 350, bottom = 512 },
+        -- The DAT contains another composite page to the right. The complete
+        -- Windurst Woods page ends immediately before its dark separator at
+        -- x=364. Clamp overview zoom and framing to this exact page so its
+        -- coordinate strip and border remain visible.
+        view_bounds = { left = 0, top = 0, right = 364, bottom = 512 },
         -- Source: ROM/18/72.DAT, internal page m_241_00. This page does not
         -- wrap. Stock-map control points at matched zoom place the sampled
         -- H-8 origin at (108.5, 288.0), one row below the drawn-grid estimate.
