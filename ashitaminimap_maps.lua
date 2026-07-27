@@ -44,16 +44,18 @@ return {
         structure_image = 'assets/maps/241_structure.png',
         width = 512,
         height = 512,
-        -- The DAT contains another composite page to the right. The complete
-        -- Windurst Woods page ends immediately before its dark separator at
-        -- x=364. Clamp overview zoom and framing to this exact page so its
-        -- coordinate strip and border remain visible.
-        view_bounds = { left = 0, top = 0, right = 364, bottom = 512 },
-        -- Source: ROM/18/72.DAT, internal page m_241_00. This page does not
-        -- wrap. Stock-map control points at matched zoom place the sampled
-        -- H-8 origin at (108.5, 288.0), one row below the drawn-grid estimate.
-        origin_x = 108.5,
+        -- The source page wraps at x=366. Moving that section to the left
+        -- restores the complete A-O page and makes the full 512 px texture
+        -- the overview boundary.
+        view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
+        -- Source: ROM/18/72.DAT, internal page m_241_00. The +146 px unwrap
+        -- moves the verified geometry origin from x=108.5 to x=254.5.
+        origin_x = 254.5,
         origin_y = 288.0,
+        -- The printed vanilla grid is independent of the geometry origin.
+        -- Its H-8 cell center is one full 32 px row above world (0, 0).
+        grid_origin_x = 255.0,
+        grid_origin_y = 256.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
     },

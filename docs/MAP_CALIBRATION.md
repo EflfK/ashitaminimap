@@ -21,7 +21,8 @@ The same transform must be used for:
 - the structure layer;
 - the player marker;
 - entity and target markers;
-- the Lua-rendered coordinate grid.
+- the Lua-rendered coordinate grid, using its own recorded grid anchor when the
+  printed vanilla grid does not center on world `(0, 0)`.
 
 Display size and user zoom are a later screen-space transform. They must never
 be folded into the source-image calibration.
@@ -53,6 +54,8 @@ Required fields are:
     view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
     origin_x = 253,
     origin_y = 253,
+    grid_origin_x = 255,
+    grid_origin_y = 255,
     grid_yalms = 40,
     image_pixels_per_yalm = 0.80,
 },
@@ -64,6 +67,12 @@ separate vanilla and walkable-structure layers when the source permits it.
 padding or an adjacent composite page. It defines the calibrated source-pixel
 rectangle that the overview camera should keep visible; it does not crop or
 recalibrate any layer.
+
+`grid_origin_x` and `grid_origin_y` are optional source-image coordinates for
+the center of vanilla cell H-8. When omitted, they default to `origin_x` and
+`origin_y`. Record them separately when the printed grid and navigation
+geometry use different origins; forcing the geometry origin onto the grid can
+shift every displayed quadrant by a full row or column.
 
 ## Deterministic import procedure
 
@@ -94,6 +103,8 @@ recalibrate any layer.
    repository-wide default as calibration.
 6. Determine the image pixel represented by world `(0, 0)`. That pixel becomes
    `origin_x`, `origin_y` after all wrap and crop operations.
+   Separately record the printed H-8 cell center as `grid_origin_x`,
+   `grid_origin_y` when it differs from world `(0, 0)`.
 7. Derive `image_pixels_per_yalm` from source metadata or at least two verified,
    widely separated control points:
 

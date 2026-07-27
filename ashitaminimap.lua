@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.9.0';
+addon.version   = '0.9.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -366,6 +366,22 @@ local function map_grid_yalms(map)
     return clamp(map ~= nil and map.grid_yalms or 40, 10, 1000);
 end
 
+local function map_grid_origin_world(map)
+    local width = tonumber(map ~= nil and map.width) or 0;
+    local height = tonumber(map ~= nil and map.height) or 0;
+    local image_scale = tonumber(map ~= nil and map.image_pixels_per_yalm) or 0;
+    if (image_scale <= 0) then
+        return 0, 0;
+    end
+    local origin_x = tonumber(map.origin_x) or (width / 2);
+    local origin_y = tonumber(map.origin_y) or (height / 2);
+    local grid_origin_x = tonumber(map.grid_origin_x) or origin_x;
+    local grid_origin_y = tonumber(map.grid_origin_y) or origin_y;
+    return
+        (grid_origin_x - origin_x) / image_scale,
+        (origin_y - grid_origin_y) / image_scale;
+end
+
 local function zoom_minimum_for_map(map, size)
     local image_scale = tonumber(map ~= nil and map.image_pixels_per_yalm) or 0;
     local width = tonumber(map ~= nil and map.width) or 0;
@@ -389,8 +405,11 @@ end
 local function grid_coordinate(x, y, map)
     local grid_yalms = map_grid_yalms(map);
     local half_cell = grid_yalms / 2;
-    local column = math.floor(((tonumber(x) or 0) + half_cell) / grid_yalms) + 8;
-    local row = math.floor((-(tonumber(y) or 0) + half_cell) / grid_yalms) + 8;
+    local grid_origin_x, grid_origin_y = map_grid_origin_world(map);
+    local local_x = (tonumber(x) or 0) - grid_origin_x;
+    local local_y = (tonumber(y) or 0) - grid_origin_y;
+    local column = math.floor((local_x + half_cell) / grid_yalms) + 8;
+    local row = math.floor((-local_y + half_cell) / grid_yalms) + 8;
     return string.format('%s-%d', letters[column] or '?', row);
 end
 
@@ -431,8 +450,8 @@ local function draw_grid(draw_list, left, top, size, camera, map, scale)
         return;
     end
 
-    local right = left + size;
-    local bottom = top + size;
+    local viewport_right = left + size;
+    local viewport_bottom = top + size;
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local line_color = color('grid', { 0.48, 0.60, 0.61, 0.25 });
@@ -440,41 +459,83 @@ local function draw_grid(draw_list, left, top, size, camera, map, scale)
     local shadow = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local world_radius = (size / 2) / scale;
     local grid_yalms = map_grid_yalms(map);
+    local grid_origin_x, grid_origin_y = map_grid_origin_world(map);
+    local image_scale = tonumber(map.image_pixels_per_yalm) or 0;
+    local width = tonumber(map.width) or 0;
+    local height = tonumber(map.height) or 0;
+    local bounds = type(map.view_bounds) == 'table' and map.view_bounds or {};
+    local bounds_left = clamp(bounds.left or 0, 0, width);
+    local bounds_top = clamp(bounds.top or 0, 0, height);
+    local bounds_right = clamp(bounds.right or width, bounds_left, width);
+    local bounds_bottom = clamp(bounds.bottom or height, bounds_top, height);
+    local camera_image_x = (tonumber(map.origin_x) or (width / 2)) + (camera.x * image_scale);
+    local camera_image_y = (tonumber(map.origin_y) or (height / 2)) - (camera.y * image_scale);
+    local screen_per_image_pixel = image_scale > 0 and (scale / image_scale) or 0;
+    local grid_left = math.max(
+        left,
+        center_x + ((bounds_left - camera_image_x) * screen_per_image_pixel));
+    local grid_top = math.max(
+        top,
+        center_y + ((bounds_top - camera_image_y) * screen_per_image_pixel));
+    local grid_right = math.min(
+        viewport_right,
+        center_x + ((bounds_right - camera_image_x) * screen_per_image_pixel));
+    local grid_bottom = math.min(
+        viewport_bottom,
+        center_y + ((bounds_bottom - camera_image_y) * screen_per_image_pixel));
+    if (grid_right <= grid_left or grid_bottom <= grid_top) then
+        return;
+    end
 
     local half_cell = grid_yalms / 2;
-    local first_column = math.floor((camera.x - world_radius + half_cell) / grid_yalms) + 8;
-    local last_column = math.floor((camera.x + world_radius + half_cell) / grid_yalms) + 8;
+    local first_column = math.floor(
+        (camera.x - world_radius - grid_origin_x + half_cell) / grid_yalms) + 8;
+    local last_column = math.floor(
+        (camera.x + world_radius - grid_origin_x + half_cell) / grid_yalms) + 8;
     for column = first_column, last_column do
-        local boundary_world_x = ((column - 8) * grid_yalms) - half_cell;
+        local boundary_world_x =
+            grid_origin_x + ((column - 8) * grid_yalms) - half_cell;
         local screen_x = center_x + ((boundary_world_x - camera.x) * scale);
-        if (screen_x >= left and screen_x <= right) then
-            draw_list:AddLine({ screen_x, top }, { screen_x, bottom }, line_color, 1.0);
+        if (screen_x >= grid_left and screen_x <= grid_right) then
+            draw_list:AddLine(
+                { screen_x, grid_top },
+                { screen_x, grid_bottom },
+                line_color,
+                1.0);
         end
 
-        local cell_center_world_x = ((column - 8) * grid_yalms);
+        local cell_center_world_x = grid_origin_x + ((column - 8) * grid_yalms);
         local label_x = center_x + ((cell_center_world_x - camera.x) * scale);
         local label = letters[column];
-        if (label ~= nil and label_x >= left + 9 and label_x <= right - 9) then
-            draw_list:AddText({ label_x - 3, top + 4 }, shadow, label);
-            draw_list:AddText({ label_x - 4, top + 3 }, text_color, label);
+        if (label ~= nil and label_x >= grid_left + 9 and label_x <= grid_right - 9) then
+            draw_list:AddText({ label_x - 3, grid_top + 4 }, shadow, label);
+            draw_list:AddText({ label_x - 4, grid_top + 3 }, text_color, label);
         end
     end
 
-    local first_row = math.floor((-(camera.y + world_radius) + half_cell) / grid_yalms) + 8;
-    local last_row = math.floor((-(camera.y - world_radius) + half_cell) / grid_yalms) + 8;
+    local first_row = math.floor(
+        (-(camera.y + world_radius - grid_origin_y) + half_cell) / grid_yalms) + 8;
+    local last_row = math.floor(
+        (-(camera.y - world_radius - grid_origin_y) + half_cell) / grid_yalms) + 8;
     for row = first_row, last_row do
-        local boundary_world_y = half_cell - ((row - 8) * grid_yalms);
+        local boundary_world_y =
+            grid_origin_y + half_cell - ((row - 8) * grid_yalms);
         local screen_y = center_y - ((boundary_world_y - camera.y) * scale);
-        if (screen_y >= top and screen_y <= bottom) then
-            draw_list:AddLine({ left, screen_y }, { right, screen_y }, line_color, 1.0);
+        if (screen_y >= grid_top and screen_y <= grid_bottom) then
+            draw_list:AddLine(
+                { grid_left, screen_y },
+                { grid_right, screen_y },
+                line_color,
+                1.0);
         end
 
-        local cell_center_world_y = -((row - 8) * grid_yalms);
+        local cell_center_world_y = grid_origin_y - ((row - 8) * grid_yalms);
         local label_y = center_y - ((cell_center_world_y - camera.y) * scale);
-        if (row >= 1 and row <= 16 and label_y >= top + 9 and label_y <= bottom - 9) then
+        if (row >= 1 and row <= 16
+                and label_y >= grid_top + 9 and label_y <= grid_bottom - 9) then
             local label = tostring(row);
-            draw_list:AddText({ left + 5, label_y - 6 }, shadow, label);
-            draw_list:AddText({ left + 4, label_y - 7 }, text_color, label);
+            draw_list:AddText({ grid_left + 5, label_y - 6 }, shadow, label);
+            draw_list:AddText({ grid_left + 4, label_y - 7 }, text_color, label);
         end
     end
 end
