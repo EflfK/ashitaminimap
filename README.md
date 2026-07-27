@@ -60,6 +60,11 @@ icons are preferred. **Marker size** scales the dots and target rings
 independently of map zoom; smaller values are useful for calibration
 screenshots without making the player arrow harder to see.
 
+Zoom is clamped to `1.25–20.00 px/yalm`. The lower limit still permits a
+whole-zone overview while preventing the calibrated map and markers from
+collapsing into an unreadable thumbnail. Grid labels outside FFXI's valid
+`A–Z / 1–16` range are not drawn.
+
 Changes are saved automatically to `ashitaminimap_config.lua` after a short
 delay. The **Save** button and `/aminimap save` command save immediately.
 You can still edit the Lua configuration manually and run `/aminimap reload`.

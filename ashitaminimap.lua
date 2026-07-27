@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.7.0';
+addon.version   = '0.7.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -15,7 +15,7 @@ local commands = T{
     ['/ashitaminimap'] = true,
 };
 
-local ZOOM_MIN = 0.25;
+local ZOOM_MIN = 1.25;
 local ZOOM_MAX = 20.00;
 local ZOOM_STEP = 1.12;
 local MARKER_REFERENCE_ZOOM = 4.41;
@@ -254,7 +254,8 @@ local function load_configuration()
         state.settings.label_visibility_boost = settings.map_visibility_boost;
     end
     state.settings.size = clamp(state.settings.size, 120, 700);
-    state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+    local loaded_zoom = tonumber(state.settings.pixels_per_yalm) or DEFAULTS.pixels_per_yalm;
+    state.settings.pixels_per_yalm = clamp(loaded_zoom, ZOOM_MIN, ZOOM_MAX);
     state.settings.vanilla_opacity = clamp(state.settings.vanilla_opacity, 0, 1);
     state.settings.structure_opacity = clamp(state.settings.structure_opacity, 0, 1);
     state.settings.label_opacity = clamp(state.settings.label_opacity, 0, 1);
@@ -267,7 +268,8 @@ local function load_configuration()
         math.floor(clamp(state.settings.landmark_visibility_boost, 1, 12) + 0.5);
     state.settings.backdrop_opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
     state.settings.marker_size = clamp(state.settings.marker_size, 0.25, 2.00);
-    state.config_dirty = false;
+    state.config_dirty = loaded_zoom ~= state.settings.pixels_per_yalm;
+    state.config_changed_at = 0;
     state.dragging = false;
     if (settings_error ~= nil) then
         log('Config warning: ' .. tostring(settings_error));
@@ -417,8 +419,8 @@ local function draw_grid(draw_list, left, top, size, player, map, scale)
 
         local cell_center_world_x = ((column - 8) * grid_yalms);
         local label_x = center_x + ((cell_center_world_x - player.x) * scale);
-        local label = letters[column] or '?';
-        if (label_x >= left + 9 and label_x <= right - 9) then
+        local label = letters[column];
+        if (label ~= nil and label_x >= left + 9 and label_x <= right - 9) then
             draw_list:AddText({ label_x - 3, top + 4 }, shadow, label);
             draw_list:AddText({ label_x - 4, top + 3 }, text_color, label);
         end
@@ -435,7 +437,7 @@ local function draw_grid(draw_list, left, top, size, player, map, scale)
 
         local cell_center_world_y = -((row - 8) * grid_yalms);
         local label_y = center_y - ((cell_center_world_y - player.y) * scale);
-        if (label_y >= top + 9 and label_y <= bottom - 9) then
+        if (row >= 1 and row <= 16 and label_y >= top + 9 and label_y <= bottom - 9) then
             local label = tostring(row);
             draw_list:AddText({ left + 5, label_y - 6 }, shadow, label);
             draw_list:AddText({ left + 4, label_y - 7 }, text_color, label);
