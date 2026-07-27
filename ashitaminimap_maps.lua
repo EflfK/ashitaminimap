@@ -41,6 +41,7 @@ return {
     },
     [241] = {
         name = 'Windurst Woods',
+        vanilla_image = 'assets/maps/241_vanilla.png',
         structure_image = 'assets/maps/241_structure.png',
         labels_image = 'assets/maps/241_labels.png',
         landmarks_image = 'assets/maps/241_landmarks.png',

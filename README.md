@@ -13,7 +13,7 @@ The first prototype includes:
 - an in-game configuration window with persistent settings;
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
-- independently composited structure, label, and landmark layers;
+- independently composited vanilla, structure, label, and landmark layers;
 - deterministic world-coordinate-to-image calibration;
 - map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
   Metalworks (zone 237), and Windurst Woods (zone 241).
@@ -42,8 +42,8 @@ The first prototype includes:
 Run `/aminimap config` to open the in-game configuration window. It controls:
 
 - map visibility, position lock, size, and zoom;
-- independent structure, label, and landmark visibility, opacity, and
-  line-strength boost;
+- independent vanilla, structure, label, and landmark visibility and opacity;
+- independent structure, label, and landmark line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
 - player, NPC, monster, and entity-name markers.
@@ -75,18 +75,21 @@ completely clear background is preferred.
 The renderer draws map content in this order:
 
 1. optional dark backdrop;
-2. calibrated map structure;
-3. place names and exit labels;
-4. static service and landmark symbols;
-5. coordinate grid;
-6. live entities and player arrow;
-7. coordinate badge and unlocked-state hint.
+2. optional calibrated vanilla map;
+3. calibrated map structure;
+4. place names and exit labels;
+5. static service and landmark symbols;
+6. coordinate grid;
+7. live entities and player arrow;
+8. coordinate badge and unlocked-state hint.
 
 Windurst Woods is the first production dark-tactical map. Its structure is a
 filled walkable-area mask generated from collision geometry plus Detour
 traversability data; the background is truly transparent. Place names and
-static landmark symbols remain separate optional overlays. All three share the
-same verified origin and scale. Metalworks has separate structure and
+static landmark symbols remain separate optional overlays. A fourth optional
+layer reproduces the vanilla parchment map with independently adjustable
+opacity. All four share the same verified origin and scale. Metalworks has
+separate structure and
 annotation layers. South Gustaberg and Port Bastok still use flattened
 prototype assets, so their embedded labels cannot yet be hidden independently.
 

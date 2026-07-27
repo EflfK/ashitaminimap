@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.6.4';
+addon.version   = '0.7.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -27,9 +27,11 @@ local DEFAULTS = {
     y = 128,
     size = 330,
     pixels_per_yalm = 4.41,
+    show_map_vanilla = true,
     show_map_structure = true,
     show_map_labels = true,
     show_map_landmarks = true,
+    vanilla_opacity = 0.35,
     structure_opacity = 0.82,
     label_opacity = 1.00,
     landmark_opacity = 1.00,
@@ -146,9 +148,11 @@ local function config_text()
         string.format('    pixels_per_yalm = %.4f,', clamp(settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX)),
         '',
         '    -- Independently composited static map layers.',
+        string.format('    show_map_vanilla = %s,', bool_text(settings.show_map_vanilla)),
         string.format('    show_map_structure = %s,', bool_text(settings.show_map_structure)),
         string.format('    show_map_labels = %s,', bool_text(settings.show_map_labels)),
         string.format('    show_map_landmarks = %s,', bool_text(settings.show_map_landmarks)),
+        string.format('    vanilla_opacity = %.3f,', clamp(settings.vanilla_opacity, 0, 1)),
         string.format('    structure_opacity = %.3f,', clamp(settings.structure_opacity, 0, 1)),
         string.format('    label_opacity = %.3f,', clamp(settings.label_opacity, 0, 1)),
         string.format('    landmark_opacity = %.3f,', clamp(settings.landmark_opacity, 0, 1)),
@@ -251,6 +255,7 @@ local function load_configuration()
     end
     state.settings.size = clamp(state.settings.size, 120, 700);
     state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+    state.settings.vanilla_opacity = clamp(state.settings.vanilla_opacity, 0, 1);
     state.settings.structure_opacity = clamp(state.settings.structure_opacity, 0, 1);
     state.settings.label_opacity = clamp(state.settings.label_opacity, 0, 1);
     state.settings.landmark_opacity = clamp(state.settings.landmark_opacity, 0, 1);
@@ -737,9 +742,13 @@ local function render_minimap()
         return;
     end
 
+    local vanilla_image = map.vanilla_image;
     local structure_image = map.structure_image or map.image;
     local labels_image = map.labels_image;
     local landmarks_image = map.landmarks_image;
+    local vanilla_texture = state.settings.show_map_vanilla == true
+        and texture_for(vanilla_image)
+        or nil;
     local structure_texture = state.settings.show_map_structure == true
         and texture_for(structure_image)
         or nil;
@@ -782,6 +791,19 @@ local function render_minimap()
             * clamp(state.settings.marker_size, 0.25, 2.00);
         local draw_list = imgui.GetWindowDrawList();
         draw_map_backdrop(draw_list, left, top, size);
+        if (vanilla_texture ~= nil) then
+            draw_map_layer(
+                draw_list,
+                left,
+                top,
+                size,
+                player,
+                map,
+                vanilla_texture,
+                scale,
+                state.settings.vanilla_opacity,
+                1);
+        end
         if (structure_texture ~= nil) then
             draw_map_layer(
                 draw_list,
@@ -897,6 +919,20 @@ local function render_config_window()
 
         imgui.Text('Static layers');
         imgui.Separator();
+        config_checkbox('Vanilla map##ashitaminimap_vanilla', 'show_map_vanilla');
+        local vanilla_opacity_buffer = {
+            math.floor(clamp(state.settings.vanilla_opacity, 0, 1) * 100 + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Vanilla opacity##ashitaminimap_vanilla_opacity',
+                vanilla_opacity_buffer,
+                0,
+                100,
+                '%d%%')) then
+            state.settings.vanilla_opacity = vanilla_opacity_buffer[1] / 100;
+            mark_configuration_changed();
+        end
+
         config_checkbox('Map structure##ashitaminimap_structure', 'show_map_structure');
         local structure_opacity_buffer = {
             math.floor(clamp(state.settings.structure_opacity, 0, 1) * 100 + 0.5),
@@ -978,7 +1014,7 @@ local function render_config_window()
         end
         imgui.TextColored(
             { 0.65, 0.68, 0.70, 1.00 },
-            'Production maps separate structure, labels, and landmark symbols.');
+            'Vanilla, structure, labels, and landmarks are independent layers.');
 
         local backdrop_buffer = {
             math.floor(clamp(state.settings.backdrop_opacity, 0, 0.75) * 100 + 0.5),

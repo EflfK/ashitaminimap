@@ -8,6 +8,7 @@ Files are named by FFXI zone ID.
 - `237_labels.png` — Metalworks labels and map annotations
 - `241_structure_source.png` — legacy Windurst Woods vanilla geometry mask
 - `241_labels_source.png` — Windurst Woods immutable annotation mask
+- `241_vanilla.png` — Windurst Woods optional vanilla parchment layer
 - `241_structure.png` — Windurst Woods walkable-area mask
 - `241_labels.png` — Windurst Woods place and exit labels
 - `241_landmarks.png` — Windurst Woods service and landmark symbols

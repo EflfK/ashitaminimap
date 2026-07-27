@@ -13,9 +13,11 @@ return {
     pixels_per_yalm = 4.41,
 
     -- Independently composited static map layers.
+    show_map_vanilla = true,
     show_map_structure = true,
     show_map_labels = true,
     show_map_landmarks = true,
+    vanilla_opacity = 0.35,
     structure_opacity = 0.82,
     label_opacity = 1.00,
     landmark_opacity = 1.00,
