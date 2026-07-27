@@ -115,9 +115,14 @@ world distance per coordinate cell. For example, Metalworks and Port Bastok use
 40-yalm cells, while South Gustaberg uses 100-yalm cells.
 
 See [Map import and calibration](docs/MAP_CALIBRATION.md) for the required
-source-data, layer-splitting, calibration, and multi-position validation
+source-data, page reconstruction, calibration, and multi-position validation
 procedure. New maps must use deterministic calibration rather than visual
 tuning.
+
+Also read [Map authoring pitfalls and diagnostic
+playbook](docs/MAP_AUTHORING_PITFALLS.md) before adding another zone. It records
+the DAT-wrap, grid-origin, overview-boundary, navmesh, deployment, and mismatch
+diagnostics learned while completing Windurst Woods.
 
 ## Map asset status
 

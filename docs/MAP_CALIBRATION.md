@@ -5,6 +5,10 @@ AshitaMinimap. Metalworks established the rendering transform; new maps should
 reuse that transform with map-specific metadata rather than being manually
 nudged until they look close.
 
+Read `MAP_AUTHORING_PITFALLS.md` as well. It contains the source-reconstruction,
+diagnostic, and live-deployment failures that are easy to repeat even when the
+calibration formulas are correct.
+
 ## What is universal
 
 AshitaMinimap is north-up. A calibrated map converts world coordinates to
@@ -171,9 +175,9 @@ adding the map. That provenance is part of the map asset.
 
 ## Current automation boundary
 
-The repository provides deterministic DAT decoding and layer splitting plus a
-collision/navmesh walkable-mask generator. It does not yet extract every
-calibration field automatically.
+The repository provides deterministic DAT decoding and a collision/navmesh
+walkable-mask generator. It does not yet extract every calibration field
+automatically.
 Until an importer generates the complete map entry, deriving and validating the
 per-map metadata remains a required import step.
 

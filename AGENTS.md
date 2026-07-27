@@ -2,8 +2,10 @@
 
 ## Adding or replacing maps
 
-Read `docs/MAP_CALIBRATION.md` before adding, replacing, cropping, splitting, or
-recalibrating a map.
+Read both `docs/MAP_CALIBRATION.md` and `docs/MAP_AUTHORING_PITFALLS.md`
+completely before adding, replacing, cropping, splitting, or recalibrating a
+map. Treat their validation and deployment checklists as required work, not
+optional background.
 
 - Prefer a zone's intermediate collision OBJ plus matching Detour navmesh for
   accessible-area geometry. The OBJ preserves explicit triangles; the navmesh
@@ -26,3 +28,7 @@ recalibrating a map.
   geometry, the player marker, and entity markers before calling a map precise.
 - Preserve the user's installed `ashitaminimap_config.lua` when syncing addon
   updates into the game installation.
+- Never assume a dark DAT seam is a page edge. Decode the complete texture and
+  test for cyclic continuation before cropping.
+- Keep the navigation origin and printed H-8 grid origin separate when the
+  vanilla artwork requires it.
