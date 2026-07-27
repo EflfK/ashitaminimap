@@ -12,19 +12,13 @@ return {
     -- 210 px mask * 0.70 zoom / 100 * 3.00 UI scale = 4.41.
     pixels_per_yalm = 4.41,
 
-    -- Independently composited static map layers.
+    -- Independently composited map layers.
     show_map_vanilla = true,
     show_map_structure = true,
-    show_map_labels = true,
-    show_map_landmarks = true,
     vanilla_opacity = 0.35,
     structure_opacity = 0.82,
-    label_opacity = 1.00,
-    landmark_opacity = 1.00,
     -- Re-render each alpha layer to strengthen faint extracted lines.
     structure_visibility_boost = 4,
-    label_visibility_boost = 4,
-    landmark_visibility_boost = 4,
     -- Optional dark square behind the map; set to 0 for fully transparent.
     backdrop_opacity = 0.12,
 

@@ -11,9 +11,10 @@ recalibrating a map.
   unavailable, navigation geometry must come from the vanilla DAT or another
   deterministic, verified source. Never use AI-generated or visually traced
   artwork for navigation geometry.
-- Keep structure and labels as separate, identically sized layers whenever the
-  source permits it. Both layers must use exactly the same crop, wrap, origin,
-  and scale.
+- Production maps have only two static sources: an optional vanilla reference
+  layer and a clean walkable-structure layer. Do not create separate static
+  label or landmark layers. Both sources must use exactly the same crop, wrap,
+  origin, and scale.
 - Treat map calibration as zone- and map-variant-specific data. Do not reuse a
   global scale or grid-cell size.
 - Derive `grid_yalms`, `origin_x`, `origin_y`, and

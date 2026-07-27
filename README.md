@@ -13,7 +13,7 @@ The first prototype includes:
 - an in-game configuration window with persistent settings;
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
-- independently composited vanilla, structure, label, and landmark layers;
+- independently composited vanilla and walkable-structure layers;
 - deterministic world-coordinate-to-image calibration;
 - map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
   Metalworks (zone 237), and Windurst Woods (zone 241).
@@ -42,8 +42,8 @@ The first prototype includes:
 Run `/aminimap config` to open the in-game configuration window. It controls:
 
 - map visibility, position lock, size, and zoom;
-- independent vanilla, structure, label, and landmark visibility and opacity;
-- independent structure, label, and landmark line-strength boost;
+- independent vanilla and structure visibility and opacity;
+- adjustable structure line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
 - player, NPC, monster, and entity-name markers.
@@ -77,8 +77,8 @@ delay. The **Save** button and `/aminimap save` command save immediately.
 You can still edit the Lua configuration manually and run `/aminimap reload`.
 
 If the transparent map linework is difficult to see, raise **Structure
-visibility** or **Label visibility**. These composite their respective alpha
-layers more strongly than ordinary opacity controls can. **Dark backdrop** adds
+visibility**. This composites its alpha layer more strongly than an ordinary
+opacity control can. **Dark backdrop** adds
 contrast behind the entire viewport and can be set back to `0%` whenever a
 completely clear background is preferred.
 
@@ -89,21 +89,17 @@ The renderer draws map content in this order:
 1. optional dark backdrop;
 2. optional calibrated vanilla map;
 3. calibrated map structure;
-4. place names and exit labels;
-5. static service and landmark symbols;
-6. coordinate grid;
-7. live entities and player arrow;
-8. coordinate badge and unlocked-state hint.
+4. coordinate grid;
+5. live entities and player arrow;
+6. coordinate badge and unlocked-state hint.
 
 Windurst Woods is the first production dark-tactical map. Its structure is a
 filled walkable-area mask generated from collision geometry plus Detour
-traversability data; the background is truly transparent. Place names and
-static landmark symbols remain separate optional overlays. A fourth optional
-layer reproduces the vanilla parchment map with independently adjustable
-opacity. All four share the same verified origin and scale. Metalworks has
-separate structure and
-annotation layers. South Gustaberg and Port Bastok still use flattened
-prototype assets, so their embedded labels cannot yet be hidden independently.
+traversability data; the background is truly transparent. An optional vanilla
+parchment layer has independently adjustable opacity. Both layers share the
+same verified origin and scale. Metalworks uses its structure layer only.
+South Gustaberg and Port Bastok still use flattened prototype assets, so their
+embedded labels remain part of those legacy images.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:
@@ -128,8 +124,6 @@ tuning.
 Metalworks uses exact vanilla DAT pixels as its geometry source and is
 horizontally unwrapped. Windurst Woods instead uses LandSandBoat collision and
 navigation geometry to render only the accessible-area fill and its boundaries.
-Its warm place labels and amber landmark symbols are independent optional
-vanilla-derived layers.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.

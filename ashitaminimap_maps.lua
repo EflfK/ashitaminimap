@@ -28,7 +28,6 @@ return {
     [237] = {
         name = 'Metalworks',
         structure_image = 'assets/maps/237_structure.png',
-        labels_image = 'assets/maps/237_labels.png',
         width = 512,
         height = 512,
         -- Horizontal unwrap moves X; Y remains at the 512 px texture's
@@ -43,8 +42,6 @@ return {
         name = 'Windurst Woods',
         vanilla_image = 'assets/maps/241_vanilla.png',
         structure_image = 'assets/maps/241_structure.png',
-        labels_image = 'assets/maps/241_labels.png',
-        landmarks_image = 'assets/maps/241_landmarks.png',
         width = 512,
         height = 512,
         -- The DAT contains another composite page to the right. The complete

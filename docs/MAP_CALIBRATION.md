@@ -17,9 +17,8 @@ image_y = origin_y - world_y * image_pixels_per_yalm
 
 The same transform must be used for:
 
+- the optional vanilla layer;
 - the structure layer;
-- the label layer;
-- the static landmark and service-symbol layer;
 - the player marker;
 - entity and target markers;
 - the Lua-rendered coordinate grid.
@@ -47,9 +46,8 @@ Required fields are:
 ```lua
 [zone_id] = {
     name = 'Zone Name',
+    vanilla_image = 'assets/maps/<zone>_vanilla.png',
     structure_image = 'assets/maps/<zone>_structure.png',
-    labels_image = 'assets/maps/<zone>_labels.png',
-    landmarks_image = 'assets/maps/<zone>_landmarks.png',
     width = 512,
     height = 512,
     view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
@@ -61,7 +59,7 @@ Required fields are:
 ```
 
 A temporary flattened `image` is supported, but a production map should use
-separate structure, label, and landmark layers when the source permits it.
+separate vanilla and walkable-structure layers when the source permits it.
 `view_bounds` is optional. Use it when the source texture contains transparent
 padding or an adjacent composite page. It defines the calibrated source-pixel
 rectangle that the overview camera should keep visible; it does not crop or
@@ -81,10 +79,10 @@ recalibrate any layer.
    such as roofs. Select the connected navmesh component from one verified
    walkable world-coordinate seed. Add another verified seed when a legitimate
    walkable region is separated by a model seam; never render every
-   disconnected polygon island. If geometry is unavailable, split structure
-   from labels with `tools/split_map_layers.py`, then split known static
-   landmark symbols from ordinary text. Every output must have identical
-   dimensions and pixel coordinates.
+   disconnected polygon island. If geometry is unavailable, derive a clean
+   structure layer from another deterministic source without promoting static
+   labels or landmark symbols into separate runtime layers. The vanilla and
+   structure outputs must have identical dimensions and pixel coordinates.
    LandSandBoat OBJ/nav coordinates use X directly but use Z opposite Ashita's
    world Y: `world_x = nav_x` and `world_y = -nav_z`. Apply that conversion to
    both seed coordinates and rendered vertices.
@@ -126,7 +124,7 @@ This is why visual tuning alone is not an acceptable calibration method.
 
 Validate a new map before calling it complete:
 
-1. Confirm structure and label PNGs have the same dimensions.
+1. Confirm vanilla and structure PNGs have the same dimensions.
 2. Confirm transparent pixels have real zero alpha.
 3. Before comparing static geometry, match the custom and stock zoom using
    several live entities as control points. Their screen-space offsets from the
@@ -142,7 +140,7 @@ Validate a new map before calling it complete:
    exact live world coordinates, not coordinates guessed from a grid label.
 7. Test at multiple user zoom levels. Static geometry, the player, entities,
    target rings, and the coordinate grid must scale around the same center.
-8. Toggle structure and labels independently and confirm neither layer moves.
+8. Toggle vanilla and structure independently and confirm neither layer moves.
 9. Check any additional floors or map variants separately.
 
 Interpret mismatches by their pattern:
@@ -174,7 +172,7 @@ The desired future importer should:
 2. decode and unwrap it;
 3. extract the map scale;
 4. calculate the post-crop world origin;
-5. emit identically aligned structure and label layers;
+5. emit identically aligned vanilla and structure layers;
 6. write or update the `ashitaminimap_maps.lua` entry;
 7. produce a validation report from control points.
 
