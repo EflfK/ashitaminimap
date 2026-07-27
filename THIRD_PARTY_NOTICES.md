@@ -1,10 +1,10 @@
 # Third-party map geometry
 
-The Windurst Woods walkable-area layer is generated from:
+The Windurst Woods and Jeuno walkable-area layers are generated from:
 
-- LandSandBoat `xiNavmeshOBJs`, `Windurst_Woods.obj`, source commit
+- LandSandBoat `xiNavmeshOBJs`, the zone collision OBJ files, source commit
   `694970ce54a4fb53b69db52b8375c605686bc350`, licensed GPL-3.0.
-- LandSandBoat `xiNavmeshes`, `Windurst_Woods.nav`, source commit
+- LandSandBoat `xiNavmeshes`, the matching compiled navmesh files, source commit
   `d5de48de84868bde744e4864768a611e5aad82b0`, used to select traversable
   polygons from the collision coordinate space, licensed GPL-2.0.
 

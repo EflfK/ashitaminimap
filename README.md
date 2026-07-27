@@ -16,7 +16,8 @@ The first prototype includes:
 - independently composited vanilla and walkable-structure layers;
 - deterministic world-coordinate-to-image calibration;
 - map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
-  Metalworks (zone 237), and Windurst Woods (zone 241).
+  Metalworks (zone 237), Windurst Woods (zone 241), and all four Jeuno city
+  zones (zones 243–246).
 
 ## Commands
 
@@ -93,11 +94,12 @@ The renderer draws map content in this order:
 5. live entities and player arrow;
 6. coordinate badge and unlocked-state hint.
 
-Windurst Woods is the first production dark-tactical map. Its structure is a
-filled walkable-area mask generated from collision geometry plus Detour
-traversability data; the background is truly transparent. An optional vanilla
-parchment layer has independently adjustable opacity. Both layers share the
-same verified origin and scale. Metalworks uses its structure layer only.
+Windurst Woods and the four Jeuno city zones use production dark-tactical
+maps. Their structure layers are filled walkable-area masks generated from
+collision geometry plus Detour traversability data; the background is truly
+transparent. Optional vanilla parchment layers have independently adjustable
+opacity. All layers share the same calibrated origin and scale. Port Jeuno and
+Metalworks use their structure layers only.
 South Gustaberg and Port Bastok still use flattened prototype assets, so their
 embedded labels remain part of those legacy images.
 
@@ -127,8 +129,12 @@ diagnostics learned while completing Windurst Woods.
 ## Map asset status
 
 Metalworks uses exact vanilla DAT pixels as its geometry source and is
-horizontally unwrapped. Windurst Woods instead uses LandSandBoat collision and
-navigation geometry to render only the accessible-area fill and its boundaries.
+horizontally unwrapped. Windurst Woods and Jeuno instead use LandSandBoat
+collision and navigation geometry to render only the accessible-area fill and
+its boundaries. Ru'Lude Gardens, Upper Jeuno, and Lower Jeuno also include
+independently controlled vanilla reference layers. Port Jeuno currently omits
+that optional layer because its installed DAT uses a different compressed
+texture layout that the deterministic palette decoder does not support.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.

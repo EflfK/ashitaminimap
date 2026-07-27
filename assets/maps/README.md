@@ -8,6 +8,10 @@ Files are named by FFXI zone ID.
 - `241_structure_source.png` — legacy Windurst Woods vanilla geometry mask
 - `241_vanilla.png` — Windurst Woods optional vanilla parchment layer
 - `241_structure.png` — Windurst Woods walkable-area mask
+- `243_vanilla.png` / `243_structure.png` — Ru'Lude Gardens
+- `244_vanilla.png` / `244_structure.png` — Upper Jeuno
+- `245_vanilla.png` / `245_structure.png` — Lower Jeuno
+- `246_structure.png` — Port Jeuno walkable-area mask
 
 Every visible image must have real per-pixel alpha. Transparent pixels remain
 invisible because AshitaMinimap draws the PNG directly through Direct3D instead
@@ -20,6 +24,6 @@ landmarks are intentionally available only as part of the optional vanilla
 layer. The vanilla and structure layers have identical dimensions, origin, and
 world scale.
 
-Windurst Woods is transparent everywhere outside the walkable polygon union.
+Production structure maps are transparent everywhere outside their walkable
+polygon unions.
 Small collision details are intentionally suppressed; larger holes and
-boundaries remain visible because they can constrain player movement.

@@ -133,8 +133,13 @@ def validate_sources(
     obj_bounds: tuple[tuple[float, ...], tuple[float, ...]],
     nav_origin: tuple[float, ...],
 ) -> None:
+    # OBJ text export and compiled Detour headers can differ by a few
+    # hundredths of a yalm due to decimal formatting. This remains well below
+    # one source pixel at supported map scales while still rejecting genuinely
+    # mismatched source revisions.
+    origin_tolerance = 0.1
     for axis, (obj_value, nav_value) in enumerate(zip(obj_bounds[0], nav_origin)):
-        if abs(obj_value - nav_value) > 0.01:
+        if abs(obj_value - nav_value) > origin_tolerance:
             raise ValueError(
                 f"OBJ/nav axis {axis} differs: {obj_value} versus {nav_value}"
             )

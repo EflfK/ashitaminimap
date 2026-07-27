@@ -50,6 +50,21 @@ Before accepting a crop or unwrap, verify:
 - no neighboring or duplicate page is included;
 - the output remains at its original resolution.
 
+## Do not assume every vanilla DAT uses the paletted layout
+
+The ordinary Jeuno city pages for zones 243–245 use the same paletted layout
+and `+146 px` cyclic reconstruction as Windurst Woods. Port Jeuno's installed
+`ROM/18/78.DAT`, however, identifies a DXT3 texture and is shorter than the
+paletted files. Feeding it to the palette decoder, or treating its compressed
+payload as ordinary DXT3 without first reproducing FFXI's texture layout,
+creates plausible-looking noise rather than a trustworthy map.
+
+Fail closed when a decoder does not support the exact format. A production
+structure layer can still ship without the optional vanilla layer; do not
+substitute an unlicensed map pack or a guessed decode merely to fill the slot.
+Record the exception in the zone manifest so later decoder work has an explicit
+target.
+
 ## Apply every spatial transform to every source
 
 Once an unwrap, crop, or offset is chosen, it defines the map's source-image
