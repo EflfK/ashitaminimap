@@ -23,6 +23,42 @@ def parse_box(value: str) -> tuple[int, int, int, int]:
 def decode(source: Path) -> Image.Image:
     data = source.read_bytes()
     pixel_count = 512 * 512
+
+    type_offset = data.find(b"3TXD", 0, 0x100)
+    header_offset = type_offset - 0x39
+    if (
+        type_offset >= 0
+        and header_offset >= 0
+        and data[header_offset] in (0xA1, 0xB1)
+    ):
+        width = int.from_bytes(
+            data[header_offset + 0x15 : header_offset + 0x19], "little"
+        )
+        height = int.from_bytes(
+            data[header_offset + 0x19 : header_offset + 0x1D], "little"
+        )
+        dxt_size = int.from_bytes(
+            data[header_offset + 0x3D : header_offset + 0x41], "little"
+        )
+        pixel_offset = header_offset + 0x45
+        expected_size = ((width + 3) // 4) * ((height + 3) // 4) * 16
+        if width <= 0 or height <= 0 or dxt_size != expected_size:
+            raise ValueError(
+                f"{source} has invalid DXT3 dimensions or payload size"
+            )
+        if pixel_offset + dxt_size > len(data):
+            raise ValueError(f"{source} has a truncated DXT3 payload")
+        # Unlike the older indexed minimap layout, DXT blocks are already
+        # stored in top-to-bottom image order.
+        return Image.frombytes(
+            "RGBA",
+            (width, height),
+            data[pixel_offset : pixel_offset + dxt_size],
+            "bcn",
+            2,
+            "DXT3",
+        )
+
     if len(data) < 0x500 + pixel_count:
         raise ValueError(f"{source} is too small to contain a 512x512 map")
 

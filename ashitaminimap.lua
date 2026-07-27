@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.0.0';
+addon.version   = '1.1.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -41,6 +41,7 @@ local DEFAULTS = {
     show_names = false,
     scale_markers_with_zoom = true,
     marker_size = 1.00,
+    map_pages = {},
     colors = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
@@ -59,9 +60,13 @@ local DEFAULTS = {
 local state = {
     settings = DEFAULTS,
     maps = {},
+    vanilla_maps = {},
     textures = {},
     device = nil,
     warned_zones = {},
+    reported_fallback = nil,
+    stock_minimap_pointer_address = 0,
+    stock_minimap_checked_at = 0,
     config_visible = { false },
     config_dirty = false,
     config_changed_at = 0,
@@ -125,6 +130,28 @@ local function color_text(value, fallback)
         tonumber(value[4]) or fallback[4]);
 end
 
+local function number_map_text(value)
+    local entries = {};
+    if (type(value) == 'table') then
+        for key, item in pairs(value) do
+            local numeric_key = tonumber(key);
+            local numeric_value = tonumber(item);
+            if (numeric_key ~= nil and numeric_value ~= nil) then
+                entries[#entries + 1] = {
+                    key = math.floor(numeric_key),
+                    value = math.floor(numeric_value),
+                };
+            end
+        end
+    end
+    table.sort(entries, function (left, right) return left.key < right.key; end);
+    local parts = {};
+    for _, entry in ipairs(entries) do
+        parts[#parts + 1] = string.format('[%d] = %d', entry.key, entry.value);
+    end
+    return '{ ' .. table.concat(parts, ', ') .. ' }';
+end
+
 local function config_text()
     local settings = state.settings;
     local colors = settings.colors or DEFAULTS.colors;
@@ -159,6 +186,7 @@ local function config_text()
         string.format('    show_names = %s,', bool_text(settings.show_names)),
         string.format('    scale_markers_with_zoom = %s,', bool_text(settings.scale_markers_with_zoom)),
         string.format('    marker_size = %.2f,', clamp(settings.marker_size, 0.25, 2.00)),
+        string.format('    map_pages = %s,', number_map_text(settings.map_pages)),
         '',
         '    colors = {',
         string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
@@ -249,6 +277,9 @@ local function load_configuration()
         math.floor(clamp(state.settings.structure_visibility_boost, 1, 12) + 0.5);
     state.settings.backdrop_opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
     state.settings.marker_size = clamp(state.settings.marker_size, 0.25, 2.00);
+    state.settings.map_pages = type(state.settings.map_pages) == 'table'
+        and state.settings.map_pages
+        or {};
     state.config_dirty = loaded_zoom ~= state.settings.pixels_per_yalm
         or obsolete_layer_settings;
     state.config_changed_at = 0;
@@ -261,6 +292,13 @@ local function load_configuration()
     state.maps = type(maps) == 'table' and maps or {};
     if (maps_error ~= nil) then
         log('Map calibration warning: ' .. tostring(maps_error));
+    end
+
+    local vanilla_maps, vanilla_error =
+        load_module_file('ashitaminimap_vanilla_maps.lua');
+    state.vanilla_maps = type(vanilla_maps) == 'table' and vanilla_maps or {};
+    if (vanilla_error ~= nil) then
+        log('Vanilla fallback catalog unavailable; run tools/import_vanilla_maps.py.');
     end
 end
 
@@ -361,6 +399,135 @@ local letters = {
     'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
     'Y', 'Z',
 };
+
+local STOCK_MINIMAP_SIGNATURE =
+    'A1????????F30F104044C3CCCCCCCCCCA1????????F30F10402C';
+
+local function stock_minimap_info()
+    local now = os.clock();
+    if (state.stock_minimap_pointer_address == 0
+            and now - state.stock_minimap_checked_at >= 1.0) then
+        state.stock_minimap_checked_at = now;
+        local signature = tonumber(safe_read(function ()
+            return ashita.memory.find(
+                'Minimap.dll',
+                0,
+                STOCK_MINIMAP_SIGNATURE,
+                0,
+                0);
+        end, 0)) or 0;
+        if (signature ~= 0) then
+            state.stock_minimap_pointer_address = tonumber(safe_read(function ()
+                return ashita.memory.read_uint32(signature + 0x01);
+            end, 0)) or 0;
+        end
+    end
+
+    local pointer_address = state.stock_minimap_pointer_address;
+    if (pointer_address == 0) then
+        return nil;
+    end
+    local runtime = tonumber(safe_read(function ()
+        return ashita.memory.read_uint32(pointer_address);
+    end, 0)) or 0;
+    local map_info = runtime ~= 0 and tonumber(safe_read(function ()
+        return ashita.memory.read_uint32(runtime + 0x14);
+    end, 0)) or 0;
+    if (map_info == 0) then
+        return nil;
+    end
+    local page_id = tonumber(safe_read(function ()
+        return ashita.memory.read_uint8(map_info + 0x02);
+    end, nil));
+    local scale_raw = tonumber(safe_read(function ()
+        return ashita.memory.read_uint8(map_info + 0x05);
+    end, nil));
+    return {
+        page_id = page_id,
+        scale_raw = scale_raw,
+    };
+end
+
+local function zone_name(zone_id)
+    local resources = safe_read(function ()
+        return AshitaCore:GetResourceManager();
+    end, nil);
+    local name = resources ~= nil and safe_read(function ()
+        return resources:GetString('zones.names', zone_id);
+    end, nil) or nil;
+    if (type(name) == 'string' and name ~= '') then
+        return name;
+    end
+    return 'Zone ' .. tostring(zone_id);
+end
+
+local function fallback_page(zone_id)
+    local zone = state.vanilla_maps[zone_id];
+    if (type(zone) ~= 'table' or type(zone.pages) ~= 'table') then
+        return nil;
+    end
+    local manual_page = tonumber(state.settings.map_pages[zone_id]);
+    local page_id = manual_page;
+    local stock = stock_minimap_info();
+    if (page_id == nil and stock ~= nil
+            and zone.pages[tonumber(stock.page_id)] ~= nil) then
+        page_id = tonumber(stock.page_id);
+    end
+    if (page_id == nil or zone.pages[page_id] == nil) then
+        page_id = tonumber(zone.default_page);
+    end
+    if (page_id == nil or zone.pages[page_id] == nil) then
+        for candidate in pairs(zone.pages) do
+            page_id = tonumber(candidate);
+            break;
+        end
+    end
+    local image = page_id ~= nil and zone.pages[page_id] or nil;
+    if (type(image) ~= 'string' or image == '') then
+        return nil;
+    end
+
+    local scale_raw = stock ~= nil
+        and (manual_page == nil or tonumber(stock.page_id) == page_id)
+        and tonumber(stock.scale_raw)
+        or nil;
+    local has_live_scale = scale_raw ~= nil and scale_raw > 0;
+    if (scale_raw == nil or scale_raw <= 0) then
+        scale_raw = 4;
+    end
+    local grid_yalms = scale_raw * 10;
+    return {
+        name = zone_name(zone_id),
+        vanilla_image = image,
+        width = 512,
+        height = 512,
+        view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
+        origin_x = 255.0,
+        origin_y = 256.0,
+        grid_origin_x = 255.0,
+        grid_origin_y = 256.0,
+        grid_yalms = grid_yalms,
+        image_pixels_per_yalm = 32 / grid_yalms,
+        page_id = page_id,
+        fallback = true,
+        live_scale = has_live_scale,
+    };
+end
+
+local function map_for_player(player)
+    if (player == nil) then
+        return nil;
+    end
+    local authored = state.maps[player.zone_id];
+    local fallback = fallback_page(player.zone_id);
+    if (authored == nil) then
+        return fallback;
+    end
+    if (fallback == nil) then
+        return authored;
+    end
+    return merge_table(copy_table(fallback), authored);
+end
 
 local function map_grid_yalms(map)
     return clamp(map ~= nil and map.grid_yalms or 40, 10, 1000);
@@ -848,13 +1015,30 @@ local function render_minimap()
         return;
     end
 
-    local map = state.maps[player.zone_id];
+    local map = map_for_player(player);
     if (map == nil) then
         if (state.warned_zones[player.zone_id] ~= true) then
             state.warned_zones[player.zone_id] = true;
-            log(string.format('No calibrated map for zone %d.', player.zone_id));
+            log(string.format(
+                'No authored or imported vanilla map for zone %d.',
+                player.zone_id));
         end
         return;
+    end
+    if (map.fallback == true and map.page_id ~= nil) then
+        local token = string.format(
+            '%d:%d:%s',
+            player.zone_id,
+            map.page_id,
+            tostring(map.live_scale == true));
+        if (state.reported_fallback ~= token) then
+            state.reported_fallback = token;
+            log(string.format(
+                'Vanilla fallback: %s page %d (%s scale).',
+                map.name or ('zone ' .. tostring(player.zone_id)),
+                map.page_id,
+                map.live_scale == true and 'live' or 'default'));
+        end
     end
 
     local vanilla_image = map.vanilla_image;
@@ -996,7 +1180,7 @@ local function render_config_window()
         end
 
         local config_player = current_player();
-        local config_map = config_player ~= nil and state.maps[config_player.zone_id] or nil;
+        local config_map = map_for_player(config_player);
         local config_zoom_minimum = zoom_minimum_for_map(
             config_map,
             clamp(state.settings.size, 120, 700));
@@ -1013,6 +1197,17 @@ local function render_config_window()
             mark_configuration_changed();
         end
         imgui.TextColored({ 0.65, 0.68, 0.70, 1.00 }, 'Mouse wheel over the map also changes zoom.');
+        if (config_map ~= nil and config_map.page_id ~= nil) then
+            local manual_page = config_player ~= nil
+                and state.settings.map_pages[config_player.zone_id]
+                or nil;
+            imgui.TextColored(
+                { 0.65, 0.68, 0.70, 1.00 },
+                string.format(
+                    'Vanilla page: %d (%s)',
+                    config_map.page_id,
+                    manual_page ~= nil and 'manual' or 'automatic'));
+        end
 
         imgui.Text('Static layers');
         imgui.Separator();
@@ -1121,18 +1316,89 @@ local function render_config_window()
     imgui.End();
 end
 
+local function available_page_ids(zone_id)
+    local zone = state.vanilla_maps[zone_id];
+    local result = {};
+    if (type(zone) == 'table' and type(zone.pages) == 'table') then
+        for page_id in pairs(zone.pages) do
+            result[#result + 1] = tonumber(page_id);
+        end
+    end
+    table.sort(result);
+    return result;
+end
+
+local function select_map_page(mode)
+    local player = current_player();
+    if (player == nil) then
+        log('Cannot select a map page before player state is available.');
+        return;
+    end
+    local page_ids = available_page_ids(player.zone_id);
+    if (#page_ids == 0) then
+        log(string.format('No imported vanilla pages for zone %d.', player.zone_id));
+        return;
+    end
+    if (mode == 'auto') then
+        state.settings.map_pages[player.zone_id] = nil;
+        mark_configuration_changed();
+        local map = map_for_player(player);
+        log(string.format(
+            'Vanilla page selection is automatic%s.',
+            map ~= nil and map.page_id ~= nil
+                and (' (page ' .. tostring(map.page_id) .. ')')
+                or ''));
+        return;
+    end
+
+    local map = map_for_player(player);
+    local current = map ~= nil and tonumber(map.page_id) or page_ids[1];
+    local selected = tonumber(mode);
+    if (mode == 'next' or mode == 'prev' or mode == 'previous') then
+        local current_index = 1;
+        for index, page_id in ipairs(page_ids) do
+            if (page_id == current) then
+                current_index = index;
+                break;
+            end
+        end
+        local step = mode == 'next' and 1 or -1;
+        selected = page_ids[((current_index - 1 + step) % #page_ids) + 1];
+    end
+    if (selected == nil) then
+        log('Usage: /aminimap page [auto | next | prev | number]');
+        return;
+    end
+    selected = math.floor(selected);
+    local zone = state.vanilla_maps[player.zone_id];
+    if (zone.pages[selected] == nil) then
+        log(string.format(
+            'Page %d is unavailable. Available pages: %s.',
+            selected,
+            table.concat(page_ids, ', ')));
+        return;
+    end
+    state.settings.map_pages[player.zone_id] = selected;
+    mark_configuration_changed();
+    log(string.format(
+        'Selected vanilla page %d for %s.',
+        selected,
+        zone_name(player.zone_id)));
+end
+
 local function print_help()
     log('Commands:');
     log('/aminimap show | hide | toggle');
     log('/aminimap config [show | hide | toggle]');
     log('/aminimap lock | unlock | save');
     log('/aminimap zoomin | zoomout');
+    log('/aminimap page [auto | next | prev | number]');
     log('/aminimap grid | names | reload');
 end
 
 local function current_zoom_minimum()
     local player = current_player();
-    local map = player ~= nil and state.maps[player.zone_id] or nil;
+    local map = map_for_player(player);
     return zoom_minimum_for_map(map, clamp(state.settings.size, 120, 700));
 end
 
@@ -1189,6 +1455,8 @@ local function handle_command(e)
             minimum_zoom,
             ZOOM_MAX);
         mark_configuration_changed();
+    elseif (action == 'page') then
+        select_map_page(args[3] and args[3]:lower() or 'next');
     elseif (action == 'grid') then
         state.settings.show_grid = not state.settings.show_grid;
         mark_configuration_changed();

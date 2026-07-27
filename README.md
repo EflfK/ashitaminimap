@@ -18,6 +18,8 @@ The first prototype includes:
 - map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
   Metalworks (zone 237), Windurst Woods (zone 241), and all four Jeuno city
   zones (zones 243–246).
+- locally generated stock-map fallbacks for every map page found in the
+  installed FFXI client.
 
 ## Commands
 
@@ -31,6 +33,10 @@ The first prototype includes:
 /aminimap save
 /aminimap zoomin
 /aminimap zoomout
+/aminimap page auto
+/aminimap page next
+/aminimap page prev
+/aminimap page 2
 /aminimap grid
 /aminimap names
 /aminimap reload
@@ -98,8 +104,9 @@ Windurst Woods and the four Jeuno city zones use production dark-tactical
 maps. Their structure layers are filled walkable-area masks generated from
 collision geometry plus Detour traversability data; the background is truly
 transparent. Optional vanilla parchment layers have independently adjustable
-opacity. All layers share the same calibrated origin and scale. Port Jeuno and
-Metalworks use their structure layers only.
+opacity. Authored layers share the same calibrated origin and scale. Port
+Jeuno pairs its structure with the locally imported stock page; Metalworks
+keeps its authored structure-focused presentation.
 South Gustaberg and Port Bastok still use flattened prototype assets, so their
 embedded labels remain part of those legacy images.
 
@@ -115,6 +122,32 @@ This calibration is independent of the user's on-screen zoom.
 `grid_yalms` is also stored per map because FFXI zones do not all use the same
 world distance per coordinate cell. For example, Metalworks and Port Bastok use
 40-yalm cells, while South Gustaberg uses 100-yalm cells.
+
+## Universal vanilla fallback
+
+Run the local importer once against the game installation:
+
+```text
+python tools/import_vanilla_maps.py "<FFXI installation>/FINAL FANTASY XI"
+```
+
+It discovers embedded map page identifiers, decodes both indexed and DXT3
+stock formats, and writes `assets/vanilla/*.png` plus
+`ashitaminimap_vanilla_maps.lua`. These generated files are installed locally
+but intentionally ignored by Git; the repository does not redistribute the
+game's stock artwork.
+
+An authored entry in `ashitaminimap_maps.lua` takes precedence. Missing fields
+are filled from the matching stock page, so Port Jeuno can pair its authored
+walkable structure with its vanilla page. A zone with no authored entry shows
+the vanilla page by itself.
+
+When the stock Minimap plugin is loaded, AshitaMinimap reads its current page
+number and map-scale byte for automatic page selection and marker scale. The
+renderer remains independent: if that plugin is unavailable, the imported
+catalog's default page and a safe fallback scale are used. Multi-page zones can
+always be changed manually with `/aminimap page next`, `prev`, or a page
+number; `/aminimap page auto` restores automatic selection.
 
 See [Map import and calibration](docs/MAP_CALIBRATION.md) for the required
 source-data, page reconstruction, calibration, and multi-position validation
@@ -132,9 +165,8 @@ Metalworks uses exact vanilla DAT pixels as its geometry source and is
 horizontally unwrapped. Windurst Woods and Jeuno instead use LandSandBoat
 collision and navigation geometry to render only the accessible-area fill and
 its boundaries. Ru'Lude Gardens, Upper Jeuno, and Lower Jeuno also include
-independently controlled vanilla reference layers. Port Jeuno currently omits
-that optional layer because its installed DAT uses a different compressed
-texture layout that the deterministic palette decoder does not support.
+committed reference layers. Port Jeuno obtains its optional vanilla layer from
+the local universal fallback import.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.

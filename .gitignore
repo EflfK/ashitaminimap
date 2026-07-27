@@ -4,3 +4,8 @@ __pycache__/
 *.tmp
 Thumbs.db
 .DS_Store
+
+# Generated locally from the user's installed FFXI DAT files. These stock
+# assets are deployed with the addon but are not redistributed by this repo.
+assets/vanilla/
+ashitaminimap_vanilla_maps.lua

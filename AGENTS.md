@@ -2,7 +2,8 @@
 
 ## Adding or replacing maps
 
-Read both `docs/MAP_CALIBRATION.md` and `docs/MAP_AUTHORING_PITFALLS.md`
+Read `docs/MAP_CALIBRATION.md`, `docs/MAP_AUTHORING_PITFALLS.md`, and
+`docs/VANILLA_FALLBACKS.md`
 completely before adding, replacing, cropping, splitting, or recalibrating a
 map. Treat their validation and deployment checklists as required work, not
 optional background.
