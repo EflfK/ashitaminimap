@@ -93,7 +93,7 @@ separate structure and label layers.
 Metalworks is the reference example:
 
 ```text
-origin                = (253, 254)
+origin                = (253, 255.5)
 grid_yalms            = 40
 image_pixels_per_yalm = 0.80
 ```

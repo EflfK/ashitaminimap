@@ -31,10 +31,11 @@ return {
         labels_image = 'assets/maps/237_labels.png',
         width = 512,
         height = 512,
-        -- Metalworks' post-unwrap world origin was verified against the stock
-        -- map and live entity control points at matching display scale.
+        -- Horizontal unwrap moves X; Y remains at the 512 px texture's
+        -- center coordinate. Both were verified against the stock map and
+        -- live entity control points at matching display scale.
         origin_x = 253,
-        origin_y = 254,
+        origin_y = 255.5,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
     },
