@@ -113,7 +113,8 @@ Metalworks and Windurst Woods use exact vanilla DAT pixels as their geometry
 source. Metalworks is horizontally unwrapped. Windurst Woods uses its original
 no-wrap page layout and applies a deterministic dark-tactical style with teal
 structure lines, warm place labels, and amber landmark symbols. Styling adds a
-centered halo but does not replace or move the source navigation pixels.
+core-only color treatment that does not widen, replace, or move the source
+navigation pixels.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.
