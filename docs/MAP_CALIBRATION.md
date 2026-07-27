@@ -108,17 +108,22 @@ Validate a new map before calling it complete:
 
 1. Confirm structure and label PNGs have the same dimensions.
 2. Confirm transparent pixels have real zero alpha.
-3. At a known player position, compute the expected source pixel with the
+3. Before comparing static geometry, match the custom and stock zoom using
+   several live entities as control points. Their screen-space offsets from the
+   player must agree on both maps. If the entity pattern has a different
+   spread, correct zoom first; an origin cannot be measured from mismatched
+   scales.
+4. At a known player position, compute the expected source pixel with the
    calibration formula and verify that the corresponding static location sits
    under the player marker.
-4. Repeat at no fewer than three well-separated positions, preferably near
+5. Repeat at no fewer than three well-separated positions, preferably near
    different edges of the accessible area.
-5. Compare several live entities against recognizable static geometry. Use
+6. Compare several live entities against recognizable static geometry. Use
    exact live world coordinates, not coordinates guessed from a grid label.
-6. Test at multiple user zoom levels. Static geometry, the player, entities,
+7. Test at multiple user zoom levels. Static geometry, the player, entities,
    target rings, and the coordinate grid must scale around the same center.
-7. Toggle structure and labels independently and confirm neither layer moves.
-8. Check any additional floors or map variants separately.
+8. Toggle structure and labels independently and confirm neither layer moves.
+9. Check any additional floors or map variants separately.
 
 Interpret mismatches by their pattern:
 

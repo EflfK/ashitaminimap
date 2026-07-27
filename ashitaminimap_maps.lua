@@ -46,10 +46,10 @@ return {
         width = 512,
         height = 512,
         -- Source: ROM/18/72.DAT, internal page m_241_00. This page does not
-        -- wrap. The stock renderer's sampled H-8 origin is (109.5, 255.0);
-        -- the drawn grid stroke is not the renderer's sampling origin.
-        origin_x = 109.5,
-        origin_y = 255.0,
+        -- wrap. Stock-map control points at matched zoom place the sampled
+        -- H-8 origin at (108.5, 288.0), one row below the drawn-grid estimate.
+        origin_x = 108.5,
+        origin_y = 288.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
     },
