@@ -26,6 +26,19 @@ def parse_seed(value: str) -> tuple[float, float]:
         raise argparse.ArgumentTypeError("seed must contain two numbers") from exception
 
 
+def parse_box(value: str) -> tuple[int, int, int, int]:
+    parts = value.split(",")
+    if len(parts) != 4:
+        raise argparse.ArgumentTypeError("box must be left,top,right,bottom")
+    try:
+        box = tuple(int(part) for part in parts)
+    except ValueError as exception:
+        raise argparse.ArgumentTypeError("box must contain four integers") from exception
+    if box[0] >= box[2] or box[1] >= box[3]:
+        raise argparse.ArgumentTypeError("box must have positive width and height")
+    return box
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("obj", type=Path, help="decompressed zone collision OBJ")
@@ -46,6 +59,13 @@ def parse_args() -> argparse.Namespace:
         help="verified walkable world-x,world-y; repeat for disconnected regions",
     )
     parser.add_argument("--maximum-step", type=float, default=0.65)
+    parser.add_argument(
+        "--exclude-box",
+        action="append",
+        type=parse_box,
+        default=[],
+        help="output-pixel left,top,right,bottom trim; repeat as needed",
+    )
     parser.add_argument("--fill-alpha", type=int, default=76)
     parser.add_argument("--edge-alpha", type=int, default=235)
     return parser.parse_args()
@@ -321,6 +341,17 @@ def main() -> None:
                 for vertex in polygon
             ],
             fill=255,
+        )
+
+    for left, top, right, bottom in args.exclude_box:
+        draw.rectangle(
+            (
+                left * scale,
+                top * scale,
+                right * scale - 1,
+                bottom * scale - 1,
+            ),
+            fill=0,
         )
 
     # Seal raster-only subpixel seams without materially expanding geometry.

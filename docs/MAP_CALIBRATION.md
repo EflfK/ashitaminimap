@@ -83,6 +83,9 @@ separate structure, label, and landmark layers when the source permits it.
    LandSandBoat OBJ/nav coordinates use X directly but use Z opposite Ashita's
    world Y: `world_x = nav_x` and `world_y = -nav_z`. Apply that conversion to
    both seed coordinates and rendered vertices.
+   If collision geometry continues beyond a real zone-transition endpoint,
+   record a narrow image-space exclusion rectangle that trims only the
+   off-map tail. Never use broad exclusion boxes to reshape interior geometry.
 5. Obtain the map's scale metadata. For known vanilla maps,
    `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
    repository-wide default as calibration.
