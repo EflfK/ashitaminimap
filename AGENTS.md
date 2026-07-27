@@ -5,9 +5,12 @@
 Read `docs/MAP_CALIBRATION.md` before adding, replacing, cropping, splitting, or
 recalibrating a map.
 
-- Navigation geometry must come from the vanilla DAT or another deterministic,
-  verified source. Never use AI-generated or visually traced artwork for
-  navigation geometry.
+- Prefer a zone's intermediate collision OBJ plus matching Detour navmesh for
+  accessible-area geometry. The OBJ preserves explicit triangles; the navmesh
+  excludes flat but unreachable surfaces such as roofs. If those sources are
+  unavailable, navigation geometry must come from the vanilla DAT or another
+  deterministic, verified source. Never use AI-generated or visually traced
+  artwork for navigation geometry.
 - Keep structure and labels as separate, identically sized layers whenever the
   source permits it. Both layers must use exactly the same crop, wrap, origin,
   and scale.
@@ -22,4 +25,3 @@ recalibrating a map.
   geometry, the player marker, and entity markers before calling a map precise.
 - Preserve the user's installed `ashitaminimap_config.lua` when syncing addon
   updates into the game installation.
-

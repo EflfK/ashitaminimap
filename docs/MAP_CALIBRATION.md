@@ -71,9 +71,12 @@ separate structure, label, and landmark layers when the source permits it.
    apply a horizontal wrap offset.
 3. Unwrap and crop once. Record every offset. Apply the identical operation to
    every derived layer.
-4. Split structure from labels with `tools/split_map_layers.py`, then split
-   known static landmark symbols from ordinary text. The outputs must have
-   identical dimensions and pixel coordinates.
+4. Prefer collision OBJ geometry for a new walkable-area structure. Use the
+   matching Detour navmesh to exclude flat but unreachable collision surfaces
+   such as roofs. If geometry is unavailable, split structure from labels with
+   `tools/split_map_layers.py`, then split known static landmark symbols from
+   ordinary text. Every output must have identical dimensions and pixel
+   coordinates.
 5. Obtain the map's scale metadata. For known vanilla maps,
    `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
    repository-wide default as calibration.
@@ -145,8 +148,9 @@ adding the map. That provenance is part of the map asset.
 
 ## Current automation boundary
 
-The repository currently provides deterministic DAT decoding and layer
-splitting, but it does not yet extract every calibration field automatically.
+The repository provides deterministic DAT decoding and layer splitting plus a
+collision/navmesh walkable-mask generator. It does not yet extract every
+calibration field automatically.
 Until an importer generates the complete map entry, deriving and validating the
 per-map metadata remains a required import step.
 

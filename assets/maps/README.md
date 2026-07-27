@@ -6,9 +6,9 @@ Files are named by FFXI zone ID.
 - `236.png` — Port Bastok
 - `237_structure.png` — Metalworks calibrated geometry
 - `237_labels.png` — Metalworks labels and map annotations
-- `241_structure_source.png` — Windurst Woods immutable geometry mask
+- `241_structure_source.png` — legacy Windurst Woods vanilla geometry mask
 - `241_labels_source.png` — Windurst Woods immutable annotation mask
-- `241_structure.png` — Windurst Woods dark-tactical geometry
+- `241_structure.png` — Windurst Woods walkable-area mask
 - `241_labels.png` — Windurst Woods place and exit labels
 - `241_landmarks.png` — Windurst Woods service and landmark symbols
 
@@ -17,10 +17,11 @@ invisible because AshitaMinimap draws the PNG directly through Direct3D instead
 of asking the stock minimap DLL to render it.
 
 Metalworks remains a linework-focused transparency prototype. Windurst Woods is
-the production reference: `tools/style_dark_tactical_layers.py` generates its
-visible structure, label, and landmark layers from the immutable source masks.
-Every generated layer has identical dimensions, origin, and world scale.
+the production reference: `tools/generate_walkable_map.py` projects verified
+collision/navigation data into a filled accessible-area layer. Labels and
+landmarks remain optional vanilla-derived overlays. Every layer has identical
+dimensions, origin, and world scale.
 
-The assets are intentionally not filled walkable-area masks. The vanilla source
-does not encode a trustworthy closed walkability polygon, so adding one by
-visual inference would weaken map precision.
+Windurst Woods is transparent everywhere outside the walkable polygon union.
+Small collision details are intentionally suppressed; larger holes and
+boundaries remain visible because they can constrain player movement.

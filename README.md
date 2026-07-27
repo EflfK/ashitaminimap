@@ -82,12 +82,13 @@ The renderer draws map content in this order:
 6. live entities and player arrow;
 7. coordinate badge and unlocked-state hint.
 
-Windurst Woods is the first production dark-tactical map. Its navigation
-structure, place names, and static landmark symbols are separate layers
-generated from immutable vanilla-derived masks. All three share the same
-verified origin and scale. Metalworks has separate structure and annotation
-layers. South Gustaberg and Port Bastok still use flattened prototype assets,
-so their embedded labels cannot yet be hidden independently.
+Windurst Woods is the first production dark-tactical map. Its structure is a
+filled walkable-area mask generated from collision geometry plus Detour
+traversability data; the background is truly transparent. Place names and
+static landmark symbols remain separate optional overlays. All three share the
+same verified origin and scale. Metalworks has separate structure and
+annotation layers. South Gustaberg and Port Bastok still use flattened
+prototype assets, so their embedded labels cannot yet be hidden independently.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:
@@ -109,12 +110,11 @@ tuning.
 
 ## Map asset status
 
-Metalworks and Windurst Woods use exact vanilla DAT pixels as their geometry
-source. Metalworks is horizontally unwrapped. Windurst Woods uses its original
-no-wrap page layout and applies a deterministic dark-tactical style with teal
-structure lines, warm place labels, and amber landmark symbols. Styling adds a
-core-only color treatment that does not widen, replace, or move the source
-navigation pixels.
+Metalworks uses exact vanilla DAT pixels as its geometry source and is
+horizontally unwrapped. Windurst Woods instead uses LandSandBoat collision and
+navigation geometry to render only the accessible-area fill and its boundaries.
+Its warm place labels and amber landmark symbols are independent optional
+vanilla-derived layers.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.
