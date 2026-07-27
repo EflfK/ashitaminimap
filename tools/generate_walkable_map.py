@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import argparse
 import struct
-from collections import deque
+from collections import defaultdict, deque
 from pathlib import Path
 
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
@@ -28,6 +28,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--pixels-per-yalm", type=float, required=True)
     parser.add_argument("--supersample", type=int, default=4)
     parser.add_argument("--minimum-hole-area", type=float, default=18.0)
+    parser.add_argument("--seed-x", type=float)
+    parser.add_argument("--seed-y", type=float)
+    parser.add_argument("--maximum-step", type=float, default=0.65)
     parser.add_argument("--fill-alpha", type=int, default=76)
     parser.add_argument("--edge-alpha", type=int, default=235)
     return parser.parse_args()
@@ -102,6 +105,133 @@ def validate_sources(
             )
 
 
+def point_in_polygon(
+    polygon: list[tuple[float, ...]], x: float, y: float
+) -> bool:
+    winding = 0
+    for index, start in enumerate(polygon):
+        end = polygon[(index + 1) % len(polygon)]
+        cross = (end[0] - start[0]) * (y - start[2]) - (
+            end[2] - start[2]
+        ) * (x - start[0])
+        if abs(cross) <= 0.0001:
+            continue
+        direction = 1 if cross > 0 else -1
+        if winding and direction != winding:
+            return False
+        winding = direction
+    return True
+
+
+def connected_component(
+    polygons: list[list[tuple[float, ...]]],
+    seed_x: float,
+    seed_y: float,
+    maximum_step: float,
+) -> list[list[tuple[float, ...]]]:
+    """Return the Detour polygon component containing a known walkable point.
+
+    Exact shared edges connect polygons inside a tile. Across tile seams one
+    edge can be split into several collinear spans, so overlapping horizontal
+    or vertical spans are joined when their interpolated heights are within
+    the configured step height.
+    """
+
+    parent = list(range(len(polygons)))
+    component_size = [1] * len(polygons)
+
+    def find(item: int) -> int:
+        while parent[item] != item:
+            parent[item] = parent[parent[item]]
+            item = parent[item]
+        return item
+
+    def union(left: int, right: int) -> None:
+        left = find(left)
+        right = find(right)
+        if left == right:
+            return
+        if component_size[left] < component_size[right]:
+            left, right = right, left
+        parent[right] = left
+        component_size[left] += component_size[right]
+
+    def vertex_key(vertex: tuple[float, ...]) -> tuple[float, ...]:
+        return tuple(round(value, 3) for value in vertex)
+
+    exact_edges: dict[tuple[tuple[float, ...], ...], int] = {}
+    axis_edges = defaultdict(list)
+    for polygon_index, polygon in enumerate(polygons):
+        for edge_index, start in enumerate(polygon):
+            end = polygon[(edge_index + 1) % len(polygon)]
+            edge = tuple(sorted((vertex_key(start), vertex_key(end))))
+            if edge in exact_edges:
+                union(polygon_index, exact_edges[edge])
+            else:
+                exact_edges[edge] = polygon_index
+
+            if abs(start[0] - end[0]) < 0.01:
+                low, high = sorted((start[2], end[2]))
+                axis_edges[("x", round((start[0] + end[0]) / 2, 2))].append(
+                    (low, high, start, end, polygon_index)
+                )
+            elif abs(start[2] - end[2]) < 0.01:
+                low, high = sorted((start[0], end[0]))
+                axis_edges[("y", round((start[2] + end[2]) / 2, 2))].append(
+                    (low, high, start, end, polygon_index)
+                )
+
+    def height_at(
+        start: tuple[float, ...],
+        end: tuple[float, ...],
+        position: float,
+        orientation: str,
+    ) -> float:
+        start_axis = start[2] if orientation == "x" else start[0]
+        end_axis = end[2] if orientation == "x" else end[0]
+        if abs(end_axis - start_axis) < 0.000001:
+            return start[1]
+        ratio = (position - start_axis) / (end_axis - start_axis)
+        return start[1] + (end[1] - start[1]) * ratio
+
+    for (orientation, _), edges in axis_edges.items():
+        edges.sort(key=lambda edge: edge[0])
+        for index, edge in enumerate(edges):
+            for candidate in edges[index + 1 :]:
+                if candidate[0] >= edge[1] - 0.01:
+                    break
+                overlap_low = max(edge[0], candidate[0])
+                overlap_high = min(edge[1], candidate[1])
+                if overlap_high - overlap_low <= 0.01:
+                    continue
+                midpoint = (overlap_low + overlap_high) / 2
+                height_delta = abs(
+                    height_at(edge[2], edge[3], midpoint, orientation)
+                    - height_at(candidate[2], candidate[3], midpoint, orientation)
+                )
+                if height_delta <= maximum_step:
+                    union(edge[4], candidate[4])
+
+    seed_index = next(
+        (
+            index
+            for index, polygon in enumerate(polygons)
+            if point_in_polygon(polygon, seed_x, seed_y)
+        ),
+        None,
+    )
+    if seed_index is None:
+        raise ValueError(
+            f"walkable seed ({seed_x}, {seed_y}) is outside every nav polygon"
+        )
+    seed_root = find(seed_index)
+    return [
+        polygon
+        for index, polygon in enumerate(polygons)
+        if find(index) == seed_root
+    ]
+
+
 def fill_small_holes(mask: Image.Image, maximum_area: int) -> int:
     pixels = mask.load()
     width, height = mask.size
@@ -148,6 +278,16 @@ def main() -> None:
     obj_bounds = read_obj_bounds(args.obj)
     nav_origin, polygons = read_navmesh(args.nav)
     validate_sources(obj_bounds, nav_origin)
+    if (args.seed_x is None) != (args.seed_y is None):
+        raise ValueError("--seed-x and --seed-y must be supplied together")
+    total_polygons = len(polygons)
+    if args.seed_x is not None:
+        polygons = connected_component(
+            polygons,
+            args.seed_x,
+            args.seed_y,
+            args.maximum_step,
+        )
 
     scale = args.supersample
     mask = Image.new("L", (args.width * scale, args.height * scale), 0)
@@ -178,7 +318,8 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     output.save(args.output)
     print(
-        f"wrote {args.output}: {len(polygons)} walkable polygons, "
+        f"wrote {args.output}: {len(polygons)}/{total_polygons} connected "
+        "walkable polygons, "
         f"{holes_filled} small holes removed"
     )
 

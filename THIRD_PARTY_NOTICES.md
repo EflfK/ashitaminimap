@@ -14,6 +14,7 @@ The upstream repositories are:
 - <https://github.com/LandSandBoat/xiNavmeshes>
 
 The generated PNG is a modified visualization: it projects the source geometry
-into AshitaMinimap's calibrated coordinate space, unions walkable polygons,
-removes only sub-threshold obstacle holes, and applies the dark-tactical
-palette. It is not an upstream LandSandBoat asset.
+into AshitaMinimap's calibrated coordinate space, selects one connected
+walkable component from a verified seed, removes only sub-threshold obstacle
+holes, and applies the dark-tactical palette. It is not an upstream LandSandBoat
+asset.

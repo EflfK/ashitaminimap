@@ -73,7 +73,9 @@ separate structure, label, and landmark layers when the source permits it.
    every derived layer.
 4. Prefer collision OBJ geometry for a new walkable-area structure. Use the
    matching Detour navmesh to exclude flat but unreachable collision surfaces
-   such as roofs. If geometry is unavailable, split structure from labels with
+   such as roofs. Select the connected navmesh component from one verified
+   walkable world-coordinate seed; never render every disconnected polygon
+   island. If geometry is unavailable, split structure from labels with
    `tools/split_map_layers.py`, then split known static landmark symbols from
    ordinary text. Every output must have identical dimensions and pixel
    coordinates.
