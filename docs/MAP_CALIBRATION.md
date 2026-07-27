@@ -18,7 +18,8 @@ image_y = origin_y - world_y * image_pixels_per_yalm
 The same transform must be used for:
 
 - the structure layer;
-- the label and static-annotation layer;
+- the label layer;
+- the static landmark and service-symbol layer;
 - the player marker;
 - entity and target markers;
 - the Lua-rendered coordinate grid.
@@ -48,6 +49,7 @@ Required fields are:
     name = 'Zone Name',
     structure_image = 'assets/maps/<zone>_structure.png',
     labels_image = 'assets/maps/<zone>_labels.png',
+    landmarks_image = 'assets/maps/<zone>_landmarks.png',
     width = 512,
     height = 512,
     origin_x = 253,
@@ -58,7 +60,7 @@ Required fields are:
 ```
 
 A temporary flattened `image` is supported, but a production map should use
-separate structure and label layers.
+separate structure, label, and landmark layers when the source permits it.
 
 ## Deterministic import procedure
 
@@ -69,8 +71,9 @@ separate structure and label layers.
    apply a horizontal wrap offset.
 3. Unwrap and crop once. Record every offset. Apply the identical operation to
    every derived layer.
-4. Split structure from labels with `tools/split_map_layers.py`. The outputs
-   must have identical dimensions and pixel coordinates.
+4. Split structure from labels with `tools/split_map_layers.py`, then split
+   known static landmark symbols from ordinary text. The outputs must have
+   identical dimensions and pixel coordinates.
 5. Obtain the map's scale metadata. For known vanilla maps,
    `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
    repository-wide default as calibration.

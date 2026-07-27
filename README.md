@@ -13,7 +13,7 @@ The first prototype includes:
 - an in-game configuration window with persistent settings;
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
-- independently composited structure and label layers;
+- independently composited structure, label, and landmark layers;
 - deterministic world-coordinate-to-image calibration;
 - map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
   Metalworks (zone 237), and Windurst Woods (zone 241).
@@ -42,7 +42,8 @@ The first prototype includes:
 Run `/aminimap config` to open the in-game configuration window. It controls:
 
 - map visibility, position lock, size, and zoom;
-- independent structure and label visibility, opacity, and line-strength boost;
+- independent structure, label, and landmark visibility, opacity, and
+  line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
 - player, NPC, monster, and entity-name markers.
@@ -75,15 +76,18 @@ The renderer draws map content in this order:
 
 1. optional dark backdrop;
 2. calibrated map structure;
-3. labels and static map annotations;
-4. coordinate grid;
-5. live entities and player arrow;
-6. coordinate badge and unlocked-state hint.
+3. place names and exit labels;
+4. static service and landmark symbols;
+5. coordinate grid;
+6. live entities and player arrow;
+7. coordinate badge and unlocked-state hint.
 
-Metalworks and Windurst Woods have fully split structure and annotation layers.
-Each pair comes from one decoded vanilla DAT texture and shares one origin and
-scale. South Gustaberg and Port Bastok still use flattened prototype assets, so
-their embedded labels cannot yet be hidden independently.
+Windurst Woods is the first production dark-tactical map. Its navigation
+structure, place names, and static landmark symbols are separate layers
+generated from immutable vanilla-derived masks. All three share the same
+verified origin and scale. Metalworks has separate structure and annotation
+layers. South Gustaberg and Port Bastok still use flattened prototype assets,
+so their embedded labels cannot yet be hidden independently.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:
@@ -105,9 +109,11 @@ tuning.
 
 ## Map asset status
 
-Metalworks and Windurst Woods use exact vanilla DAT pixels, split into
-structure and annotation layers before transparency is applied. Metalworks is
-horizontally unwrapped; Windurst Woods uses its original no-wrap page layout.
+Metalworks and Windurst Woods use exact vanilla DAT pixels as their geometry
+source. Metalworks is horizontally unwrapped. Windurst Woods uses its original
+no-wrap page layout and applies a deterministic dark-tactical style with teal
+structure lines, warm place labels, and amber landmark symbols. Styling adds a
+centered halo but does not replace or move the source navigation pixels.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.

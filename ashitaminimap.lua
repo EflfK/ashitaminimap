@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.4.3';
+addon.version   = '0.5.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -29,10 +29,13 @@ local DEFAULTS = {
     pixels_per_yalm = 4.41,
     show_map_structure = true,
     show_map_labels = true,
+    show_map_landmarks = true,
     structure_opacity = 0.82,
     label_opacity = 1.00,
+    landmark_opacity = 1.00,
     structure_visibility_boost = 4,
     label_visibility_boost = 4,
+    landmark_visibility_boost = 4,
     backdrop_opacity = 0.12,
     show_grid = true,
     show_coordinate = true,
@@ -145,14 +148,19 @@ local function config_text()
         '    -- Independently composited static map layers.',
         string.format('    show_map_structure = %s,', bool_text(settings.show_map_structure)),
         string.format('    show_map_labels = %s,', bool_text(settings.show_map_labels)),
+        string.format('    show_map_landmarks = %s,', bool_text(settings.show_map_landmarks)),
         string.format('    structure_opacity = %.3f,', clamp(settings.structure_opacity, 0, 1)),
         string.format('    label_opacity = %.3f,', clamp(settings.label_opacity, 0, 1)),
+        string.format('    landmark_opacity = %.3f,', clamp(settings.landmark_opacity, 0, 1)),
         string.format(
             '    structure_visibility_boost = %d,',
             math.floor(clamp(settings.structure_visibility_boost, 1, 12) + 0.5)),
         string.format(
             '    label_visibility_boost = %d,',
             math.floor(clamp(settings.label_visibility_boost, 1, 12) + 0.5)),
+        string.format(
+            '    landmark_visibility_boost = %d,',
+            math.floor(clamp(settings.landmark_visibility_boost, 1, 12) + 0.5)),
         string.format('    backdrop_opacity = %.3f,', clamp(settings.backdrop_opacity, 0, 0.75)),
         '',
         string.format('    show_grid = %s,', bool_text(settings.show_grid)),
@@ -245,10 +253,13 @@ local function load_configuration()
     state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
     state.settings.structure_opacity = clamp(state.settings.structure_opacity, 0, 1);
     state.settings.label_opacity = clamp(state.settings.label_opacity, 0, 1);
+    state.settings.landmark_opacity = clamp(state.settings.landmark_opacity, 0, 1);
     state.settings.structure_visibility_boost =
         math.floor(clamp(state.settings.structure_visibility_boost, 1, 12) + 0.5);
     state.settings.label_visibility_boost =
         math.floor(clamp(state.settings.label_visibility_boost, 1, 12) + 0.5);
+    state.settings.landmark_visibility_boost =
+        math.floor(clamp(state.settings.landmark_visibility_boost, 1, 12) + 0.5);
     state.settings.backdrop_opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
     state.settings.marker_size = clamp(state.settings.marker_size, 0.25, 2.00);
     state.config_dirty = false;
@@ -728,11 +739,15 @@ local function render_minimap()
 
     local structure_image = map.structure_image or map.image;
     local labels_image = map.labels_image;
+    local landmarks_image = map.landmarks_image;
     local structure_texture = state.settings.show_map_structure == true
         and texture_for(structure_image)
         or nil;
     local labels_texture = state.settings.show_map_labels == true
         and texture_for(labels_image)
+        or nil;
+    local landmarks_texture = state.settings.show_map_landmarks == true
+        and texture_for(landmarks_image)
         or nil;
 
     local size = clamp(state.settings.size, 120, 700);
@@ -792,6 +807,19 @@ local function render_minimap()
                 scale,
                 state.settings.label_opacity,
                 state.settings.label_visibility_boost);
+        end
+        if (landmarks_texture ~= nil) then
+            draw_map_layer(
+                draw_list,
+                left,
+                top,
+                size,
+                player,
+                map,
+                landmarks_texture,
+                scale,
+                state.settings.landmark_opacity,
+                state.settings.landmark_visibility_boost);
         end
         draw_grid(draw_list, left, top, size, player, map, scale);
         draw_entities(draw_list, left, top, size, player, scale, entity_visual_scale);
@@ -922,9 +950,35 @@ local function render_config_window()
             state.settings.label_visibility_boost = label_visibility_buffer[1];
             mark_configuration_changed();
         end
+        config_checkbox('Static landmarks##ashitaminimap_landmarks', 'show_map_landmarks');
+        local landmark_opacity_buffer = {
+            math.floor(clamp(state.settings.landmark_opacity, 0, 1) * 100 + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Landmark opacity##ashitaminimap_landmark_opacity',
+                landmark_opacity_buffer,
+                0,
+                100,
+                '%d%%')) then
+            state.settings.landmark_opacity = landmark_opacity_buffer[1] / 100;
+            mark_configuration_changed();
+        end
+
+        local landmark_visibility_buffer = {
+            math.floor(clamp(state.settings.landmark_visibility_boost, 1, 12) + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Landmark visibility##ashitaminimap_landmark_visibility',
+                landmark_visibility_buffer,
+                1,
+                12,
+                '%d x')) then
+            state.settings.landmark_visibility_boost = landmark_visibility_buffer[1];
+            mark_configuration_changed();
+        end
         imgui.TextColored(
             { 0.65, 0.68, 0.70, 1.00 },
-            'Metalworks has separately composited structure and label assets.');
+            'Production maps separate structure, labels, and landmark symbols.');
 
         local backdrop_buffer = {
             math.floor(clamp(state.settings.backdrop_opacity, 0, 0.75) * 100 + 0.5),

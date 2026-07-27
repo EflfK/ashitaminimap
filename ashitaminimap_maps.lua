@@ -43,6 +43,7 @@ return {
         name = 'Windurst Woods',
         structure_image = 'assets/maps/241_structure.png',
         labels_image = 'assets/maps/241_labels.png',
+        landmarks_image = 'assets/maps/241_landmarks.png',
         width = 512,
         height = 512,
         -- Source: ROM/18/72.DAT, internal page m_241_00. This page does not
