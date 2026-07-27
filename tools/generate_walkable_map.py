@@ -302,7 +302,7 @@ def main() -> None:
                 for polygon in connected_component(
                     polygons,
                     seed_x,
-                    seed_y,
+                    -seed_y,
                     args.maximum_step,
                 )
             )
@@ -316,7 +316,7 @@ def main() -> None:
             [
                 (
                     (args.origin_x + vertex[0] * args.pixels_per_yalm) * scale,
-                    (args.origin_y - vertex[2] * args.pixels_per_yalm) * scale,
+                    (args.origin_y + vertex[2] * args.pixels_per_yalm) * scale,
                 )
                 for vertex in polygon
             ],

@@ -80,6 +80,9 @@ separate structure, label, and landmark layers when the source permits it.
    from labels with `tools/split_map_layers.py`, then split known static
    landmark symbols from ordinary text. Every output must have identical
    dimensions and pixel coordinates.
+   LandSandBoat OBJ/nav coordinates use X directly but use Z opposite Ashita's
+   world Y: `world_x = nav_x` and `world_y = -nav_z`. Apply that conversion to
+   both seed coordinates and rendered vertices.
 5. Obtain the map's scale metadata. For known vanilla maps,
    `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
    repository-wide default as calibration.
