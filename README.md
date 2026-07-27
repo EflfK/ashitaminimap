@@ -60,10 +60,16 @@ icons are preferred. **Marker size** scales the dots and target rings
 independently of map zoom; smaller values are useful for calibration
 screenshots without making the player arrow harder to see.
 
-Zoom is clamped to `1.25–20.00 px/yalm`. The lower limit still permits a
-whole-zone overview while preventing the calibrated map and markers from
-collapsing into an unreadable thumbnail. Grid labels outside FFXI's valid
-`A–Z / 1–16` range are not drawn.
+Maximum zoom is `20.00 px/yalm`. The minimum is calculated from the current
+viewport size, map scale, and `view_bounds`, so maximum zoom-out fits the full
+calibrated page along its largest axis but never shrinks it into a thumbnail.
+Grid labels outside FFXI's valid `A–Z / 1–16` range are not drawn.
+
+At overview scales, the camera follows the player until centering them would
+push part of the calibrated map page outside the viewport. It then shifts just
+enough to keep the page visible. If the viewport is larger than a map axis, that
+axis is centered as a whole. The player, entities, grid, and every static layer
+share this camera transform.
 
 Changes are saved automatically to `ashitaminimap_config.lua` after a short
 delay. The **Save** button and `/aminimap save` command save immediately.

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.7.1';
+addon.version   = '0.8.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -15,7 +15,7 @@ local commands = T{
     ['/ashitaminimap'] = true,
 };
 
-local ZOOM_MIN = 1.25;
+local ZOOM_MIN = 0.25;
 local ZOOM_MAX = 20.00;
 local ZOOM_STEP = 1.12;
 local MARKER_REFERENCE_ZOOM = 4.41;
@@ -384,6 +384,26 @@ local function map_grid_yalms(map)
     return clamp(map ~= nil and map.grid_yalms or 40, 10, 1000);
 end
 
+local function zoom_minimum_for_map(map, size)
+    local image_scale = tonumber(map ~= nil and map.image_pixels_per_yalm) or 0;
+    local width = tonumber(map ~= nil and map.width) or 0;
+    local height = tonumber(map ~= nil and map.height) or 0;
+    if (image_scale <= 0 or width <= 0 or height <= 0) then
+        return ZOOM_MIN;
+    end
+
+    local bounds = type(map.view_bounds) == 'table' and map.view_bounds or {};
+    local left = clamp(bounds.left or 0, 0, width);
+    local top = clamp(bounds.top or 0, 0, height);
+    local right = clamp(bounds.right or width, left, width);
+    local bottom = clamp(bounds.bottom or height, top, height);
+    local maximum_span = math.max(right - left, bottom - top);
+    if (maximum_span <= 0) then
+        return ZOOM_MIN;
+    end
+    return clamp((size * image_scale) / maximum_span, ZOOM_MIN, ZOOM_MAX);
+end
+
 local function grid_coordinate(x, y, map)
     local grid_yalms = map_grid_yalms(map);
     local half_cell = grid_yalms / 2;
@@ -392,7 +412,39 @@ local function grid_coordinate(x, y, map)
     return string.format('%s-%d', letters[column] or '?', row);
 end
 
-local function draw_grid(draw_list, left, top, size, player, map, scale)
+local function camera_for_map(player, map, size, scale)
+    local image_scale = tonumber(map.image_pixels_per_yalm) or 0;
+    local width = tonumber(map.width) or 0;
+    local height = tonumber(map.height) or 0;
+    local bounds = type(map.view_bounds) == 'table' and map.view_bounds or nil;
+    if (bounds == nil or image_scale <= 0 or width <= 0 or height <= 0) then
+        return { x = player.x, y = player.y };
+    end
+
+    local left = clamp(bounds.left, 0, width);
+    local top = clamp(bounds.top, 0, height);
+    local right = clamp(bounds.right, left, width);
+    local bottom = clamp(bounds.bottom, top, height);
+    local half_source = ((size / 2) / scale) * image_scale;
+    local player_image_x = (tonumber(map.origin_x) or (width / 2)) + (player.x * image_scale);
+    local player_image_y = (tonumber(map.origin_y) or (height / 2)) - (player.y * image_scale);
+
+    local function clamp_axis(value, minimum, maximum)
+        if ((half_source * 2) >= (maximum - minimum)) then
+            return (minimum + maximum) / 2;
+        end
+        return clamp(value, minimum + half_source, maximum - half_source);
+    end
+
+    local image_x = clamp_axis(player_image_x, left, right);
+    local image_y = clamp_axis(player_image_y, top, bottom);
+    return {
+        x = (image_x - (tonumber(map.origin_x) or (width / 2))) / image_scale,
+        y = ((tonumber(map.origin_y) or (height / 2)) - image_y) / image_scale,
+    };
+end
+
+local function draw_grid(draw_list, left, top, size, camera, map, scale)
     if (state.settings.show_grid ~= true) then
         return;
     end
@@ -408,17 +460,17 @@ local function draw_grid(draw_list, left, top, size, player, map, scale)
     local grid_yalms = map_grid_yalms(map);
 
     local half_cell = grid_yalms / 2;
-    local first_column = math.floor((player.x - world_radius + half_cell) / grid_yalms) + 8;
-    local last_column = math.floor((player.x + world_radius + half_cell) / grid_yalms) + 8;
+    local first_column = math.floor((camera.x - world_radius + half_cell) / grid_yalms) + 8;
+    local last_column = math.floor((camera.x + world_radius + half_cell) / grid_yalms) + 8;
     for column = first_column, last_column do
         local boundary_world_x = ((column - 8) * grid_yalms) - half_cell;
-        local screen_x = center_x + ((boundary_world_x - player.x) * scale);
+        local screen_x = center_x + ((boundary_world_x - camera.x) * scale);
         if (screen_x >= left and screen_x <= right) then
             draw_list:AddLine({ screen_x, top }, { screen_x, bottom }, line_color, 1.0);
         end
 
         local cell_center_world_x = ((column - 8) * grid_yalms);
-        local label_x = center_x + ((cell_center_world_x - player.x) * scale);
+        local label_x = center_x + ((cell_center_world_x - camera.x) * scale);
         local label = letters[column];
         if (label ~= nil and label_x >= left + 9 and label_x <= right - 9) then
             draw_list:AddText({ label_x - 3, top + 4 }, shadow, label);
@@ -426,17 +478,17 @@ local function draw_grid(draw_list, left, top, size, player, map, scale)
         end
     end
 
-    local first_row = math.floor((-(player.y + world_radius) + half_cell) / grid_yalms) + 8;
-    local last_row = math.floor((-(player.y - world_radius) + half_cell) / grid_yalms) + 8;
+    local first_row = math.floor((-(camera.y + world_radius) + half_cell) / grid_yalms) + 8;
+    local last_row = math.floor((-(camera.y - world_radius) + half_cell) / grid_yalms) + 8;
     for row = first_row, last_row do
         local boundary_world_y = half_cell - ((row - 8) * grid_yalms);
-        local screen_y = center_y - ((boundary_world_y - player.y) * scale);
+        local screen_y = center_y - ((boundary_world_y - camera.y) * scale);
         if (screen_y >= top and screen_y <= bottom) then
             draw_list:AddLine({ left, screen_y }, { right, screen_y }, line_color, 1.0);
         end
 
         local cell_center_world_y = -((row - 8) * grid_yalms);
-        local label_y = center_y - ((cell_center_world_y - player.y) * scale);
+        local label_y = center_y - ((cell_center_world_y - camera.y) * scale);
         if (row >= 1 and row <= 16 and label_y >= top + 9 and label_y <= bottom - 9) then
             local label = tostring(row);
             draw_list:AddText({ left + 5, label_y - 6 }, shadow, label);
@@ -475,7 +527,7 @@ local function marker_zoom_scale(world_scale)
     return clamp(world_scale / MARKER_REFERENCE_ZOOM, 0.50, 2.50);
 end
 
-local function draw_entities(draw_list, left, top, size, player, scale, visual_scale)
+local function draw_entities(draw_list, left, top, size, player, camera, scale, visual_scale)
     local entity = player.entity;
     local count = math.min(tonumber(safe_read(function () return entity:GetEntityMapSize(); end, 0)) or 0, 0x8FF);
     local center_x = left + (size / 2);
@@ -495,8 +547,8 @@ local function draw_entities(draw_list, left, top, size, player, scale, visual_s
                     local enabled = (kind == 'player' and state.settings.show_players == true)
                         or (kind == 'npc' and state.settings.show_npcs == true)
                         or (kind == 'monster' and state.settings.show_monsters == true);
-                    local screen_x = center_x + ((x - player.x) * scale);
-                    local screen_y = center_y - ((y - player.y) * scale);
+                    local screen_x = center_x + ((x - camera.x) * scale);
+                    local screen_y = center_y - ((y - camera.y) * scale);
                     if (enabled and screen_x >= left + 3 and screen_x <= left + size - 3
                             and screen_y >= top + 3 and screen_y <= top + size - 3) then
                         local dot_color = color(kind == 'player' and 'other_player' or kind,
@@ -591,7 +643,7 @@ local function draw_map_layer(
         left,
         top,
         size,
-        player,
+        camera,
         map,
         texture,
         scale,
@@ -604,21 +656,38 @@ local function draw_map_layer(
         return;
     end
 
-    local player_image_x = (tonumber(map.origin_x) or (width / 2)) + (player.x * image_scale);
-    local player_image_y = (tonumber(map.origin_y) or (height / 2)) - (player.y * image_scale);
+    local camera_image_x = (tonumber(map.origin_x) or (width / 2)) + (camera.x * image_scale);
+    local camera_image_y = (tonumber(map.origin_y) or (height / 2)) - (camera.y * image_scale);
     local source_half_pixels = ((size / 2) / scale) * image_scale;
-    local u0 = (player_image_x - source_half_pixels) / width;
-    local v0 = (player_image_y - source_half_pixels) / height;
-    local u1 = (player_image_x + source_half_pixels) / width;
-    local v1 = (player_image_y + source_half_pixels) / height;
+    local source_left = camera_image_x - source_half_pixels;
+    local source_top = camera_image_y - source_half_pixels;
+    local source_right = camera_image_x + source_half_pixels;
+    local source_bottom = camera_image_y + source_half_pixels;
+    local clipped_left = clamp(source_left, 0, width);
+    local clipped_top = clamp(source_top, 0, height);
+    local clipped_right = clamp(source_right, 0, width);
+    local clipped_bottom = clamp(source_bottom, 0, height);
+    if (clipped_right <= clipped_left or clipped_bottom <= clipped_top) then
+        return;
+    end
+
+    local source_span = source_half_pixels * 2;
+    local destination_left = left + (((clipped_left - source_left) / source_span) * size);
+    local destination_top = top + (((clipped_top - source_top) / source_span) * size);
+    local destination_right = left + (((clipped_right - source_left) / source_span) * size);
+    local destination_bottom = top + (((clipped_bottom - source_top) / source_span) * size);
+    local u0 = clipped_left / width;
+    local v0 = clipped_top / height;
+    local u1 = clipped_right / width;
+    local v1 = clipped_bottom / height;
     opacity = clamp(opacity, 0, 1);
     local passes = math.floor(clamp(visibility_boost, 1, 12) + 0.5);
     local tint = imgui.GetColorU32({ 1, 1, 1, opacity });
     for _ = 1, passes do
         draw_list:AddImage(
             texture.handle,
-            { left, top },
-            { left + size, top + size },
+            { destination_left, destination_top },
+            { destination_right, destination_bottom },
             { u0, v0 },
             { u1, v1 },
             tint);
@@ -656,17 +725,18 @@ local function mouse_over_map(left, top, size)
         mouse_y;
 end
 
-local function handle_map_input(left, top, size)
+local function handle_map_input(left, top, size, map)
     local hovered, mouse_x, mouse_y = mouse_over_map(left, top, size);
     local wheel = hovered
         and safe_read(function () return tonumber(imgui.GetIO().MouseWheel) or 0; end, 0)
         or 0;
     if (wheel ~= 0) then
         local factor = ZOOM_STEP ^ math.abs(wheel);
-        local current = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+        local minimum_zoom = zoom_minimum_for_map(map, size);
+        local current = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
         state.settings.pixels_per_yalm = clamp(
             wheel > 0 and (current * factor) or (current / factor),
-            ZOOM_MIN,
+            minimum_zoom,
             ZOOM_MAX);
         mark_configuration_changed();
     end
@@ -762,7 +832,8 @@ local function render_minimap()
         or nil;
 
     local size = clamp(state.settings.size, 120, 700);
-    local scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+    local minimum_zoom = zoom_minimum_for_map(map, size);
+    local scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
     local window_flags = bit.bor(
         bit.lshift(1, 0),  -- NoTitleBar
         bit.lshift(1, 1),  -- NoResize
@@ -786,8 +857,14 @@ local function render_minimap()
 
     if (imgui.Begin('##ashitaminimap_overlay', true, window_flags)) then
         local left, top = imgui.GetCursorScreenPos();
-        handle_map_input(left, top, size);
-        scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
+        handle_map_input(left, top, size, map);
+        minimum_zoom = zoom_minimum_for_map(map, size);
+        scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
+        if (state.settings.pixels_per_yalm ~= scale) then
+            state.settings.pixels_per_yalm = scale;
+            mark_configuration_changed();
+        end
+        local camera = camera_for_map(player, map, size, scale);
         local visual_scale = marker_zoom_scale(scale);
         local entity_visual_scale = visual_scale
             * clamp(state.settings.marker_size, 0.25, 2.00);
@@ -799,7 +876,7 @@ local function render_minimap()
                 left,
                 top,
                 size,
-                player,
+                camera,
                 map,
                 vanilla_texture,
                 scale,
@@ -812,7 +889,7 @@ local function render_minimap()
                 left,
                 top,
                 size,
-                player,
+                camera,
                 map,
                 structure_texture,
                 scale,
@@ -825,7 +902,7 @@ local function render_minimap()
                 left,
                 top,
                 size,
-                player,
+                camera,
                 map,
                 labels_texture,
                 scale,
@@ -838,19 +915,21 @@ local function render_minimap()
                 left,
                 top,
                 size,
-                player,
+                camera,
                 map,
                 landmarks_texture,
                 scale,
                 state.settings.landmark_opacity,
                 state.settings.landmark_visibility_boost);
         end
-        draw_grid(draw_list, left, top, size, player, map, scale);
-        draw_entities(draw_list, left, top, size, player, scale, entity_visual_scale);
+        draw_grid(draw_list, left, top, size, camera, map, scale);
+        draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
+        local player_screen_x = left + (size / 2) + ((player.x - camera.x) * scale);
+        local player_screen_y = top + (size / 2) - ((player.y - camera.y) * scale);
         draw_player(
             draw_list,
-            left + (size / 2),
-            top + (size / 2),
+            player_screen_x,
+            player_screen_y,
             player.yaw,
             visual_scale);
         draw_badge(draw_list, left, top, player, map);
@@ -907,11 +986,18 @@ local function render_config_window()
             mark_configuration_changed();
         end
 
-        local zoom_buffer = { clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX) };
+        local config_player = current_player();
+        local config_map = config_player ~= nil and state.maps[config_player.zone_id] or nil;
+        local config_zoom_minimum = zoom_minimum_for_map(
+            config_map,
+            clamp(state.settings.size, 120, 700));
+        local zoom_buffer = {
+            clamp(state.settings.pixels_per_yalm, config_zoom_minimum, ZOOM_MAX),
+        };
         if (imgui.SliderFloat(
                 'Zoom##ashitaminimap_zoom',
                 zoom_buffer,
-                ZOOM_MIN,
+                config_zoom_minimum,
                 ZOOM_MAX,
                 '%.2f px/yalm')) then
             state.settings.pixels_per_yalm = zoom_buffer[1];
@@ -1087,6 +1173,12 @@ local function print_help()
     log('/aminimap grid | names | reload');
 end
 
+local function current_zoom_minimum()
+    local player = current_player();
+    local map = player ~= nil and state.maps[player.zone_id] or nil;
+    return zoom_minimum_for_map(map, clamp(state.settings.size, 120, 700));
+end
+
 local function handle_command(e)
     local args = e.command:args();
     local name = args[1] and args[1]:lower() or '';
@@ -1127,15 +1219,17 @@ local function handle_command(e)
         local ok, message = save_configuration();
         log(ok and ('Saved configuration to ' .. message .. '.') or ('Could not save configuration: ' .. message));
     elseif (action == 'zoomin' or action == 'in') then
+        local minimum_zoom = current_zoom_minimum();
         state.settings.pixels_per_yalm = clamp(
             state.settings.pixels_per_yalm * ZOOM_STEP,
-            ZOOM_MIN,
+            minimum_zoom,
             ZOOM_MAX);
         mark_configuration_changed();
     elseif (action == 'zoomout' or action == 'out') then
+        local minimum_zoom = current_zoom_minimum();
         state.settings.pixels_per_yalm = clamp(
             state.settings.pixels_per_yalm / ZOOM_STEP,
-            ZOOM_MIN,
+            minimum_zoom,
             ZOOM_MAX);
         mark_configuration_changed();
     elseif (action == 'grid') then

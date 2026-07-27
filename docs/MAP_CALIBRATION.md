@@ -52,6 +52,7 @@ Required fields are:
     landmarks_image = 'assets/maps/<zone>_landmarks.png',
     width = 512,
     height = 512,
+    view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
     origin_x = 253,
     origin_y = 253,
     grid_yalms = 40,
@@ -61,6 +62,10 @@ Required fields are:
 
 A temporary flattened `image` is supported, but a production map should use
 separate structure, label, and landmark layers when the source permits it.
+`view_bounds` is optional. Use it when the source texture contains transparent
+padding or an adjacent composite page. It defines the calibrated source-pixel
+rectangle that the overview camera should keep visible; it does not crop or
+recalibrate any layer.
 
 ## Deterministic import procedure
 
