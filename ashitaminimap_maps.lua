@@ -24,7 +24,8 @@ return {
     },
     [237] = {
         name = 'Metalworks',
-        image = 'assets/maps/237.png',
+        structure_image = 'assets/maps/237_structure.png',
+        labels_image = 'assets/maps/237_labels.png',
         width = 512,
         height = 512,
         -- The vanilla texture's H-8 cell center is at pixel 253 after unwrap.

@@ -38,16 +38,26 @@ def decode(source: Path) -> Image.Image:
 
 def tactical_linework(
     image: Image.Image,
-    box: tuple[int, int, int, int],
+    boxes: list[tuple[int, int, int, int]],
+    excluded_boxes: list[tuple[int, int, int, int]],
 ) -> Image.Image:
     source = image.convert("RGB")
     output = Image.new("RGBA", source.size, (0, 0, 0, 0))
     source_pixels = source.load()
     output_pixels = output.load()
-    left, top, right, bottom = box
+    for y in range(source.height):
+        for x in range(source.width):
+            included = any(
+                left <= x < right and top <= y < bottom
+                for left, top, right, bottom in boxes
+            )
+            excluded = any(
+                left <= x < right and top <= y < bottom
+                for left, top, right, bottom in excluded_boxes
+            )
+            if not included or excluded:
+                continue
 
-    for y in range(max(0, top), min(source.height, bottom)):
-        for x in range(max(0, left), min(source.width, right)):
             red, green, blue = source_pixels[x, y]
             luminance = (red * 0.299) + (green * 0.587) + (blue * 0.114)
             darkness = max(0.0, min(1.0, (178.0 - luminance) / 95.0))
@@ -70,13 +80,28 @@ def main() -> None:
     parser.add_argument("source", type=Path)
     parser.add_argument("destination", type=Path)
     parser.add_argument("--x-offset", type=int, default=0)
-    parser.add_argument("--box", required=True, type=parse_box)
+    parser.add_argument(
+        "--box",
+        dest="boxes",
+        action="append",
+        required=True,
+        type=parse_box,
+        help="included left,top,right,bottom rectangle; repeat for multiple regions",
+    )
+    parser.add_argument(
+        "--exclude-box",
+        dest="excluded_boxes",
+        action="append",
+        default=[],
+        type=parse_box,
+        help="excluded left,top,right,bottom rectangle; repeat as needed",
+    )
     arguments = parser.parse_args()
 
     image = decode(arguments.source)
     if arguments.x_offset:
         image = ImageChops.offset(image, arguments.x_offset, 0)
-    output = tactical_linework(image, arguments.box)
+    output = tactical_linework(image, arguments.boxes, arguments.excluded_boxes)
     arguments.destination.parent.mkdir(parents=True, exist_ok=True)
     output.save(arguments.destination, "PNG", optimize=True)
 

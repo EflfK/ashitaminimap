@@ -13,6 +13,7 @@ The first prototype includes:
 - an in-game configuration window with persistent settings;
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
+- independently composited structure and label layers;
 - deterministic world-coordinate-to-image calibration;
 - initial map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
   and Metalworks (zone 237).
@@ -40,7 +41,8 @@ The first prototype includes:
 
 Run `/aminimap config` to open the in-game configuration window. It controls:
 
-- map visibility, position lock, size, zoom, opacity, and line-strength boost;
+- map visibility, position lock, size, and zoom;
+- independent structure and label visibility, opacity, and line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
 - player, NPC, monster, and entity-name markers.
@@ -53,10 +55,27 @@ Changes are saved automatically to `ashitaminimap_config.lua` after a short
 delay. The **Save** button and `/aminimap save` command save immediately.
 You can still edit the Lua configuration manually and run `/aminimap reload`.
 
-If the transparent map linework is difficult to see, raise **Map visibility**.
-This composites the alpha layer more strongly than the ordinary opacity control
-can. **Dark backdrop** adds contrast behind the entire viewport and can be set
-back to `0%` whenever a completely clear background is preferred.
+If the transparent map linework is difficult to see, raise **Structure
+visibility** or **Label visibility**. These composite their respective alpha
+layers more strongly than ordinary opacity controls can. **Dark backdrop** adds
+contrast behind the entire viewport and can be set back to `0%` whenever a
+completely clear background is preferred.
+
+## Layer model
+
+The renderer draws map content in this order:
+
+1. optional dark backdrop;
+2. calibrated map structure;
+3. labels and static map annotations;
+4. coordinate grid;
+5. live entities and player arrow;
+6. coordinate badge and unlocked-state hint.
+
+Metalworks is the first fully split sample. Its structure and label PNGs come
+from the same decoded vanilla DAT texture and share one origin and scale.
+South Gustaberg and Port Bastok still use flattened prototype assets, so their
+embedded labels cannot yet be hidden independently.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:
@@ -71,11 +90,10 @@ This calibration is independent of the user's on-screen zoom.
 ## Map asset status
 
 Metalworks now uses the exact vanilla DAT pixels, unwrapped into north-up map
-space before transparency is applied. The other bundled images remain
-transparency and calibration prototypes generated from locally installed
-reference maps. All currently keep only the strongest map linework and suppress
-most of the parchment background. They are not yet precision-traced walkable-area
-masks.
+space and split into structure and label layers before transparency is applied.
+The other bundled images remain flattened transparency and calibration
+prototypes generated from locally installed reference maps. They are not yet
+precision-traced walkable-area masks.
 
 Production map packs should use hand-authored or deterministic vector masks tied
 to verified map calibration. AI-generated artwork should never be used as the

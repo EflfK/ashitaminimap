@@ -11,9 +11,15 @@ return {
     -- Matches the current stock Minimap configuration:
     -- 210 px mask * 0.70 zoom / 100 * 3.00 UI scale = 4.41.
     pixels_per_yalm = 4.41,
-    map_opacity = 0.82,
-    -- Re-renders the alpha map layer to strengthen faint extracted lines.
-    map_visibility_boost = 4,
+
+    -- Independently composited static map layers.
+    show_map_structure = true,
+    show_map_labels = true,
+    structure_opacity = 0.82,
+    label_opacity = 1.00,
+    -- Re-render each alpha layer to strengthen faint extracted lines.
+    structure_visibility_boost = 4,
+    label_visibility_boost = 4,
     -- Optional dark square behind the map; set to 0 for fully transparent.
     backdrop_opacity = 0.12,
 

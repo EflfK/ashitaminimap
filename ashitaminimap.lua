@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.2.1';
+addon.version   = '0.3.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -26,8 +26,12 @@ local DEFAULTS = {
     y = 128,
     size = 330,
     pixels_per_yalm = 4.41,
-    map_opacity = 0.82,
-    map_visibility_boost = 4,
+    show_map_structure = true,
+    show_map_labels = true,
+    structure_opacity = 0.82,
+    label_opacity = 1.00,
+    structure_visibility_boost = 4,
+    label_visibility_boost = 4,
     backdrop_opacity = 0.12,
     show_grid = true,
     show_coordinate = true,
@@ -134,10 +138,18 @@ local function config_text()
         '',
         '    -- Lua renderer scale. Higher values zoom in.',
         string.format('    pixels_per_yalm = %.4f,', clamp(settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX)),
-        string.format('    map_opacity = %.3f,', clamp(settings.map_opacity, 0, 1)),
+        '',
+        '    -- Independently composited static map layers.',
+        string.format('    show_map_structure = %s,', bool_text(settings.show_map_structure)),
+        string.format('    show_map_labels = %s,', bool_text(settings.show_map_labels)),
+        string.format('    structure_opacity = %.3f,', clamp(settings.structure_opacity, 0, 1)),
+        string.format('    label_opacity = %.3f,', clamp(settings.label_opacity, 0, 1)),
         string.format(
-            '    map_visibility_boost = %d,',
-            math.floor(clamp(settings.map_visibility_boost, 1, 12) + 0.5)),
+            '    structure_visibility_boost = %d,',
+            math.floor(clamp(settings.structure_visibility_boost, 1, 12) + 0.5)),
+        string.format(
+            '    label_visibility_boost = %d,',
+            math.floor(clamp(settings.label_visibility_boost, 1, 12) + 0.5)),
         string.format('    backdrop_opacity = %.3f,', clamp(settings.backdrop_opacity, 0, 0.75)),
         '',
         string.format('    show_grid = %s,', bool_text(settings.show_grid)),
@@ -211,11 +223,27 @@ end
 
 local function load_configuration()
     local settings, settings_error = load_module_file('ashitaminimap_config.lua');
-    state.settings = merge_table(copy_table(DEFAULTS), settings or {});
+    settings = type(settings) == 'table' and settings or {};
+    state.settings = merge_table(copy_table(DEFAULTS), settings);
+    -- Migrate the original flattened-layer settings without overwriting newer
+    -- per-layer values when they are already present.
+    if (settings.structure_opacity == nil and settings.map_opacity ~= nil) then
+        state.settings.structure_opacity = settings.map_opacity;
+    end
+    if (settings.structure_visibility_boost == nil and settings.map_visibility_boost ~= nil) then
+        state.settings.structure_visibility_boost = settings.map_visibility_boost;
+    end
+    if (settings.label_visibility_boost == nil and settings.map_visibility_boost ~= nil) then
+        state.settings.label_visibility_boost = settings.map_visibility_boost;
+    end
     state.settings.size = clamp(state.settings.size, 120, 700);
     state.settings.pixels_per_yalm = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
-    state.settings.map_opacity = clamp(state.settings.map_opacity, 0, 1);
-    state.settings.map_visibility_boost = math.floor(clamp(state.settings.map_visibility_boost, 1, 12) + 0.5);
+    state.settings.structure_opacity = clamp(state.settings.structure_opacity, 0, 1);
+    state.settings.label_opacity = clamp(state.settings.label_opacity, 0, 1);
+    state.settings.structure_visibility_boost =
+        math.floor(clamp(state.settings.structure_visibility_boost, 1, 12) + 0.5);
+    state.settings.label_visibility_boost =
+        math.floor(clamp(state.settings.label_visibility_boost, 1, 12) + 0.5);
     state.settings.backdrop_opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
     state.config_dirty = false;
     state.dragging = false;
@@ -242,12 +270,12 @@ local function ensure_device()
     return state.device;
 end
 
-local function texture_for(map)
-    if (map == nil or map.image == nil) then
+local function texture_for(image)
+    if (image == nil or image == '') then
         return nil;
     end
-    if (state.textures[map.image] ~= nil) then
-        return state.textures[map.image] ~= false and state.textures[map.image] or nil;
+    if (state.textures[image] ~= nil) then
+        return state.textures[image] ~= false and state.textures[image] or nil;
     end
 
     local device = ensure_device();
@@ -255,9 +283,9 @@ local function texture_for(map)
         return nil;
     end
 
-    local path = string.format('%s%s', addon.path, map.image);
+    local path = string.format('%s%s', addon.path, image);
     if (not ashita.fs.exists(path)) then
-        state.textures[map.image] = false;
+        state.textures[image] = false;
         log('Missing map asset: ' .. path);
         return nil;
     end
@@ -267,7 +295,7 @@ local function texture_for(map)
         return ffi.C.D3DXCreateTextureFromFileA(device, path, pointer);
     end, -1);
     if (result ~= 0 or pointer[0] == nil) then
-        state.textures[map.image] = false;
+        state.textures[image] = false;
         log('Could not load map asset: ' .. path);
         return nil;
     end
@@ -277,7 +305,7 @@ local function texture_for(map)
         texture = texture,
         handle = tonumber(ffi.cast('uint32_t', texture)),
     };
-    state.textures[map.image] = entry;
+    state.textures[image] = entry;
     return entry;
 end
 
@@ -491,7 +519,17 @@ local function draw_badge(draw_list, left, top, player, map)
     draw_list:AddText({ left + 14, top + 10 }, text_color, label);
 end
 
-local function draw_map_texture(draw_list, left, top, size, player, map, texture, scale)
+local function draw_map_layer(
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        map,
+        texture,
+        scale,
+        opacity,
+        visibility_boost)
     local image_scale = tonumber(map.image_pixels_per_yalm) or 0;
     local width = tonumber(map.width) or 0;
     local height = tonumber(map.height) or 0;
@@ -506,8 +544,8 @@ local function draw_map_texture(draw_list, left, top, size, player, map, texture
     local v0 = (player_image_y - source_half_pixels) / height;
     local u1 = (player_image_x + source_half_pixels) / width;
     local v1 = (player_image_y + source_half_pixels) / height;
-    local opacity = clamp(state.settings.map_opacity, 0, 1);
-    local passes = math.floor(clamp(state.settings.map_visibility_boost, 1, 12) + 0.5);
+    opacity = clamp(opacity, 0, 1);
+    local passes = math.floor(clamp(visibility_boost, 1, 12) + 0.5);
     local tint = imgui.GetColorU32({ 1, 1, 1, opacity });
     for _ = 1, passes do
         draw_list:AddImage(
@@ -639,10 +677,14 @@ local function render_minimap()
         return;
     end
 
-    local texture = texture_for(map);
-    if (texture == nil) then
-        return;
-    end
+    local structure_image = map.structure_image or map.image;
+    local labels_image = map.labels_image;
+    local structure_texture = state.settings.show_map_structure == true
+        and texture_for(structure_image)
+        or nil;
+    local labels_texture = state.settings.show_map_labels == true
+        and texture_for(labels_image)
+        or nil;
 
     local size = clamp(state.settings.size, 120, 700);
     local scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
@@ -673,7 +715,32 @@ local function render_minimap()
         scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
         local draw_list = imgui.GetWindowDrawList();
         draw_map_backdrop(draw_list, left, top, size);
-        draw_map_texture(draw_list, left, top, size, player, map, texture, scale);
+        if (structure_texture ~= nil) then
+            draw_map_layer(
+                draw_list,
+                left,
+                top,
+                size,
+                player,
+                map,
+                structure_texture,
+                scale,
+                state.settings.structure_opacity,
+                state.settings.structure_visibility_boost);
+        end
+        if (labels_texture ~= nil) then
+            draw_map_layer(
+                draw_list,
+                left,
+                top,
+                size,
+                player,
+                map,
+                labels_texture,
+                scale,
+                state.settings.label_opacity,
+                state.settings.label_visibility_boost);
+        end
         draw_grid(draw_list, left, top, size, player, scale);
         draw_entities(draw_list, left, top, size, player, scale);
         draw_player(draw_list, left + (size / 2), top + (size / 2), player.yaw);
@@ -743,32 +810,64 @@ local function render_config_window()
         end
         imgui.TextColored({ 0.65, 0.68, 0.70, 1.00 }, 'Mouse wheel over the map also changes zoom.');
 
-        local opacity_buffer = { math.floor(clamp(state.settings.map_opacity, 0, 1) * 100 + 0.5) };
+        imgui.Text('Static layers');
+        imgui.Separator();
+        config_checkbox('Map structure##ashitaminimap_structure', 'show_map_structure');
+        local structure_opacity_buffer = {
+            math.floor(clamp(state.settings.structure_opacity, 0, 1) * 100 + 0.5),
+        };
         if (imgui.SliderInt(
-                'Map opacity##ashitaminimap_opacity',
-                opacity_buffer,
+                'Structure opacity##ashitaminimap_structure_opacity',
+                structure_opacity_buffer,
                 0,
                 100,
                 '%d%%')) then
-            state.settings.map_opacity = opacity_buffer[1] / 100;
+            state.settings.structure_opacity = structure_opacity_buffer[1] / 100;
             mark_configuration_changed();
         end
 
-        local visibility_buffer = {
-            math.floor(clamp(state.settings.map_visibility_boost, 1, 12) + 0.5),
+        local structure_visibility_buffer = {
+            math.floor(clamp(state.settings.structure_visibility_boost, 1, 12) + 0.5),
         };
         if (imgui.SliderInt(
-                'Map visibility##ashitaminimap_visibility',
-                visibility_buffer,
+                'Structure visibility##ashitaminimap_structure_visibility',
+                structure_visibility_buffer,
                 1,
                 12,
                 '%d x')) then
-            state.settings.map_visibility_boost = visibility_buffer[1];
+            state.settings.structure_visibility_boost = structure_visibility_buffer[1];
+            mark_configuration_changed();
+        end
+
+        config_checkbox('Map labels##ashitaminimap_labels', 'show_map_labels');
+        local label_opacity_buffer = {
+            math.floor(clamp(state.settings.label_opacity, 0, 1) * 100 + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Label opacity##ashitaminimap_label_opacity',
+                label_opacity_buffer,
+                0,
+                100,
+                '%d%%')) then
+            state.settings.label_opacity = label_opacity_buffer[1] / 100;
+            mark_configuration_changed();
+        end
+
+        local label_visibility_buffer = {
+            math.floor(clamp(state.settings.label_visibility_boost, 1, 12) + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Label visibility##ashitaminimap_label_visibility',
+                label_visibility_buffer,
+                1,
+                12,
+                '%d x')) then
+            state.settings.label_visibility_boost = label_visibility_buffer[1];
             mark_configuration_changed();
         end
         imgui.TextColored(
             { 0.65, 0.68, 0.70, 1.00 },
-            'Raise visibility to strengthen faint transparent map lines.');
+            'Metalworks has separately composited structure and label assets.');
 
         local backdrop_buffer = {
             math.floor(clamp(state.settings.backdrop_opacity, 0, 0.75) * 100 + 0.5),
