@@ -30,6 +30,8 @@ return {
     show_monsters = true,
     show_names = false,
     scale_markers_with_zoom = true,
+    -- Scales entity dots and target rings independently of map zoom.
+    marker_size = 1.00,
 
     colors = {
         border = { 0.67, 0.47, 0.22, 0.90 },

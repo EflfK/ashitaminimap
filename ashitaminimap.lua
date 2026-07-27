@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '0.3.2';
+addon.version   = '0.3.3';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -41,6 +41,7 @@ local DEFAULTS = {
     show_monsters = true,
     show_names = false,
     scale_markers_with_zoom = true,
+    marker_size = 1.00,
     colors = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
@@ -161,6 +162,7 @@ local function config_text()
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
         string.format('    show_names = %s,', bool_text(settings.show_names)),
         string.format('    scale_markers_with_zoom = %s,', bool_text(settings.scale_markers_with_zoom)),
+        string.format('    marker_size = %.2f,', clamp(settings.marker_size, 0.25, 2.00)),
         '',
         '    colors = {',
         string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
@@ -248,6 +250,7 @@ local function load_configuration()
     state.settings.label_visibility_boost =
         math.floor(clamp(state.settings.label_visibility_boost, 1, 12) + 0.5);
     state.settings.backdrop_opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
+    state.settings.marker_size = clamp(state.settings.marker_size, 0.25, 2.00);
     state.config_dirty = false;
     state.dragging = false;
     if (settings_error ~= nil) then
@@ -447,7 +450,7 @@ local function entity_kind(entity, index)
     return 'npc';
 end
 
-local function marker_visual_scale(world_scale)
+local function marker_zoom_scale(world_scale)
     if (state.settings.scale_markers_with_zoom ~= true) then
         return 1.0;
     end
@@ -759,7 +762,9 @@ local function render_minimap()
         local left, top = imgui.GetCursorScreenPos();
         handle_map_input(left, top, size);
         scale = clamp(state.settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX);
-        local visual_scale = marker_visual_scale(scale);
+        local visual_scale = marker_zoom_scale(scale);
+        local entity_visual_scale = visual_scale
+            * clamp(state.settings.marker_size, 0.25, 2.00);
         local draw_list = imgui.GetWindowDrawList();
         draw_map_backdrop(draw_list, left, top, size);
         if (structure_texture ~= nil) then
@@ -789,7 +794,7 @@ local function render_minimap()
                 state.settings.label_visibility_boost);
         end
         draw_grid(draw_list, left, top, size, player, map, scale);
-        draw_entities(draw_list, left, top, size, player, scale, visual_scale);
+        draw_entities(draw_list, left, top, size, player, scale, entity_visual_scale);
         draw_player(
             draw_list,
             left + (size / 2),
@@ -948,9 +953,24 @@ local function render_config_window()
         config_checkbox(
             'Scale dynamic markers with zoom##ashitaminimap_scale_markers',
             'scale_markers_with_zoom');
+        local marker_size_buffer = {
+            math.floor(clamp(state.settings.marker_size, 0.25, 2.00) * 100 + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Marker size##ashitaminimap_marker_size',
+                marker_size_buffer,
+                25,
+                200,
+                '%d%%')) then
+            state.settings.marker_size = marker_size_buffer[1] / 100;
+            mark_configuration_changed();
+        end
         imgui.TextColored(
             { 0.65, 0.68, 0.70, 1.00 },
-            'Controls entity dots, target rings, and the player arrow.');
+            'Zoom scaling controls entity dots, target rings, and the player arrow.');
+        imgui.TextColored(
+            { 0.65, 0.68, 0.70, 1.00 },
+            'Marker size controls entity dots and target rings only.');
 
         if (imgui.Button('Save##ashitaminimap_save', { 92, 0 })) then
             local ok, message = save_configuration();
