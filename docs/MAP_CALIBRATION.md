@@ -105,11 +105,23 @@ shift every displayed quadrant by a full row or column.
 5. Obtain the map's scale metadata. For known vanilla maps,
    `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
    repository-wide default as calibration.
-6. Determine the image pixel represented by world `(0, 0)`. Do not directly
-   negate the stock page record's signed `+0x0A` and `+0x0C` fields; live
-   Castle Oztroja validation proved that they require an additional renderer
-   transform. The verified image pixel becomes `origin_x`, `origin_y` after all
-   wrap and crop operations.
+6. Determine the image pixel represented by world `(0, 0)`. When
+   `Minimap.dll` is available, its runtime doubles at `runtime + 0x18` and
+   `runtime + 0x20` are the final computed map-space position of the player.
+   Combine them with the player's live world position and the scale from step 5:
+
+   ```text
+   origin_x = runtime_map_x - world_x * image_pixels_per_yalm
+   origin_y = runtime_map_y + world_y * image_pixels_per_yalm
+   ```
+
+   This produces the origin in the same post-reconstruction 512-by-512 source
+   coordinates used by the imported image. It was checked against Ru'Lude
+   Gardens' known authored origin and Castle Oztroja's live page-specific
+   placement. The signed page-record fields at `+0x0A` and `+0x0C` are named
+   `OffsetX` and `OffsetY` in the plugin's own diagnostics, but the renderer
+   does not use them directly as final source pixels. Do not negate or store
+   them as the origin.
    Separately record the printed H-8 cell center as `grid_origin_x`,
    `grid_origin_y` when it differs from world `(0, 0)`.
 7. Derive `image_pixels_per_yalm` from source metadata or at least two verified,
@@ -179,10 +191,11 @@ adding the map. That provenance is part of the map asset.
 ## Current automation boundary
 
 The repository provides deterministic DAT decoding and a collision/navmesh
-walkable-mask generator. It does not yet extract every calibration field
-automatically.
-Until an importer generates the complete map entry, deriving and validating the
-per-map metadata remains a required import step.
+walkable-mask generator. For vanilla fallback pages, the runtime now derives
+page, scale, and world origin automatically from stock map state. Authored
+assets still require deterministic wrap/crop metadata and multi-position
+validation because their source coordinates may differ from the locally
+imported stock page.
 
 The desired future importer should:
 

@@ -54,14 +54,15 @@ Therefore:
 - a committed/authored vanilla layer overrides the generated fallback;
 - no generated file is loaded until its zone and page are actually active.
 
-## Page and scale selection
+## Page, scale, and origin selection
 
-If `Minimap.dll` is loaded, its read-only current map page and scale byte are
-used automatically. AshitaMinimap still performs all rendering itself and does
-not require the plugin to draw.
+If `Minimap.dll` is loaded, its read-only current map page, scale byte, and
+computed map-space center are used automatically. AshitaMinimap still performs
+all rendering itself and does not require the plugin to draw.
 
 Without that optional metadata source, the catalog default page is shown and a
-40-yalm-cell fallback scale is used. Select another page with:
+40-yalm-cell fallback scale plus provisional `(255,256)` origin are used.
+Select another page with:
 
 ```text
 /aminimap page next
@@ -87,16 +88,24 @@ After each import:
 7. cycle a multi-page zone and restore automatic mode.
 
 The scale byte at page-record offset `+0x05` gives
-`image_pixels_per_yalm = 32 / (scale_byte * 10)`. Fallback origin `(255,256)`
-remains intentionally provisional. A production walkable structure still
-requires the full calibration and multi-position validation in
-`MAP_CALIBRATION.md`.
+`image_pixels_per_yalm = 32 / (scale_byte * 10)`. The plugin runtime's
+computed player position in map space is stored as doubles at `runtime + 0x18`
+and `runtime + 0x20`. The fallback origin is recovered each frame with:
 
-The signed values at page-record offsets `+0x0A` and `+0x0C` are not final
-source-image origin pixels. Treating their negations as `origin_x` and
-`origin_y` displaced Castle Oztroja's live markers far from its floor geometry.
-They require an additional stock-renderer transform that has not yet been
-derived; do not use them directly.
+```text
+origin_x = runtime_map_x - player_world_x * image_pixels_per_yalm
+origin_y = runtime_map_y + player_world_y * image_pixels_per_yalm
+```
+
+This is the stock renderer's final post-reconstruction coordinate space and
+therefore accounts for page-specific placement without a per-map table. It has
+been validated against Ru'Lude Gardens' authored calibration and live Castle
+Oztroja pages.
+
+The signed page-record values at `+0x0A` and `+0x0C` are diagnostic `OffsetX`
+and `OffsetY` metadata, not final source-image origin pixels. Treating their
+negations as `origin_x` and `origin_y` displaced Castle Oztroja's markers far
+from its floor geometry. Do not use them directly.
 
 ## Correcting a provisional fallback origin
 
@@ -115,8 +124,10 @@ Lua grid continue to align with the stock artwork as the world-to-image
 calibration changes. Because the values are source-image pixels, they remain
 valid across display sizes and user zoom levels.
 
-The adjustment is a correction on top of the provisional or authored base
-origin, not a replacement for it.
+The adjustment is a correction on top of the live-derived, provisional, or
+authored base origin, not a replacement for it. A saved correction should
+normally be unnecessary when the stock page matches the selected page; clear
+obsolete corrections created before live origin derivation was available.
 
 Use this as a user-level correction for a uniformly displaced fallback. An
 error that grows with distance is a scale problem, and a regional mismatch is

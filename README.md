@@ -149,12 +149,13 @@ are filled from the matching stock page, so Port Jeuno can pair its authored
 walkable structure with its vanilla page. A zone with no authored entry shows
 the vanilla page by itself.
 
-When the stock Minimap plugin is loaded, AshitaMinimap reads its current page
-number and map-scale byte for automatic page selection and marker scale. The
-renderer remains independent: if that plugin is unavailable, the imported
-catalog's default page and a safe fallback scale are used. Multi-page zones can
-always be changed manually with `/aminimap page next`, `prev`, or a page
-number; `/aminimap page auto` restores automatic selection.
+When the stock Minimap plugin is loaded, AshitaMinimap reads its current page,
+map-scale byte, and computed map-space center. Together with the live player
+position, those values determine the stock page's exact world origin
+automatically. The renderer remains independent: if that plugin is unavailable,
+the imported catalog's default page and safe provisional calibration are used.
+Multi-page zones can always be changed manually with `/aminimap page next`,
+`prev`, or a page number; `/aminimap page auto` restores automatic selection.
 
 See [Map import and calibration](docs/MAP_CALIBRATION.md) for the required
 source-data, page reconstruction, calibration, and multi-position validation

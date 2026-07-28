@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.3.1';
+addon.version   = '1.4.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -510,9 +510,17 @@ local function stock_minimap_info()
     local scale_raw = tonumber(safe_read(function ()
         return ashita.memory.read_uint8(map_info + 0x05);
     end, nil));
+    local map_x = tonumber(safe_read(function ()
+        return ashita.memory.read_double(runtime + 0x18);
+    end, nil));
+    local map_y = tonumber(safe_read(function ()
+        return ashita.memory.read_double(runtime + 0x20);
+    end, nil));
     return {
         page_id = page_id,
         scale_raw = scale_raw,
+        map_x = map_x,
+        map_y = map_y,
     };
 end
 
@@ -529,7 +537,7 @@ local function zone_name(zone_id)
     return 'Zone ' .. tostring(zone_id);
 end
 
-local function fallback_page(zone_id)
+local function fallback_page(zone_id, player)
     local zone = state.vanilla_maps[zone_id];
     if (type(zone) ~= 'table' or type(zone.pages) ~= 'table') then
         return nil;
@@ -556,28 +564,45 @@ local function fallback_page(zone_id)
     end
 
     local stock_matches_page = stock ~= nil
-        and (manual_page == nil or tonumber(stock.page_id) == page_id);
+        and tonumber(stock.page_id) == page_id;
     local scale_raw = stock_matches_page and tonumber(stock.scale_raw) or nil;
     local has_live_scale = scale_raw ~= nil and scale_raw > 0;
     if (scale_raw == nil or scale_raw <= 0) then
         scale_raw = 4;
     end
     local grid_yalms = scale_raw * 10;
+    local image_scale = 32 / grid_yalms;
+    local map_x = stock_matches_page and tonumber(stock.map_x) or nil;
+    local map_y = stock_matches_page and tonumber(stock.map_y) or nil;
+    local has_live_origin = player ~= nil
+        and map_x ~= nil
+        and map_y ~= nil
+        and map_x == map_x
+        and map_y == map_y
+        and math.abs(map_x) < 1000000
+        and math.abs(map_y) < 1000000;
+    local origin_x = has_live_origin
+        and (map_x - ((tonumber(player.x) or 0) * image_scale))
+        or 255.0;
+    local origin_y = has_live_origin
+        and (map_y + ((tonumber(player.y) or 0) * image_scale))
+        or 256.0;
     return {
         name = zone_name(zone_id),
         vanilla_image = image,
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
-        origin_x = 255.0,
-        origin_y = 256.0,
+        origin_x = origin_x,
+        origin_y = origin_y,
         grid_origin_x = 255.0,
         grid_origin_y = 256.0,
         grid_yalms = grid_yalms,
-        image_pixels_per_yalm = 32 / grid_yalms,
+        image_pixels_per_yalm = image_scale,
         page_id = page_id,
         fallback = true,
         live_scale = has_live_scale,
+        live_origin = has_live_origin,
     };
 end
 
@@ -627,7 +652,7 @@ local function map_for_player(player)
         return nil;
     end
     local authored = state.maps[player.zone_id];
-    local fallback = fallback_page(player.zone_id);
+    local fallback = fallback_page(player.zone_id, player);
     if (authored == nil) then
         return apply_origin_adjustment(fallback, player.zone_id);
     end
@@ -635,6 +660,9 @@ local function map_for_player(player)
         return apply_origin_adjustment(copy_table(authored), player.zone_id);
     end
     local merged = merge_table(copy_table(fallback), authored);
+    if (authored.origin_x ~= nil or authored.origin_y ~= nil) then
+        merged.live_origin = false;
+    end
     if (authored.image_pixels_per_yalm ~= nil or authored.grid_yalms ~= nil) then
         merged.live_scale = false;
     end
@@ -1139,17 +1167,21 @@ local function render_minimap()
     end
     if (map.fallback == true and map.page_id ~= nil) then
         local token = string.format(
-            '%d:%d:%s',
+            '%d:%d:%s:%s',
             player.zone_id,
             map.page_id,
-            tostring(map.live_scale == true));
+            tostring(map.live_scale == true),
+            tostring(map.live_origin == true));
         if (state.reported_fallback ~= token) then
             state.reported_fallback = token;
             log(string.format(
-                'Vanilla fallback: %s page %d (%s scale).',
+                'Vanilla fallback: %s page %d (%s scale, %s origin %.1f, %.1f).',
                 map.name or ('zone ' .. tostring(player.zone_id)),
                 map.page_id,
-                map.live_scale == true and 'stock' or 'default'));
+                map.live_scale == true and 'stock' or 'default',
+                map.live_origin == true and 'stock' or 'provisional',
+                tonumber(map.base_origin_x) or tonumber(map.origin_x) or 0,
+                tonumber(map.base_origin_y) or tonumber(map.origin_y) or 0));
         end
     end
 
@@ -1369,6 +1401,11 @@ local function render_config_window()
                     tonumber(config_map.base_origin_y) or 0,
                     tonumber(config_map.origin_adjustment_x) or 0,
                     tonumber(config_map.origin_adjustment_y) or 0));
+            if (config_map.live_origin == true) then
+                imgui.TextColored(
+                    { 0.65, 0.68, 0.70, 1.00 },
+                    'Base origin and map scale are computed from stock map state.');
+            end
             if (imgui.Button('Save calibration##ashitaminimap_origin_save', { 140, 0 })) then
                 local zones = state.settings.origin_adjustments;
                 zones[config_player.zone_id] = type(zones[config_player.zone_id]) == 'table'
