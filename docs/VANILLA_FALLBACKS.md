@@ -56,9 +56,10 @@ Therefore:
 
 ## Page and scale selection
 
-If `Minimap.dll` is loaded, its read-only current map page and scale byte are
-used automatically. AshitaMinimap still performs all rendering itself and does
-not require the plugin to draw.
+If `Minimap.dll` is loaded, its read-only current map-page record is used
+automatically. The 14-byte record provides the page ID, scale byte, and signed
+X/Y navigation-origin offsets. AshitaMinimap still performs all rendering
+itself and does not require the plugin to draw.
 
 Without that optional metadata source, the catalog default page is shown and a
 40-yalm-cell fallback scale is used. Select another page with:
@@ -86,9 +87,23 @@ After each import:
 6. test an authored zone, a structure-only zone, and an un-authored zone;
 7. cycle a multi-page zone and restore automatic mode.
 
-Fallback origin `(255,256)` is intentionally provisional. A production
-walkable structure still requires the full calibration and multi-position
-validation in `MAP_CALIBRATION.md`.
+When stock metadata is available for the active page, fallback navigation
+origin is:
+
+```text
+origin_x = -signed_int16(record + 0x0A)
+origin_y = -signed_int16(record + 0x0C)
+```
+
+The scale byte at `record + 0x05` gives
+`image_pixels_per_yalm = 32 / (scale_byte * 10)`. These fields vary by page;
+do not replace them with a global center or scale. Without the optional
+metadata source, origin `(255,256)` and a 40-yalm-cell scale remain provisional
+fallbacks.
+
+Authored map fields continue to override stock metadata. A production walkable
+structure still requires the full calibration and multi-position validation in
+`MAP_CALIBRATION.md`.
 
 ## Correcting a provisional fallback origin
 
@@ -106,6 +121,10 @@ underlying PNG and its recorded printed-grid anchor unchanged. This lets the
 Lua grid continue to align with the stock artwork as the world-to-image
 calibration changes. Because the values are source-image pixels, they remain
 valid across display sizes and user zoom levels.
+
+The adjustment is a correction on top of the stock or authored base origin,
+not a replacement for it. Set both adjustments to zero to use the page's
+metadata-derived origin directly.
 
 Use this as a user-level correction for a uniformly displaced fallback. An
 error that grows with distance is a scale problem, and a regional mismatch is

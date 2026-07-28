@@ -105,8 +105,11 @@ shift every displayed quadrant by a full row or column.
 5. Obtain the map's scale metadata. For known vanilla maps,
    `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
    repository-wide default as calibration.
-6. Determine the image pixel represented by world `(0, 0)`. That pixel becomes
-   `origin_x`, `origin_y` after all wrap and crop operations.
+6. Determine the image pixel represented by world `(0, 0)`. The stock
+   Minimap page record stores its negated signed coordinates at offsets
+   `+0x0A` and `+0x0C`; use those values when the page uses the same
+   reconstructed coordinate system. That pixel becomes `origin_x`, `origin_y`
+   after all wrap and crop operations.
    Separately record the printed H-8 cell center as `grid_origin_x`,
    `grid_origin_y` when it differs from world `(0, 0)`.
 7. Derive `image_pixels_per_yalm` from source metadata or at least two verified,
