@@ -102,9 +102,12 @@ shift every displayed quadrant by a full row or column.
    If collision geometry continues beyond a real zone-transition endpoint,
    record a narrow image-space exclusion rectangle that trims only the
    off-map tail. Never use broad exclusion boxes to reshape interior geometry.
-5. Obtain the map's scale metadata. For known vanilla maps,
-   `grid_yalms = map_scale_byte * 10`. Store the result per map; do not use a
-   repository-wide default as calibration.
+5. Obtain the map's scale metadata. Minimap.dll's coordinate converter proves
+   that `image_pixels_per_yalm = map_scale_byte / 5`. A 32-pixel vanilla grid
+   cell therefore spans `grid_yalms = 160 / map_scale_byte`. Store both results
+   per map; do not use a repository-wide default as calibration. The earlier
+   `32 / (map_scale_byte * 10)` formula only agrees when the scale byte is `4`
+   and mis-scales every other page.
 6. Determine the image pixel represented by world `(0, 0)`. When
    `Minimap.dll` is available, its runtime doubles at `runtime + 0x18` and
    `runtime + 0x20` are the final computed map-space position of the player.
@@ -183,6 +186,9 @@ Interpret mismatches by their pattern:
   discontinuous composite texture.
 - Small marker-only motion can come from game update timing; do not compensate
   for it by distorting the static map transform.
+- Entities from a different loaded floor can have valid X/Y coordinates but
+  belong to another map page. Filter dynamic entities by elevation before
+  judging scale or origin.
 
 Record the source DAT/page, wrap or crop values, calibration derivation, and
 validation positions in the map entry comments or an adjacent manifest when

@@ -88,7 +88,12 @@ After each import:
 7. cycle a multi-page zone and restore automatic mode.
 
 The scale byte at page-record offset `+0x05` gives
-`image_pixels_per_yalm = 32 / (scale_byte * 10)`. The plugin runtime's
+`image_pixels_per_yalm = scale_byte / 5`; a 32-pixel grid cell therefore spans
+`grid_yalms = 160 / scale_byte`. Minimap.dll's own coordinate-conversion
+routine performs this multiplication directly. The older
+`32 / (scale_byte * 10)` expression only produced the same result for scale
+byte `4` and caused live entities to spread incorrectly on every other scale.
+The plugin runtime's
 computed player position in map space is stored as doubles at `runtime + 0x18`
 and `runtime + 0x20`. The fallback origin is recovered each frame with:
 
@@ -101,6 +106,12 @@ This is the stock renderer's final post-reconstruction coordinate space and
 therefore accounts for page-specific placement without a per-map table. It has
 been validated against Ru'Lude Gardens' authored calibration and live Castle
 Oztroja pages.
+
+The stock renderer also rejects entities assigned to a different active map
+page. AshitaMinimap applies a zone-independent elevation tolerance before
+drawing live entities so monsters loaded from floors above or below do not
+pollute the current page. This same filter is used for every authored and
+fallback map; it is not a Castle-specific correction.
 
 The signed page-record values at `+0x0A` and `+0x0C` are diagnostic `OffsetX`
 and `OffsetY` metadata, not final source-image origin pixels. Treating their

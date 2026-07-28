@@ -176,6 +176,19 @@ lines.
 Temporarily shrinking both minimaps' entity dots makes center-to-center
 comparison easier. Restore normal marker size after calibration.
 
+For stock fallback pages, use the DLL's actual source-pixel scale:
+
+```text
+image_pixels_per_yalm = map_scale_byte / 5
+grid_yalms             = 160 / map_scale_byte
+```
+
+Do not restore the older reciprocal formula. It accidentally matches scale
+byte `4`, making initial maps look correct, but changes entity spread on every
+other scale. Also compare entity elevation with the player before rendering;
+loaded enemies on another floor can have plausible X/Y coordinates while
+belonging to a different active page.
+
 Use exact world coordinates from live game state. Never derive calibration
 coordinates from an `H-8` label or from an approximate screenshot.
 

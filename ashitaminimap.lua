@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.4.0';
+addon.version   = '1.4.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -19,6 +19,7 @@ local ZOOM_MIN = 0.25;
 local ZOOM_MAX = 20.00;
 local ZOOM_STEP = 1.12;
 local MARKER_REFERENCE_ZOOM = 4.41;
+local ENTITY_FLOOR_TOLERANCE = 8.0;
 
 local DEFAULTS = {
     visible = true,
@@ -438,21 +439,24 @@ local function current_player()
     local position = player ~= nil and safe_read(function () return player.Movement.LocalPosition; end, nil) or nil;
     local x = position ~= nil and tonumber(safe_read(function () return position.X; end, nil)) or nil;
     local y = position ~= nil and tonumber(safe_read(function () return position.Y; end, nil)) or nil;
+    local z = position ~= nil and tonumber(safe_read(function () return position.Z; end, nil)) or nil;
     local yaw = position ~= nil and tonumber(safe_read(function () return position.Yaw; end, nil)) or nil;
 
     if (index > 0) then
         x = x or tonumber(safe_read(function () return entity:GetLocalPositionX(index); end, nil));
         y = y or tonumber(safe_read(function () return entity:GetLocalPositionY(index); end, nil));
+        z = z or tonumber(safe_read(function () return entity:GetLocalPositionZ(index); end, nil));
         yaw = yaw or tonumber(safe_read(function () return entity:GetLocalPositionYaw(index); end, nil));
         yaw = yaw or tonumber(safe_read(function () return entity:GetHeading(index); end, nil));
     end
-    if (x == nil or y == nil or yaw == nil) then
+    if (x == nil or y == nil or z == nil or yaw == nil) then
         return nil;
     end
 
     return {
         x = x,
         y = y,
+        z = z,
         yaw = yaw,
         index = index,
         zone_id = tonumber(safe_read(function () return party:GetMemberZone(0); end, 0)) or 0,
@@ -570,8 +574,11 @@ local function fallback_page(zone_id, player)
     if (scale_raw == nil or scale_raw <= 0) then
         scale_raw = 4;
     end
-    local grid_yalms = scale_raw * 10;
-    local image_scale = 32 / grid_yalms;
+    -- Minimap.dll converts world coordinates to source pixels with
+    -- (scale_raw / 5), not 32 / (scale_raw * 10). The formulas only agree
+    -- when scale_raw is 4, which hid the error on the first maps.
+    local image_scale = scale_raw / 5;
+    local grid_yalms = 32 / image_scale;
     local map_x = stock_matches_page and tonumber(stock.map_x) or nil;
     local map_y = stock_matches_page and tonumber(stock.map_y) or nil;
     local has_live_origin = player ~= nil
@@ -603,6 +610,7 @@ local function fallback_page(zone_id, player)
         fallback = true,
         live_scale = has_live_scale,
         live_origin = has_live_origin,
+        stock_scale_raw = scale_raw,
     };
 end
 
@@ -892,7 +900,10 @@ local function draw_entities(draw_list, left, top, size, player, camera, scale, 
                 local name = tostring(safe_read(function () return entity:GetName(index); end, '') or '');
                 local x = tonumber(safe_read(function () return entity:GetLocalPositionX(index); end, nil));
                 local y = tonumber(safe_read(function () return entity:GetLocalPositionY(index); end, nil));
-                if (name ~= '' and x ~= nil and y ~= nil) then
+                local z = tonumber(safe_read(function () return entity:GetLocalPositionZ(index); end, nil));
+                local same_floor = z ~= nil
+                    and math.abs(z - player.z) <= ENTITY_FLOOR_TOLERANCE;
+                if (name ~= '' and x ~= nil and y ~= nil and same_floor) then
                     local kind = entity_kind(entity, index);
                     local enabled = (kind == 'player' and state.settings.show_players == true)
                         or (kind == 'npc' and state.settings.show_npcs == true)
@@ -1175,10 +1186,11 @@ local function render_minimap()
         if (state.reported_fallback ~= token) then
             state.reported_fallback = token;
             log(string.format(
-                'Vanilla fallback: %s page %d (%s scale, %s origin %.1f, %.1f).',
+                'Vanilla fallback: %s page %d (%s scale raw %d, %s origin %.1f, %.1f).',
                 map.name or ('zone ' .. tostring(player.zone_id)),
                 map.page_id,
                 map.live_scale == true and 'stock' or 'default',
+                tonumber(map.stock_scale_raw) or 0,
                 map.live_origin == true and 'stock' or 'provisional',
                 tonumber(map.base_origin_x) or tonumber(map.origin_x) or 0,
                 tonumber(map.base_origin_y) or tonumber(map.origin_y) or 0));
