@@ -1,8 +1,9 @@
 # Map authoring pitfalls and diagnostic playbook
 
-Read this with `MAP_CALIBRATION.md` before creating or correcting a map. This
-document records the failure modes discovered while building the production
-Windurst Woods map so a future task does not need the original chat history.
+Read this with `MAP_CALIBRATION.md` and `MAP_COMPONENT_AUDIT.md` before creating
+or correcting a map. These documents record the failures discovered while
+building and correcting production maps so a future task does not need the
+original chat history.
 
 ## Work in this order
 
@@ -191,6 +192,9 @@ Common symptoms:
 | --- | --- | --- |
 | Large blocky protrusions | Collision geometry rendered without sufficient navmesh filtering | Select only the seeded Detour-connected component |
 | Real walkable region missing | Model seam separates valid navmesh components | Add another verified walkable seed for that region |
+| Floor looks complete but omits stairs | Stair flights are isolated tiny components | Audit every transition and seed each verified fragment |
+| Bridge appears connected to path below | Disconnected floors were unioned into one PNG | Render ordered component textures with distinct floor styling |
+| Seed selects the wrong floor | Multiple polygons overlap the seed X/Y | Inspect containing polygon elevations and choose an unambiguous seed or verified elevation band |
 | Long straight tail at a zone exit | Collision continues past the useful transition endpoint | Add one narrow image-space exclusion at the tail |
 | Interior paths disappear | Exclusion is too broad | Remove it and trim only the proven off-map segment |
 | Roofs or platforms appear playable | All flat collision polygons were accepted | Require matching navmesh traversability |
@@ -203,6 +207,11 @@ world_y = -nav_z
 ```
 
 Apply that conversion to both vertices and seed coordinates.
+
+Component connectivity is a selection aid, not proof of route completeness.
+Before publishing, follow the mandatory classification and live-transition
+procedure in `MAP_COMPONENT_AUDIT.md`. Do not assume a plausible overview or a
+large selected polygon count proves that all walkable paths are present.
 
 ## Diagnose alignment from the mismatch pattern
 
@@ -241,10 +250,15 @@ coordinates from an `H-8` label or from an approximate screenshot.
 
 ## Runtime layer rules
 
-Production maps have only two independently controlled static layers:
+Production maps have only two independently controlled static source
+categories:
 
 1. optional vanilla reference;
 2. clean walkable structure.
+
+The walkable-structure category may use multiple ordered component textures for
+disconnected overlapping floors, stairs, and ramps. This preserves topology
+without creating extra user-facing layer toggles.
 
 Do not create separate static place-label or landmark layers. Labels and
 symbols remain available only through the optional vanilla layer. Dynamic
@@ -282,6 +296,12 @@ Before publishing a map:
 - regenerate each asset twice and compare hashes;
 - confirm all outputs are the expected dimensions;
 - inspect each output's alpha bounding box;
+- inventory and classify every plausible navmesh component;
+- record live positions on every floor and at the entrance, middle, and exit
+  of every transition;
+- confirm disconnected projected crossings retain separate boundaries and
+  cyan/violet floor styling;
+- treat any unclassified or unvisited plausible area as partial, not complete;
 - run `git diff --check`;
 - reload the installed addon and confirm its version in the game log;
 - document any zone-specific exception next to the map asset;

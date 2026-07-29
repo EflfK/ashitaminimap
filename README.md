@@ -171,6 +171,11 @@ playbook](docs/MAP_AUTHORING_PITFALLS.md) before adding another zone. It records
 the DAT-wrap, grid-origin, overview-boundary, navmesh, deployment, and mismatch
 diagnostics learned while completing Windurst Woods.
 
+For every authored structure map, follow the [required navmesh component and
+transition audit](docs/MAP_COMPONENT_AUDIT.md). It requires classification of
+all plausible components, live coverage checks for every floor and connector,
+and separate rendering for disconnected paths that overlap in two dimensions.
+
 ## Map asset status
 
 Metalworks uses exact vanilla DAT pixels as its geometry source and is

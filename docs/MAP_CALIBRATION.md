@@ -5,9 +5,10 @@ AshitaMinimap. Metalworks established the rendering transform; new maps should
 reuse that transform with map-specific metadata rather than being manually
 nudged until they look close.
 
-Read `MAP_AUTHORING_PITFALLS.md` as well. It contains the source-reconstruction,
-diagnostic, and live-deployment failures that are easy to repeat even when the
-calibration formulas are correct.
+Read `MAP_AUTHORING_PITFALLS.md` and `MAP_COMPONENT_AUDIT.md` as well. They
+contain source-reconstruction, coverage, topology, diagnostic, and
+live-deployment failures that are easy to repeat even when the calibration
+formulas are correct.
 
 ## What is universal
 
@@ -89,10 +90,12 @@ shift every displayed quadrant by a full row or column.
    every derived layer.
 4. Prefer collision OBJ geometry for a new walkable-area structure. Use the
    matching Detour navmesh to exclude flat but unreachable collision surfaces
-   such as roofs. Select the connected navmesh component from one verified
-   walkable world-coordinate seed. Add another verified seed when a legitimate
-   walkable region is separated by a model seam; never render every
-   disconnected polygon island. If geometry is unavailable, derive a clean
+   such as roofs. Inventory and classify plausible components before selecting
+   the connected component from a verified walkable world-coordinate seed.
+   Add verified seeds for legitimate floors, seams, stairs, ramps, and
+   landings; never render every disconnected polygon island. A seed is only
+   X/Y, so inspect all containing polygons and their elevations before using it
+   in an overlapping area. If geometry is unavailable, derive a clean
    structure layer from another deterministic source without promoting static
    labels or landmark symbols into separate runtime layers. The vanilla and
    structure outputs must have identical dimensions and pixel coordinates.
@@ -189,7 +192,15 @@ Validate a new map before calling it complete:
 7. Test at multiple user zoom levels. Static geometry, the player, entities,
    target rings, and the coordinate grid must scale around the same center.
 8. Toggle vanilla and structure independently and confirm neither layer moves.
-9. Check any additional floors or map variants separately.
+9. Check every additional floor or map variant separately.
+10. Audit every stair, ramp, bridge, elevator landing, and other transition at
+    its entrance, middle, and exit. At close zoom, the player marker must remain
+    over structure along the complete route.
+11. Classify every plausible nearby navmesh component as included main path,
+    included alternate floor, included connector, excluded with reason, or
+    unresolved. An unresolved component makes the map partial.
+12. Keep disconnected overlapping components in separate `structure_layers`
+    textures and confirm their boundaries do not form false 2D junctions.
 
 Interpret mismatches by their pattern:
 
@@ -205,9 +216,10 @@ Interpret mismatches by their pattern:
   belong to another map page. Filter dynamic entities by elevation before
   judging scale or origin.
 
-Record the source DAT/page, wrap or crop values, calibration derivation, and
-validation positions in the map entry comments or an adjacent manifest when
-adding the map. That provenance is part of the map asset.
+Record the source DAT/page, wrap or crop values, calibration derivation,
+component classification, transition-route positions, exclusions, and all
+other validation positions in the map entry comments or an adjacent manifest.
+That provenance is part of the map asset.
 
 ## Current automation boundary
 
