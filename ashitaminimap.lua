@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.11.1';
+addon.version   = '1.11.2';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -1833,6 +1833,17 @@ local function render_minimap()
                 layer.opacity * zoom_opacity,
                 visibility_boost);
         end
+        -- NM ranges sit immediately above the vanilla and authored pathing
+        -- layers. The grid and every marker type remain clearly above them.
+        local nm_spawn_hover = draw_nm_spawn_ranges(
+            draw_list,
+            left,
+            top,
+            size,
+            camera,
+            map,
+            scale,
+            player.z);
         draw_grid(draw_list, left, top, size, camera, map, scale);
         draw_coffer_spawns(
             draw_list,
@@ -1844,18 +1855,6 @@ local function render_minimap()
             scale,
             player.z);
         draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
-        -- NM ranges are a foreground reference overlay. Draw them after the
-        -- map, grid, coffers, and entities so their translucent veil never
-        -- appears buried beneath another map layer.
-        local nm_spawn_hover = draw_nm_spawn_ranges(
-            draw_list,
-            left,
-            top,
-            size,
-            camera,
-            map,
-            scale,
-            player.z);
         local player_screen_x = left + (size / 2) + ((player.x - camera.x) * scale);
         local player_screen_y = top + (size / 2) - ((player.y - camera.y) * scale);
         draw_player(

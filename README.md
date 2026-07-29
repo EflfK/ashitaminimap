@@ -125,10 +125,10 @@ The renderer draws map content in this order:
 2. optional calibrated vanilla map;
 3. calibrated map structure layers, preserving separate outlines for
    disconnected overlapping floors;
-4. coordinate grid;
-5. fixed possible coffer spawn references, when enabled for an authored zone;
-6. live entities;
-7. static NM spawn-range veils, when enabled for an authored zone;
+4. static NM spawn-range veils, when enabled for an authored zone;
+5. coordinate grid;
+6. fixed possible coffer spawn references, when enabled for an authored zone;
+7. live entities;
 8. player arrow;
 9. coordinate badge and unlocked-state hint.
 

@@ -124,9 +124,10 @@ the placeholder count shown in the hover card. The declared level is 66.
 Each verified starting point contributes one small translucent disc. Their
 overlap reads as a continuous area rather than 50 individual markers, while
 remaining faithful to the non-convex distribution of the source positions.
-The veil is a foreground overlay above the grid and markers, while the player
-arrow and hover card remain above it. The card stays fully readable even when
-the range itself uses other-floor opacity. No singular Amemet marker is drawn.
+The veil renders immediately above the vanilla and authored pathing layers.
+The grid, coffers, live markers, player arrow, and hover card all remain above
+it. The card stays fully readable even when the range itself uses other-floor
+opacity. No singular Amemet marker is drawn.
 
 This is intentionally static reference data. It neither checks whether Amemet
 is alive nor selects a current placeholder or location. The separate patrol
