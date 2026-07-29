@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.6.5';
+addon.version   = '1.7.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -812,7 +812,14 @@ local function map_for_player(player)
         merged.live_scale = false;
     end
     if (type(authored.structure_pages) == 'table') then
-        merged.structure_image = authored.structure_pages[map_page_key(merged)];
+        local page_structure = authored.structure_pages[map_page_key(merged)];
+        if (type(page_structure) == 'table') then
+            merged.structure_image = nil;
+            merged.structure_layers = page_structure;
+        else
+            merged.structure_image = page_structure;
+            merged.structure_layers = nil;
+        end
     end
     return apply_origin_adjustment(merged, player.zone_id);
 end

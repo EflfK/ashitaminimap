@@ -8,6 +8,10 @@ before adding, replacing, cropping, splitting, or recalibrating a map. Treat
 their validation and deployment checklists as required work, not optional
 background.
 
+Also read a zone-specific provenance document when one exists. Kuftal Tunnel
+work must read `docs/KUFTAL_TUNNEL.md` before changing its page rules,
+calibration, component selection, elevation bands, or structure assets.
+
 - Prefer a zone's intermediate collision OBJ plus matching Detour navmesh for
   accessible-area geometry. The OBJ preserves explicit triangles; the navmesh
   excludes flat but unreachable surfaces such as roofs. If those sources are

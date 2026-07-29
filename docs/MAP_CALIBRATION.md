@@ -153,8 +153,21 @@ shift every displayed quadrant by a full row or column.
 8. Add the resulting values to `ashitaminimap_maps.lua`.
 
 For a multi-page zone, use `structure_pages[page_id]` rather than one
-`structure_image` when the stock pages do not share identical geometry. The
-walkable-map generator accepts `--minimum-elevation` and
+`structure_image` when the stock pages do not share identical geometry. A page
+value may be either one image path or an ordered array of layer records using
+the same shape as `structure_layers`. Use the array form whenever a page has
+overlapping or disconnected elevations:
+
+```lua
+structure_pages = {
+    [1] = {
+        { image = 'assets/maps/example_lower.png' },
+        { image = 'assets/maps/example_main.png' },
+    },
+}
+```
+
+The walkable-map generator accepts `--minimum-elevation` and
 `--maximum-elevation` to isolate a verified Detour height band before
 connectivity filtering and rendering. Detour elevation is the navmesh
 vertex's second coordinate; record its bounds in the map provenance.

@@ -152,4 +152,68 @@ return {
         grid_yalms = 80,
         image_pixels_per_yalm = 0.40,
     },
+    [174] = {
+        name = 'Kuftal Tunnel',
+        stock_calibration = true,
+        -- Kuftal's four logical maps use non-contiguous stock page IDs.
+        -- Each page is an ordered set of separately rendered elevation
+        -- components so overlapping floors retain their own boundaries.
+        structure_pages = {
+            [1] = {
+                { image = 'assets/maps/174_01_lower_structure.png' },
+                { image = 'assets/maps/174_01_main_structure.png' },
+            },
+            [2] = {
+                { image = 'assets/maps/174_02_upper_structure.png' },
+                { image = 'assets/maps/174_02_lower_structure.png' },
+                { image = 'assets/maps/174_02_main_structure.png' },
+            },
+            [15] = {
+                { image = 'assets/maps/174_15_lower_structure.png' },
+                { image = 'assets/maps/174_15_upper_structure.png' },
+                { image = 'assets/maps/174_15_main_structure.png' },
+            },
+            [16] = {
+                { image = 'assets/maps/174_16_left_lower_structure.png' },
+                { image = 'assets/maps/174_16_right_lower_structure.png' },
+                { image = 'assets/maps/174_16_upper_structure.png' },
+                { image = 'assets/maps/174_16_main_structure.png' },
+            },
+        },
+        -- These rules also prevent the unrecorded overview artwork on page 0
+        -- from becoming the automatic fallback when Minimap.dll is unloaded.
+        page_rules = {
+            {
+                page_id = 15,
+                minimum_z = 15.0,
+                maximum_y = -10.0,
+            },
+            {
+                page_id = 16,
+                minimum_z = 15.0,
+                minimum_y = -10.0,
+            },
+            {
+                page_id = 1,
+                maximum_y = -175.0,
+                maximum_z = 15.0,
+            },
+            {
+                page_id = 2,
+                minimum_z = -100.0,
+                maximum_z = 100.0,
+            },
+        },
+        width = 512,
+        height = 512,
+        view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
+        -- Page 2 fallback values; each recorded page supplies its exact
+        -- origin and common 0.80 source scale at runtime.
+        origin_x = 208.0,
+        origin_y = 304.0,
+        grid_origin_x = 255.0,
+        grid_origin_y = 256.0,
+        grid_yalms = 40,
+        image_pixels_per_yalm = 0.80,
+    },
 }

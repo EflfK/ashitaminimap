@@ -1,0 +1,99 @@
+# Kuftal Tunnel map provenance
+
+Kuftal Tunnel is the reference for a multi-page dungeon whose logical maps,
+overlapping elevations, and transitional fragments must be authored together.
+Do not replace these layers with one unioned texture.
+
+## Stock records
+
+The installed `FFXiMain.dll` map table contains four 14-byte records for zone
+174. Page 0 artwork also exists in the DAT catalog, but it has no matching map
+record and is not one of the four logical maps.
+
+| Page | Scale byte | Source origin | Record offsets |
+| --- | ---: | ---: | ---: |
+| 1 | 4 | `(272, 96)` | `(-272, -96)` |
+| 2 | 4 | `(208, 304)` | `(-208, -304)` |
+| 15 | 4 | `(176, 160)` | `(-176, -160)` |
+| 16 | 4 | `(216, 304)` | `(-216, -304)` |
+
+All four pages therefore use `image_pixels_per_yalm = 0.8` and
+`grid_yalms = 40`. The logical-page correspondence was cross-checked against
+widely separated in-game coordinate references:
+
+- page 1: southern Western Altepa route near `(1, -220)`;
+- page 2: central map near `(1, -81)`;
+- page 15: southern upper map near `(120, -60)`;
+- page 16: northern upper map near `(110, 40)`.
+
+## Geometry sources and classification
+
+Sources:
+
+- collision OBJ: LandSandBoat `Kuftal_Tunnel.obj`;
+- Detour navmesh: `xiNavmeshes/Kuftal_Tunnel.nav`;
+- stock page images: local FFXI DAT imports `174_01`, `174_02`, `174_15`,
+  and `174_16`.
+
+The navmesh contains 3,259 polygons and 260 seam-connected components at a
+maximum step of `0.65`; 56 components contain at least five polygons. This is
+not evidence that the zone has 260 floors. Most small components are slopes,
+landings, narrow transition pieces, or collision fragments. The authored
+layers deliberately use elevation bands for the overview page and verified
+component seeds for the two upper pages.
+
+Detour elevation has the opposite sign from the player's Ashita Z in this
+zone. A player Z of about `-10` lies in raw Detour elevation `+7..+13`.
+Always record both conventions and never choose a band by sign intuition.
+
+| Page | Classification | Selection |
+| --- | --- | --- |
+| 1 | Main/current southern floor | raw elevation `5..15`, clipped to the recorded page extent |
+| 1 | Descending/deeper route | raw elevation `>=15`, clipped to the recorded page extent |
+| 2 | Main central elevation | raw elevation `-6..6` |
+| 2 | Upper alternate elevations | raw elevation `<=-6` |
+| 2 | Lower alternate elevations | raw elevation `>=6` |
+| 15 | Main upper component | seed `(126.245, -50.1)`, raw elevation `<=-17` |
+| 15 | Higher southern continuation | seed `(40.112, -186.667)`, raw elevation `<=-25` |
+| 15 | Lower north connector | seed `(64.112, 14.083)`, narrowly clipped to the stock connector |
+| 16 | Main upper component | seed `(36.528, 140.083)`, raw elevation `-25..-15` |
+| 16 | Higher room | seed `(56.112, 135.0)`, raw elevation `<=-25` |
+| 16 | Lower west connector | seed `(-49.43, 101.0)`, clipped to the stock page |
+| 16 | Lower east connector | seed `(179.695, 112.0)`, clipped to the stock page |
+
+Page 2 is the broad overview and intentionally shows all verified elevation
+bands. Cyan is the main map elevation; violet layers are alternate floors or
+connectors. Drawing the cyan layer last keeps the current logical floor legible
+where layers overlap.
+
+The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
+stock artwork remains visible there, while only navmesh-backed portions receive
+the structure overlay. Do not invent a permanently walkable polygon across the
+dynamic obstruction.
+
+## Automatic page rules
+
+When the stock Minimap plugin is not loaded, the DAT importer otherwise falls
+back to unrecorded page 0. Kuftal therefore has authored page rules:
+
+- player Z `>=15`, world Y `<-10`: page 15;
+- player Z `>=15`, world Y `>=-10`: page 16;
+- world Y `<=-175`, player Z `<=15`: page 1;
+- remaining navigable space: page 2.
+
+These rules are fallbacks as well as a guard against stale stock page state.
+Validate them at the page transitions whenever a live traversal is available.
+
+## Required regeneration audit
+
+For any future Kuftal edit:
+
+1. preserve all four recorded page transforms above;
+2. regenerate every layer twice and compare SHA-256 hashes;
+3. overlay each result on its exact stock page at source resolution;
+4. confirm page 1 at the southern route before changing other pages;
+5. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
+   lower connectors, and every visible stair or ramp;
+6. keep disconnected elevations in separate layer textures;
+7. deploy without overwriting `ashitaminimap_config.lua`, reload the addon, and
+   confirm the expected version and active page in the chat log.
