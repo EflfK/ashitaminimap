@@ -43,7 +43,15 @@ background.
   map as partial rather than assuming omitted components are inaccessible.
 - Preserve the user's installed `ashitaminimap_config.lua` when syncing addon
   updates into the game installation.
+- Do not add entity-name labels or recover entity names solely for minimap
+  display. AshitaMinimap intentionally limits dynamic entities to anonymous
+  dots, target styling, and the player arrow. The former entity-name rendering
+  capability was removed and must not be reintroduced.
 - Never assume a dark DAT seam is a page edge. Decode the complete texture and
   test for cyclic continuation before cropping.
 - Keep the navigation origin and printed H-8 grid origin separate when the
   vanilla artwork requires it.
+- Treat the current asset-validation steps as manual completion gates. There
+  is not yet an automated validator for page-to-asset references, PNG
+  dimensions and alpha, deterministic regeneration, or prohibited
+  entity-name rendering.

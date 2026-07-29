@@ -1,7 +1,9 @@
 # AshitaMinimap
 
 AshitaMinimap is a read-only Ashita v4 Lua addon that renders its own transparent
-minimap. It does not depend on the stock `Minimap.dll`.
+minimap. Rendering does not require the stock `Minimap.dll`; when available,
+the addon reads its active page and calibration state to improve automatic
+page selection.
 
 The first prototype includes:
 
@@ -56,6 +58,11 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
+
+Dynamic entities are intentionally anonymous. AshitaMinimap does not render
+entity-name labels and must not recover names solely for minimap display. That
+capability was deliberately removed; dots, target styling, and the player
+arrow are the supported dynamic representations.
 
 Unlock the map in the configuration window or with `/aminimap unlock`, then
 left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.
@@ -184,9 +191,11 @@ collision and navigation geometry to render only the accessible-area fill and
 its boundaries. Ru'Lude Gardens, Upper Jeuno, and Lower Jeuno also include
 committed reference layers. Port Jeuno obtains its optional vanilla layer from
 the local universal fallback import.
-Garlaige Citadel uses page-aware structure selection; its verified page 16
-layer is generated from a bounded Detour elevation band, while its remaining
-pages intentionally fall back to vanilla only.
+Garlaige Citadel uses page-aware structure selection. Pages 1 and 16 have
+authored layers generated from bounded Detour elevation bands; their
+calibration is registered, but the zone remains partial pending complete
+component and live-transition audits. Pages 2, 3, and 14 intentionally fall
+back to vanilla only.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.

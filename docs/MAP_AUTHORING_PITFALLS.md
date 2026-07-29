@@ -112,15 +112,18 @@ Use `structure_pages` keyed by the stock page ID:
 
 ```lua
 structure_pages = {
+    [1] = 'assets/maps/200_01_structure.png',
     [16] = 'assets/maps/200_16_structure.png',
 }
 ```
 
 An absent key deliberately produces vanilla-only fallback on that page.
-Garlaige Citadel is the reference case: page 16 is isolated with a verified
-Detour elevation band, while pages `1`, `2`, `3`, and `14` remain un-authored
-until their page membership can be proven. Shipping no structure is safer than
-flattening unrelated floors into a plausible-looking but false map.
+Garlaige Citadel is the reference case: pages 1 and 16 have distinct authored
+assets isolated with recorded Detour elevation bands and image footprints,
+while pages `2`, `3`, and `14` remain un-authored until their page membership
+can be proven. The two authored pages remain partial until their complete
+component and live-transition audits are recorded. Shipping no structure is
+safer than flattening unrelated floors into a plausible-looking but false map.
 
 The Minimap DLL's active-page pointer can remain on the previous page after an
 in-zone vertical transition such as falling through a hole. When a page has a
@@ -208,6 +211,21 @@ world_y = -nav_z
 
 Apply that conversion to both vertices and seed coordinates.
 
+For the LandSandBoat Citadel sources inspected so far, the remaining vertical
+axis also has opposite sign:
+
+```text
+live game player.z ≈ -Detour polygon nav_y
+```
+
+This is useful for diagnosing overlapping floors but must be confirmed from a
+live point and every nav polygon containing that world X/Y before choosing an
+elevation band. Garlaige page 1 provided the concrete check: live `z=-6`
+occupied a Detour polygon with mean elevation approximately `+6.7`; page 16's
+live `z=14..21` corresponds to the recorded Detour band `-21..-14`. Do not
+derive a band by sign conversion alone when slopes, landings, or overlapping
+polygons are present.
+
 Component connectivity is a selection aid, not proof of route completeness.
 Before publishing, follow the mandatory classification and live-transition
 procedure in `MAP_COMPONENT_AUDIT.md`. Do not assume a plausible overview or a
@@ -269,6 +287,27 @@ Both PNGs must have identical dimensions and real per-pixel alpha. Pixels
 outside the walkable structure must have alpha zero; a dark RGB value with
 nonzero alpha is not transparent.
 
+## Exclusion boxes are not guaranteed final alpha bounds
+
+`generate_walkable_map.py` currently applies `--exclude-box` while the
+supersampled polygon mask is still being processed. Morphological seam sealing
+and the final Lanczos resize occur afterward. Their antialiasing can create
+nonzero alpha one or more pixels beyond the requested exclusion edge.
+
+Always inspect the final alpha channel:
+
+```python
+from PIL import Image
+
+alpha_bounds = Image.open(output_path).convert("RGBA").getchannel("A").getbbox()
+```
+
+If a precise final boundary is required, move the generator exclusion inward
+by the measured expansion and regenerate, then record both the command-space
+exclusion and final alpha bounds in the map provenance. Garlaige page 1 needed
+a right exclusion beginning at x=290 to produce the intended final alpha bound
+at x=293. Never claim precision from the `--exclude-box` arguments alone.
+
 ## Live verification and deployment
 
 After changing addon code or assets:
@@ -308,3 +347,19 @@ Before publishing a map:
 - commit and push the verified repository state.
 
 For Windurst Woods, `assets/maps/241.md` is the concrete provenance example.
+
+## Current validation automation gaps
+
+The repository does not yet have automated checks for:
+
+- `structure_image`, `structure_pages`, and `structure_layers` paths that do
+  not exist;
+- mismatched layer dimensions, missing per-pixel alpha, or unexpected alpha
+  bounds;
+- nondeterministic asset regeneration;
+- incomplete page/component provenance or live route-audit evidence;
+- reintroduction of entity-name rendering.
+
+Until those checks exist, every item in the completion checklist above is a
+required manual gate. A clean Lua load and a visually plausible screenshot do
+not cover these gaps.

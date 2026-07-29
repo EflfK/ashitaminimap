@@ -13,7 +13,7 @@ Files are named by FFXI zone ID.
 - `244_vanilla.png` / `244_structure.png` /
   `244_stables_structure.png` — Upper Jeuno
 - `200_01_structure.png` / `200_16_structure.png` — Garlaige Citadel,
-  verified stock pages 1 and 16
+  authored stock pages 1 and 16 (partial coverage audit)
 - `245_vanilla.png` / `245_structure.png` — Lower Jeuno
 - `246_structure.png` — Port Jeuno walkable-area mask
 
