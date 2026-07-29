@@ -1,5 +1,14 @@
 # Required navmesh component and transition audit
 
+This component audit is only one part of completing a non-vanilla map. Any
+authored structure, calibration, path graph, or static overlay triggers the
+repository-wide **Non-vanilla map completeness invariant** in `AGENTS.md`.
+Before calling the map complete, its provenance must also account for Home
+Points, Survival Guides, Treasure Chests, Treasure Coffers, relevant
+notorious-monster references, and a page-owned navigation graph. Each static
+category must be populated, proven empty from a pinned source, or explicitly
+left unresolved. Missing data is not proof that a layer is empty.
+
 Read this document before creating, correcting, or declaring complete any
 authored walkable-structure map. It records the coverage failures found while
 correcting Ru'Lude Gardens and Upper Jeuno so they are not repeated without the

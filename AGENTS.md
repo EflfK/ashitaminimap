@@ -64,6 +64,43 @@ the user to restate the workflow:
    unavailable, clearly leave the map partial and report the exact remaining
    audit rather than lowering the completion standard.
 
+## Non-vanilla map completeness invariant
+
+Any zone or stock page that has any authored/non-vanilla content must undergo
+the complete-map workflow above. This applies even when the first change is
+small, such as one structure component, one corrected calibration value, one
+path graph, or one static marker. Do not treat a partly customized map as
+exempt from the remaining layer audit.
+
+For every authored zone and authored page, inventory and resolve all supported
+layer and reference categories:
+
+- optional calibrated vanilla reference artwork;
+- every walkable structure, alternate-floor, and transition component;
+- the map-owned navigation graph for every authored page;
+- Home Points;
+- Survival Guides;
+- Treasure Chests;
+- Treasure Coffers;
+- relevant notorious-monster points or spawn ranges;
+- guide/custom destination markers and computed-path compatibility.
+
+Every static reference category must be recorded as one of:
+
+- **populated** — all records from a pinned trustworthy source are present;
+- **verified empty** — the pinned source was checked and proves the zone has no
+  records of that type;
+- **unresolved** — source coverage, page membership, or floor membership is not
+  yet truthful enough to publish.
+
+An absent table or undocumented omission is never equivalent to verified
+empty. Record the source revision, coordinate conversion, record count, and
+page/floor assignment evidence in zone provenance. An unresolved category
+keeps the map explicitly partial; do not describe, document, or present that
+map as complete. Never guess a missing marker, duplicate a zone-wide marker
+onto every page, or remove page filtering merely to make a category appear
+filled.
+
 - Prefer a zone's intermediate collision OBJ plus matching Detour navmesh for
   accessible-area geometry. The OBJ preserves explicit triangles; the navmesh
   excludes flat but unreachable surfaces such as roofs. If those sources are
