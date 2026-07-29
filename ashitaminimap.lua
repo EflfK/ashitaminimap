@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.8.0';
+addon.version   = '1.8.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -32,6 +32,7 @@ local DEFAULTS = {
     show_map_structure = true,
     vanilla_opacity = 0.35,
     structure_opacity = 0.82,
+    inactive_floor_opacity = 0.14,
     structure_visibility_boost = 4,
     backdrop_opacity = 0.12,
     show_grid = true,
@@ -235,6 +236,9 @@ local function config_text()
         string.format('    vanilla_opacity = %.3f,', clamp(settings.vanilla_opacity, 0, 1)),
         string.format('    structure_opacity = %.3f,', clamp(settings.structure_opacity, 0, 1)),
         string.format(
+            '    inactive_floor_opacity = %.3f,',
+            clamp(settings.inactive_floor_opacity, 0, 1)),
+        string.format(
             '    structure_visibility_boost = %d,',
             math.floor(clamp(settings.structure_visibility_boost, 1, 12) + 0.5)),
         string.format('    backdrop_opacity = %.3f,', clamp(settings.backdrop_opacity, 0, 0.75)),
@@ -338,6 +342,8 @@ local function load_configuration()
     state.settings.pixels_per_yalm = clamp(loaded_zoom, ZOOM_MIN, ZOOM_MAX);
     state.settings.vanilla_opacity = clamp(state.settings.vanilla_opacity, 0, 1);
     state.settings.structure_opacity = clamp(state.settings.structure_opacity, 0, 1);
+    state.settings.inactive_floor_opacity =
+        clamp(state.settings.inactive_floor_opacity, 0, 1);
     state.settings.structure_visibility_boost =
         math.floor(clamp(state.settings.structure_visibility_boost, 1, 12) + 0.5);
     state.settings.backdrop_opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
@@ -1354,11 +1360,14 @@ local function render_minimap()
                             local is_current_floor =
                                 (minimum_z == nil or player_z >= minimum_z)
                                 and (maximum_z == nil or player_z <= maximum_z);
-                            local floor_opacity = is_current_floor
-                                and clamp(layer.current_opacity or 1, 0, 1)
-                                or clamp(layer.inactive_opacity or 0.16, 0, 1);
-                            opacity = opacity * floor_opacity;
+                            opacity = opacity * (is_current_floor
+                                and state.settings.structure_opacity
+                                or state.settings.inactive_floor_opacity);
+                        else
+                            opacity = opacity * state.settings.structure_opacity;
                         end
+                    else
+                        opacity = opacity * state.settings.structure_opacity;
                     end
                     structure_layers[#structure_layers + 1] = {
                         texture = texture,
@@ -1371,7 +1380,7 @@ local function render_minimap()
             if (texture ~= nil) then
                 structure_layers[1] = {
                     texture = texture,
-                    opacity = 1,
+                    opacity = state.settings.structure_opacity,
                 };
             end
         end
@@ -1439,7 +1448,7 @@ local function render_minimap()
                 map,
                 layer.texture,
                 scale,
-                state.settings.structure_opacity * layer.opacity,
+                layer.opacity,
                 state.settings.structure_visibility_boost);
         end
         draw_grid(draw_list, left, top, size, camera, map, scale);
@@ -1635,12 +1644,27 @@ local function render_config_window()
             math.floor(clamp(state.settings.structure_opacity, 0, 1) * 100 + 0.5),
         };
         if (imgui.SliderInt(
-                'Structure opacity##ashitaminimap_structure_opacity',
+                'Current floor opacity##ashitaminimap_structure_opacity',
                 structure_opacity_buffer,
                 0,
                 100,
                 '%d%%')) then
             state.settings.structure_opacity = structure_opacity_buffer[1] / 100;
+            mark_configuration_changed();
+        end
+
+        local inactive_floor_opacity_buffer = {
+            math.floor(
+                clamp(state.settings.inactive_floor_opacity, 0, 1) * 100 + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Other floors opacity##ashitaminimap_inactive_floor_opacity',
+                inactive_floor_opacity_buffer,
+                0,
+                100,
+                '%d%%')) then
+            state.settings.inactive_floor_opacity =
+                inactive_floor_opacity_buffer[1] / 100;
             mark_configuration_changed();
         end
 

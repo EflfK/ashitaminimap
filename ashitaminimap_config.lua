@@ -17,6 +17,7 @@ return {
     show_map_structure = true,
     vanilla_opacity = 0.35,
     structure_opacity = 0.82,
+    inactive_floor_opacity = 0.14,
     -- Re-render each alpha layer to strengthen faint extracted lines.
     structure_visibility_boost = 4,
     -- Optional dark square behind the map; set to 0 for fully transparent.

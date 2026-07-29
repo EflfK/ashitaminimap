@@ -49,7 +49,8 @@ calibration, component selection, elevation bands, or structure assets.
 - For multi-floor pages, give each floor layer truthful
   `minimum_player_z`/`maximum_player_z` bounds. Keep the matching current floor
   at full opacity and make nonmatching floors substantially fainter with
-  `inactive_opacity`; do not rely on color alone to show the player's floor.
+  the user-level `inactive_floor_opacity` setting; do not hardcode inactive
+  opacity per map or rely on color alone to show the player's floor.
 - A visually plausible overview is not coverage validation. Inspect close zoom
   and record live control points on every floor and at the entrance, middle,
   and exit of every transition. If full traversal is unavailable, document the

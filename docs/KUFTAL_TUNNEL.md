@@ -79,10 +79,10 @@ cyan stripes widen toward the cyan floor, violet stripes widen toward the
 violet floor, and both have equal width at the midpoint. Regenerate with
 radius `10`, stripe period `5`, direction `(-0.6,0.8)`, and alpha `190`.
 
-Every Kuftal floor layer declares player-Z bounds and
-`inactive_opacity = 0.14`. The matching floor remains at full structure
-opacity; all other floors stay visible only as faint context. Page 1 switches
-at player Z `-15`. Pages 2, 15, and 16 use the verified bands recorded in
+Every Kuftal floor layer declares player-Z bounds. The matching floor uses
+`structure_opacity`; all other floors use the independent
+`inactive_floor_opacity` setting (default `0.14`). Page 1 switches at player Z
+`-15`. Pages 2, 15, and 16 use the verified bands recorded in
 `ashitaminimap_maps.lua`.
 
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
@@ -114,8 +114,9 @@ For any future Kuftal edit:
 5. check that page 1 renders as one connected cyan base and one connected
    violet route, and that its transition stripes remain centered on the
    live-verified connector at `(290,252)`;
-6. cross every recorded Z boundary and confirm the player's floor becomes
-   fully opaque while every other floor fades to 14%;
+6. cross every recorded Z boundary and confirm the player's floor uses
+   **Current floor opacity** while every other floor uses **Other floors
+   opacity**;
 7. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
    lower connectors, and every visible stair or ramp;
 8. keep disconnected elevations in separate layer textures;

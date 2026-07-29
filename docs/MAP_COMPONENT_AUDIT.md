@@ -111,21 +111,23 @@ or use an opaque block, glyph, arrow, or invented connector.
 
 Color is secondary to opacity. Give each floor layer verified
 `minimum_player_z` and/or `maximum_player_z` bounds. The renderer keeps a
-matching layer at its normal opacity and multiplies a nonmatching layer by
-`inactive_opacity`:
+matching layer at the configured current-floor opacity and renders a
+nonmatching layer at the independently configured
+`inactive_floor_opacity`:
 
 ```lua
 {
     image = 'assets/maps/example_lower.png',
     maximum_player_z = -15.0,
-    inactive_opacity = 0.14,
 }
 ```
 
 Use narrow nonoverlapping Z ranges derived from live transition samples. A
 transition-only stripe layer may omit bounds and use a moderate fixed
-`opacity`. Do not make inactive floors fully invisible; they still provide
-orientation and warn about projected crossings.
+`opacity`. The config UI exposes **Current floor opacity** and **Other floors
+opacity** separately. Do not hardcode the inactive value in map metadata. Keep
+inactive floors faint but visible so they still provide orientation and warn
+about projected crossings.
 
 ## Required live route audit
 
