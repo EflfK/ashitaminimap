@@ -160,25 +160,79 @@ return {
         -- components so overlapping floors retain their own boundaries.
         structure_pages = {
             [1] = {
-                { image = 'assets/maps/174_01_main_structure.png' },
-                { image = 'assets/maps/174_01_lower_structure.png' },
-                { image = 'assets/maps/174_01_transition_structure.png' },
+                {
+                    image = 'assets/maps/174_01_main_structure.png',
+                    minimum_player_z = -14.9,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_01_lower_structure.png',
+                    maximum_player_z = -15.0,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_01_transition_structure.png',
+                    opacity = 0.72,
+                },
             },
             [2] = {
-                { image = 'assets/maps/174_02_upper_structure.png' },
-                { image = 'assets/maps/174_02_lower_structure.png' },
-                { image = 'assets/maps/174_02_main_structure.png' },
+                {
+                    image = 'assets/maps/174_02_upper_structure.png',
+                    minimum_player_z = 6.1,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_02_lower_structure.png',
+                    maximum_player_z = -6.1,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_02_main_structure.png',
+                    minimum_player_z = -6.0,
+                    maximum_player_z = 6.0,
+                    inactive_opacity = 0.14,
+                },
             },
             [15] = {
-                { image = 'assets/maps/174_15_lower_structure.png' },
-                { image = 'assets/maps/174_15_upper_structure.png' },
-                { image = 'assets/maps/174_15_main_structure.png' },
+                {
+                    image = 'assets/maps/174_15_lower_structure.png',
+                    maximum_player_z = 5.0,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_15_upper_structure.png',
+                    minimum_player_z = 25.1,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_15_main_structure.png',
+                    minimum_player_z = 5.1,
+                    maximum_player_z = 25.0,
+                    inactive_opacity = 0.14,
+                },
             },
             [16] = {
-                { image = 'assets/maps/174_16_left_lower_structure.png' },
-                { image = 'assets/maps/174_16_right_lower_structure.png' },
-                { image = 'assets/maps/174_16_upper_structure.png' },
-                { image = 'assets/maps/174_16_main_structure.png' },
+                {
+                    image = 'assets/maps/174_16_left_lower_structure.png',
+                    maximum_player_z = 14.9,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_16_right_lower_structure.png',
+                    maximum_player_z = 14.9,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_16_upper_structure.png',
+                    minimum_player_z = 25.1,
+                    inactive_opacity = 0.14,
+                },
+                {
+                    image = 'assets/maps/174_16_main_structure.png',
+                    minimum_player_z = 15.0,
+                    maximum_player_z = 25.0,
+                    inactive_opacity = 0.14,
+                },
             },
         },
         -- These rules also prevent the unrecorded overview artwork on page 0

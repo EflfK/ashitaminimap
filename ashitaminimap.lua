@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.7.3';
+addon.version   = '1.8.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -1342,11 +1342,27 @@ local function render_minimap()
                     and texture_for(image)
                     or nil;
                 if (texture ~= nil) then
+                    local opacity = type(layer) == 'table'
+                        and clamp(layer.opacity or 1, 0, 1)
+                        or 1;
+                    if (type(layer) == 'table') then
+                        local minimum_z = tonumber(layer.minimum_player_z);
+                        local maximum_z = tonumber(layer.maximum_player_z);
+                        local player_z = tonumber(player.z);
+                        if ((minimum_z ~= nil or maximum_z ~= nil)
+                                and player_z ~= nil) then
+                            local is_current_floor =
+                                (minimum_z == nil or player_z >= minimum_z)
+                                and (maximum_z == nil or player_z <= maximum_z);
+                            local floor_opacity = is_current_floor
+                                and clamp(layer.current_opacity or 1, 0, 1)
+                                or clamp(layer.inactive_opacity or 0.16, 0, 1);
+                            opacity = opacity * floor_opacity;
+                        end
+                    end
                     structure_layers[#structure_layers + 1] = {
                         texture = texture,
-                        opacity = type(layer) == 'table'
-                            and clamp(layer.opacity or 1, 0, 1)
-                            or 1,
+                        opacity = opacity,
                     };
                 end
             end

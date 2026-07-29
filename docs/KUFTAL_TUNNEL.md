@@ -48,7 +48,7 @@ Always record both conventions and never choose a band by sign intuition.
 
 | Page | Classification | Selection |
 | --- | --- | --- |
-| 1 | Continuous southern walkable base | all raw elevations, clipped to the recorded page extent, seam closure radius `1.25` |
+| 1 | Current southern floor | raw elevation `<=15`, clipped to the recorded page extent, seam closure radius `1.25` |
 | 1 | Descending/deeper route | raw elevation `>=15`, clipped to the recorded page extent |
 | 1 | Verified floor transition | path-clipped transverse cyan/violet stripes centered at source pixel `(290, 252)` |
 | 2 | Main central elevation | raw elevation `-6..6` |
@@ -67,8 +67,9 @@ bands. Cyan is the main map elevation; violet layers are alternate floors or
 connectors. Drawing the cyan layer last keeps the current logical floor legible
 where layers overlap.
 
-Page 1 uses the continuous navmesh union as its cyan base, then overlays the
-deeper route in violet. This prevents raw elevation thresholds from breaking
+Page 1 uses separately clipped cyan and violet floor assets. This prevents the
+current cyan layer from remaining bright underneath the inactive violet floor.
+The expanded seam closure prevents raw elevation thresholds from breaking
 walkable slopes and tile seams into dots. Both geometry layers use
 `--seam-closure-radius 1.25`; the default remains `0.25` for other maps. The
 verified live position `(22.445, -195.267, -9.982)` maps to source pixel
@@ -77,6 +78,12 @@ position toward the violet lower route. The stripes cross the path direction:
 cyan stripes widen toward the cyan floor, violet stripes widen toward the
 violet floor, and both have equal width at the midpoint. Regenerate with
 radius `10`, stripe period `5`, direction `(-0.6,0.8)`, and alpha `190`.
+
+Every Kuftal floor layer declares player-Z bounds and
+`inactive_opacity = 0.14`. The matching floor remains at full structure
+opacity; all other floors stay visible only as faint context. Page 1 switches
+at player Z `-15`. Pages 2, 15, and 16 use the verified bands recorded in
+`ashitaminimap_maps.lua`.
 
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
 stock artwork remains visible there, while only navmesh-backed portions receive
@@ -107,8 +114,10 @@ For any future Kuftal edit:
 5. check that page 1 renders as one connected cyan base and one connected
    violet route, and that its transition stripes remain centered on the
    live-verified connector at `(290,252)`;
-6. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
+6. cross every recorded Z boundary and confirm the player's floor becomes
+   fully opaque while every other floor fades to 14%;
+7. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
    lower connectors, and every visible stair or ramp;
-7. keep disconnected elevations in separate layer textures;
-8. deploy without overwriting `ashitaminimap_config.lua`, reload the addon, and
+8. keep disconnected elevations in separate layer textures;
+9. deploy without overwriting `ashitaminimap_config.lua`, reload the addon, and
    confirm the expected version and active page in the chat log.
