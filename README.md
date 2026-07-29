@@ -65,7 +65,7 @@ entity-name labels and must not recover names solely for minimap display. That
 capability was deliberately removed; dots, target styling, and the player
 arrow are the supported dynamic representations.
 
-Kuftal Tunnel can optionally draw hollow magenta rings at all authored
+Kuftal Tunnel can optionally draw filled gold coffer icons at all authored
 possible Treasure Coffer locations. These are fixed, page-filtered reference
 points for manual searching. The addon does not inspect the live coffer,
 identify which point is occupied, or mark its current location.

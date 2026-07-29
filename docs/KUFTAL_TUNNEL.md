@@ -101,8 +101,8 @@ location on that page remains visible for manual checking.
 
 This overlay is static reference data. It does not inspect entities, locate the
 currently spawned coffer, distinguish an occupied spawn point, or imply that a
-coffer is present. Hollow magenta rings distinguish these references from the
-solid live entity dots.
+coffer is present. Filled gold coffer icons distinguish these references from
+the solid live entity dots.
 
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
 stock artwork remains visible there, while only navmesh-backed portions receive

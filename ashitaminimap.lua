@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.9.0';
+addon.version   = '1.9.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -51,7 +51,7 @@ local DEFAULTS = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
         grid_text = { 0.82, 0.71, 0.51, 0.88 },
-        coffer_spawn = { 1.000, 0.314, 0.686, 0.98 },
+        coffer_spawn = { 1.000, 0.820, 0.200, 0.98 },
         player = { 0.18, 0.88, 0.90, 1.00 },
         other_player = { 0.275, 0.553, 1.000, 0.96 },
         npc = { 0.000, 0.784, 0.176, 0.96 },
@@ -143,6 +143,18 @@ local function color_text(value, fallback)
         tonumber(value[2]) or fallback[2],
         tonumber(value[3]) or fallback[3],
         tonumber(value[4]) or fallback[4]);
+end
+
+local function colors_match(left, right)
+    if (type(left) ~= 'table' or type(right) ~= 'table') then
+        return false;
+    end
+    for index = 1, 4 do
+        if (math.abs((tonumber(left[index]) or -1) - right[index]) > 0.0005) then
+            return false;
+        end
+    end
+    return true;
 end
 
 local function number_map_text(value)
@@ -343,6 +355,14 @@ local function load_configuration()
         or settings.landmark_opacity ~= nil
         or settings.label_visibility_boost ~= nil
         or settings.landmark_visibility_boost ~= nil;
+    local legacy_coffer_color = type(settings.colors) == 'table'
+        and colors_match(
+            settings.colors.coffer_spawn,
+            { 1.000, 0.314, 0.686, 0.98 });
+    if (legacy_coffer_color) then
+        state.settings.colors.coffer_spawn =
+            copy_table(DEFAULTS.colors.coffer_spawn);
+    end
     state.settings.size = clamp(state.settings.size, 120, 700);
     local loaded_zoom = tonumber(state.settings.pixels_per_yalm) or DEFAULTS.pixels_per_yalm;
     state.settings.pixels_per_yalm = clamp(loaded_zoom, ZOOM_MIN, ZOOM_MAX);
@@ -361,7 +381,8 @@ local function load_configuration()
         and state.settings.origin_adjustments
         or {};
     state.config_dirty = loaded_zoom ~= state.settings.pixels_per_yalm
-        or obsolete_layer_settings;
+        or obsolete_layer_settings
+        or legacy_coffer_color;
     state.config_changed_at = 0;
     state.dragging = false;
     state.origin_editor.zone_id = nil;
@@ -1107,7 +1128,7 @@ local function draw_coffer_spawns(draw_list, left, top, size, camera, map, scale
     local center_y = top + (size / 2);
     local active_page = tonumber(map.page_id);
     local shadow = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
-    local marker_color = color('coffer_spawn', { 1.000, 0.314, 0.686, 0.98 });
+    local marker_color = color('coffer_spawn', { 1.000, 0.820, 0.200, 0.98 });
 
     for _, marker in ipairs(map.coffer_spawns) do
         local marker_page = type(marker) == 'table'
@@ -1119,13 +1140,44 @@ local function draw_coffer_spawns(draw_list, left, top, size, camera, map, scale
                 and (marker_page == nil or marker_page == active_page)) then
             local screen_x = center_x + ((x - camera.x) * scale);
             local screen_y = center_y - ((y - camera.y) * scale);
-            if (screen_x >= left + 7 and screen_x <= left + size - 7
+            if (screen_x >= left + 8 and screen_x <= left + size - 8
                     and screen_y >= top + 7 and screen_y <= top + size - 7) then
-                -- A hollow magenta marker distinguishes fixed possible-spawn
-                -- references from solid live entity dots and target rings.
-                draw_list:AddCircleFilled({ screen_x, screen_y }, 7.0, shadow, 20);
-                draw_list:AddCircleFilled({ screen_x, screen_y }, 5.5, marker_color, 20);
-                draw_list:AddCircleFilled({ screen_x, screen_y }, 2.5, shadow, 16);
+                -- A filled gold coffer silhouette distinguishes fixed
+                -- possible-spawn references from live entity dots and rings.
+                draw_list:AddRectFilled(
+                    { screen_x - 8, screen_y - 7 },
+                    { screen_x + 8, screen_y + 1 },
+                    shadow,
+                    3.0);
+                draw_list:AddRectFilled(
+                    { screen_x - 8, screen_y - 1 },
+                    { screen_x + 8, screen_y + 7 },
+                    shadow,
+                    1.5);
+                draw_list:AddRectFilled(
+                    { screen_x - 7, screen_y - 6 },
+                    { screen_x + 7, screen_y },
+                    marker_color,
+                    2.5);
+                draw_list:AddRectFilled(
+                    { screen_x - 7, screen_y - 0.5 },
+                    { screen_x + 7, screen_y + 6 },
+                    marker_color,
+                    1.0);
+                draw_list:AddRectFilled(
+                    { screen_x - 7, screen_y - 1 },
+                    { screen_x + 7, screen_y + 1 },
+                    shadow);
+                draw_list:AddRectFilled(
+                    { screen_x - 2, screen_y - 2 },
+                    { screen_x + 2, screen_y + 3 },
+                    shadow,
+                    0.8);
+                draw_list:AddCircleFilled(
+                    { screen_x, screen_y + 0.5 },
+                    0.9,
+                    marker_color,
+                    8);
             end
         end
     end
