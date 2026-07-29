@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate a path-clipped color blend at a verified floor transition."""
+"""Generate directional floor-color stripes at a verified transition."""
 
 from __future__ import annotations
 
@@ -22,9 +22,19 @@ def parse_pair(value: str) -> tuple[float, float]:
         ) from exception
 
 
-def smoothstep(value: float) -> float:
-    value = min(1.0, max(0.0, value))
-    return value * value * (3.0 - 2.0 * value)
+def parse_rgb(value: str) -> tuple[int, int, int]:
+    parts = value.split(",")
+    if len(parts) != 3:
+        raise argparse.ArgumentTypeError("RGB must contain three channels")
+    try:
+        color = tuple(int(part) for part in parts)
+    except ValueError as exception:
+        raise argparse.ArgumentTypeError(
+            "RGB channels must be integers"
+        ) from exception
+    if any(channel < 0 or channel > 255 for channel in color):
+        raise argparse.ArgumentTypeError("RGB channels must be from 0 to 255")
+    return color
 
 
 def arguments() -> argparse.Namespace:
@@ -39,8 +49,14 @@ def arguments() -> argparse.Namespace:
         help="source-pixel vector pointing toward the alternate floor",
     )
     parser.add_argument("--radius", type=float, default=18.0)
-    parser.add_argument("--rgb", default="122,86,160")
-    parser.add_argument("--maximum-alpha", type=int, default=190)
+    parser.add_argument("--stripe-period", type=float, default=6.0)
+    parser.add_argument("--main-rgb", type=parse_rgb, default=(64, 211, 205))
+    parser.add_argument(
+        "--alternate-rgb",
+        type=parse_rgb,
+        default=(166, 115, 213),
+    )
+    parser.add_argument("--alpha", type=int, default=210)
     return parser.parse_args()
 
 
@@ -48,12 +64,10 @@ def main() -> None:
     args = arguments()
     if args.radius <= 0:
         raise ValueError("--radius must be positive")
-    if not 0 <= args.maximum_alpha <= 255:
-        raise ValueError("--maximum-alpha must be between 0 and 255")
-
-    color = tuple(int(part) for part in args.rgb.split(","))
-    if len(color) != 3 or any(channel < 0 or channel > 255 for channel in color):
-        raise ValueError("--rgb must contain three channels from 0 to 255")
+    if args.stripe_period <= 0:
+        raise ValueError("--stripe-period must be positive")
+    if not 0 <= args.alpha <= 255:
+        raise ValueError("--alpha must be between 0 and 255")
 
     direction_length = math.hypot(*args.direction)
     if direction_length <= 0:
@@ -75,30 +89,32 @@ def main() -> None:
     bottom = min(geometry.height, math.ceil(center_y + radius + 1))
     for y in range(top, bottom):
         for x in range(left, right):
-            geometry_opacity = alpha[x, y] / 255.0
-            if geometry_opacity <= 0:
+            coverage = min(1.0, alpha[x, y] / 64.0)
+            if coverage <= 0:
                 continue
             offset_x = x - center_x
             offset_y = y - center_y
-            distance = math.hypot(offset_x, offset_y)
-            if distance > radius:
+            if math.hypot(offset_x, offset_y) > radius:
                 continue
 
-            projection = (
-                offset_x * direction_x + offset_y * direction_y
-            ) / radius
-            directional_weight = smoothstep((projection + 0.65) / 1.3)
-            radial_weight = smoothstep((radius - distance) / (radius * 0.35))
-            weight = directional_weight * radial_weight
-            pixels[x, y] = (
-                *color,
-                round(args.maximum_alpha * geometry_opacity * weight),
+            # Constant projection creates bands perpendicular to the path.
+            # The main-color share shrinks from 90% to 10% as the bands
+            # approach the alternate floor; its share is 50% at the center.
+            projection = offset_x * direction_x + offset_y * direction_y
+            floor_progress = min(1.0, max(0.0, (projection / radius + 1) / 2))
+            main_share = 0.90 - 0.80 * floor_progress
+            phase = ((projection + radius) % args.stripe_period) / (
+                args.stripe_period
             )
+            color = (
+                args.main_rgb if phase < main_share else args.alternate_rgb
+            )
+            pixels[x, y] = (*color, round(args.alpha * coverage))
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     output.save(args.output)
     print(
-        f"wrote {args.output}: gradient center {args.center}, "
+        f"wrote {args.output}: stripe center {args.center}, "
         f"direction {args.direction}"
     )
 

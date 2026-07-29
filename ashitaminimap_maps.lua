@@ -161,8 +161,8 @@ return {
         structure_pages = {
             [1] = {
                 { image = 'assets/maps/174_01_main_structure.png' },
-                { image = 'assets/maps/174_01_transition_structure.png' },
                 { image = 'assets/maps/174_01_lower_structure.png' },
+                { image = 'assets/maps/174_01_transition_structure.png' },
             },
             [2] = {
                 { image = 'assets/maps/174_02_upper_structure.png' },

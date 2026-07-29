@@ -50,7 +50,7 @@ Always record both conventions and never choose a band by sign intuition.
 | --- | --- | --- |
 | 1 | Continuous southern walkable base | all raw elevations, clipped to the recorded page extent, seam closure radius `1.25` |
 | 1 | Descending/deeper route | raw elevation `>=15`, clipped to the recorded page extent |
-| 1 | Verified floor transition | path-clipped cyan/violet gradient centered at source pixel `(290, 252)` |
+| 1 | Verified floor transition | path-clipped transverse cyan/violet stripes centered at source pixel `(290, 252)` |
 | 2 | Main central elevation | raw elevation `-6..6` |
 | 2 | Upper alternate elevations | raw elevation `<=-6` |
 | 2 | Lower alternate elevations | raw elevation `>=6` |
@@ -72,9 +72,11 @@ deeper route in violet. This prevents raw elevation thresholds from breaking
 walkable slopes and tile seams into dots. Both geometry layers use
 `--seam-closure-radius 1.25`; the default remains `0.25` for other maps. The
 verified live position `(22.445, -195.267, -9.982)` maps to source pixel
-`(290,252)`. A small geometry-clipped gradient points southwest from that
-position toward the violet lower route. It blends the two floor colors without
-covering the path.
+`(290,252)`. A small geometry-clipped stripe field points southwest from that
+position toward the violet lower route. The stripes cross the path direction:
+cyan stripes widen toward the cyan floor, violet stripes widen toward the
+violet floor, and both have equal width at the midpoint. Regenerate with
+radius `10`, stripe period `5`, direction `(-0.6,0.8)`, and alpha `190`.
 
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
 stock artwork remains visible there, while only navmesh-backed portions receive
@@ -103,7 +105,7 @@ For any future Kuftal edit:
 3. overlay each result on its exact stock page at source resolution;
 4. confirm page 1 at the southern route before changing other pages;
 5. check that page 1 renders as one connected cyan base and one connected
-   violet route, and that its transition gradient remains centered on the
+   violet route, and that its transition stripes remain centered on the
    live-verified connector at `(290,252)`;
 6. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
    lower connectors, and every visible stair or ramp;
