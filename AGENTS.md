@@ -12,6 +12,40 @@ Also read a zone-specific provenance document when one exists. Kuftal Tunnel
 work must read `docs/KUFTAL_TUNNEL.md` before changing its page rules,
 calibration, component selection, elevation bands, or structure assets.
 
+## Production-map shorthand
+
+When the user says `complete map <zone>`, treat it as a request to finish that
+zone's production map end to end and make it visible in game without requiring
+the user to restate the workflow:
+
+1. Follow every map-authoring document and use exact stock calibration plus
+   deterministic collision/navigation sources.
+2. Generate, inventory, and classify every plausible component as main path,
+   alternate floor, connector, excluded with evidence, or unresolved. Preserve
+   overlapping floors as separate cyan/violet layers with verified player-Z
+   bounds and transition treatments.
+3. Conduct the required attended live route audit. Give the user concise
+   destinations to visit, capture entrance/middle/exit positions for every
+   floor transition, and continue when live evidence arrives. Never substitute
+   an overview image for traversal evidence or call unresolved work complete.
+4. Add display-only static references for all verified Treasure Chest or
+   Treasure Coffer locations and relevant notorious-monster spawn points or
+   ranges available from trustworthy CatsEyeXI-compatible data. Record their
+   provenance and page/floor metadata. Do not add live detection, status
+   reporting, entity-name recovery, commands, movement, or automation.
+5. Register every finished asset and overlay in `ashitaminimap_maps.lua`,
+   document complete provenance, regenerate twice, and verify deterministic
+   hashes, referenced paths, dimensions, alpha, calibration, floor/page
+   filtering, overview zoom, close zoom, and marker placement.
+6. Preserve the installed user configuration, sync the finished addon into the
+   game installation, reload it through AshitaDevTools, and verify the expected
+   version and behavior in the live log and game.
+7. Finish the repository workflow: update relevant documentation, commit only
+   the intended work in one request-specific commit, and push `main` to
+   `origin/main`. If required live traversal or authoritative source data is
+   unavailable, clearly leave the map partial and report the exact remaining
+   audit rather than lowering the completion standard.
+
 - Prefer a zone's intermediate collision OBJ plus matching Detour navmesh for
   accessible-area geometry. The OBJ preserves explicit triangles; the navmesh
   excludes flat but unreachable surfaces such as roofs. If those sources are
