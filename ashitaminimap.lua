@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.8.3';
+addon.version   = '1.9.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -39,6 +39,7 @@ local DEFAULTS = {
     backdrop_opacity = 0.12,
     show_grid = true,
     show_coordinate = true,
+    show_coffer_spawns = true,
     show_players = true,
     show_npcs = true,
     show_monsters = true,
@@ -50,6 +51,7 @@ local DEFAULTS = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
         grid_text = { 0.82, 0.71, 0.51, 0.88 },
+        coffer_spawn = { 1.000, 0.314, 0.686, 0.98 },
         player = { 0.18, 0.88, 0.90, 1.00 },
         other_player = { 0.275, 0.553, 1.000, 0.96 },
         npc = { 0.000, 0.784, 0.176, 0.96 },
@@ -247,6 +249,7 @@ local function config_text()
         '',
         string.format('    show_grid = %s,', bool_text(settings.show_grid)),
         string.format('    show_coordinate = %s,', bool_text(settings.show_coordinate)),
+        string.format('    show_coffer_spawns = %s,', bool_text(settings.show_coffer_spawns)),
         string.format('    show_players = %s,', bool_text(settings.show_players)),
         string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
@@ -263,6 +266,7 @@ local function config_text()
         string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
         string.format('        grid = %s,', color_text(colors.grid, DEFAULTS.colors.grid)),
         string.format('        grid_text = %s,', color_text(colors.grid_text, DEFAULTS.colors.grid_text)),
+        string.format('        coffer_spawn = %s,', color_text(colors.coffer_spawn, DEFAULTS.colors.coffer_spawn)),
         string.format('        player = %s,', color_text(colors.player, DEFAULTS.colors.player)),
         string.format('        other_player = %s,', color_text(colors.other_player, DEFAULTS.colors.other_player)),
         string.format('        npc = %s,', color_text(colors.npc, DEFAULTS.colors.npc)),
@@ -1093,6 +1097,40 @@ local function draw_entities(draw_list, left, top, size, player, camera, scale, 
     end
 end
 
+local function draw_coffer_spawns(draw_list, left, top, size, camera, map, scale)
+    if (state.settings.show_coffer_spawns ~= true
+            or type(map.coffer_spawns) ~= 'table') then
+        return;
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local active_page = tonumber(map.page_id);
+    local shadow = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
+    local marker_color = color('coffer_spawn', { 1.000, 0.314, 0.686, 0.98 });
+
+    for _, marker in ipairs(map.coffer_spawns) do
+        local marker_page = type(marker) == 'table'
+            and tonumber(marker.page_id)
+            or nil;
+        local x = type(marker) == 'table' and tonumber(marker.x) or nil;
+        local y = type(marker) == 'table' and tonumber(marker.y) or nil;
+        if (x ~= nil and y ~= nil
+                and (marker_page == nil or marker_page == active_page)) then
+            local screen_x = center_x + ((x - camera.x) * scale);
+            local screen_y = center_y - ((y - camera.y) * scale);
+            if (screen_x >= left + 7 and screen_x <= left + size - 7
+                    and screen_y >= top + 7 and screen_y <= top + size - 7) then
+                -- A hollow magenta marker distinguishes fixed possible-spawn
+                -- references from solid live entity dots and target rings.
+                draw_list:AddCircleFilled({ screen_x, screen_y }, 7.0, shadow, 20);
+                draw_list:AddCircleFilled({ screen_x, screen_y }, 5.5, marker_color, 20);
+                draw_list:AddCircleFilled({ screen_x, screen_y }, 2.5, shadow, 16);
+            end
+        end
+    end
+end
+
 local function draw_player(draw_list, center_x, center_y, yaw, visual_scale)
     local heading_x = math.cos(yaw);
     local heading_y = math.sin(yaw);
@@ -1456,6 +1494,7 @@ local function render_minimap()
                 state.settings.structure_visibility_boost);
         end
         draw_grid(draw_list, left, top, size, camera, map, scale);
+        draw_coffer_spawns(draw_list, left, top, size, camera, map, scale);
         draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
         local player_screen_x = left + (size / 2) + ((player.x - camera.x) * scale);
         local player_screen_y = top + (size / 2) - ((player.y - camera.y) * scale);
@@ -1709,6 +1748,9 @@ local function render_config_window()
         imgui.Separator();
         config_checkbox('Coordinate grid##ashitaminimap_grid', 'show_grid');
         config_checkbox('Coordinate badge##ashitaminimap_coordinate', 'show_coordinate');
+        config_checkbox(
+            'Possible coffer spawns##ashitaminimap_coffer_spawns',
+            'show_coffer_spawns');
         config_checkbox('Players##ashitaminimap_players', 'show_players');
         config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
         config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');

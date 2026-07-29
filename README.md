@@ -54,6 +54,7 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - adjustable structure line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
+- possible coffer spawn references for authored zones that provide them;
 - player, NPC, and monster dot markers;
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
@@ -63,6 +64,11 @@ Dynamic entities are intentionally anonymous. AshitaMinimap does not render
 entity-name labels and must not recover names solely for minimap display. That
 capability was deliberately removed; dots, target styling, and the player
 arrow are the supported dynamic representations.
+
+Kuftal Tunnel can optionally draw hollow magenta rings at all authored
+possible Treasure Coffer locations. These are fixed, page-filtered reference
+points for manual searching. The addon does not inspect the live coffer,
+identify which point is occupied, or mark its current location.
 
 Unlock the map in the configuration window or with `/aminimap unlock`, then
 left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.
@@ -110,8 +116,9 @@ The renderer draws map content in this order:
 3. calibrated map structure layers, preserving separate outlines for
    disconnected overlapping floors;
 4. coordinate grid;
-5. live entities and player arrow;
-6. coordinate badge and unlocked-state hint.
+5. fixed possible coffer spawn references, when enabled for an authored zone;
+6. live entities and player arrow;
+7. coordinate badge and unlocked-state hint.
 
 Windurst Woods and the four Jeuno city zones use production dark-tactical
 maps. Their structure layers are filled walkable-area masks generated from

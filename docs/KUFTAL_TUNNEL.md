@@ -85,6 +85,25 @@ Every Kuftal floor layer declares player-Z bounds. The matching floor uses
 `-15`. Pages 2, 15, and 16 use the verified bands recorded in
 `ashitaminimap_maps.lua`.
 
+## Possible coffer spawn references
+
+Kuftal has an optional marker overlay containing 13 fixed possible Treasure
+Coffer locations. The positions come from CatsEyeXI's public
+`scripts/globals/treasure.lua` Kuftal table and match the corresponding
+LandSandBoat data. Its `setPos` tuples store
+`(x, vertical, horizontal)`, so the last two values are converted to
+AshitaMinimap's `(x, y, z)` convention.
+
+Twelve locations belong to stock page 2. The deeper location at
+`(-27.946, -183.709, -21.825)` belongs to page 1. Markers are filtered only by
+the active stock page, not by the player's current elevation, so every possible
+location on that page remains visible for manual checking.
+
+This overlay is static reference data. It does not inspect entities, locate the
+currently spawned coffer, distinguish an occupied spawn point, or imply that a
+coffer is present. Hollow magenta rings distinguish these references from the
+solid live entity dots.
+
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
 stock artwork remains visible there, while only navmesh-backed portions receive
 the structure overlay. Do not invent a permanently walkable polygon across the
