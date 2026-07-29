@@ -90,6 +90,12 @@ away from the displayed route triggers a new shortest-path calculation. The
 compact map status strip reports remaining route distance. Turning the
 **AshitaGuide shortest path** setting off leaves the destination marker intact.
 
+Right-click an empty location on the map to place a temporary cyan custom
+waypoint. Its shortest path takes priority over the current AshitaGuide
+destination. Right-click the custom waypoint again to remove it; when a guide
+is active, its destination marker and path immediately regain priority. The
+custom waypoint is session-only and remains display-only.
+
 Navigation graphs are deterministic build artifacts generated from the same
 verified Detour source used for authored walkable structure. They are
 display-only and never move, target, interact, queue commands, or automate

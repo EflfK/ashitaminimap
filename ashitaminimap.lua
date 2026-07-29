@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.0';
+addon.version   = '1.13.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -107,6 +107,7 @@ local state = {
         last_attempt = 0,
         last_error = nil,
     },
+    custom_waypoint = nil,
 };
 
 local function safe_read(callback, fallback)
@@ -598,6 +599,17 @@ state.active_guide_markers = function (player)
     return payload.markers;
 end
 
+state.active_custom_waypoint = function (player, map)
+    local waypoint = state.custom_waypoint;
+    if (type(waypoint) ~= 'table'
+            or waypoint.zone_id ~= player.zone_id
+            or (waypoint.page_id ~= nil
+                and tonumber(map.page_id) ~= waypoint.page_id)) then
+        return nil;
+    end
+    return waypoint;
+end
+
 state.path_graph_for = function (zone_id)
     if (state.path_graphs[zone_id] ~= nil) then
         return state.path_graphs[zone_id] ~= false
@@ -796,8 +808,9 @@ state.ensure_guide_path = function (player, map)
         state.guide_path.route = nil;
         return nil;
     end
+    local custom_waypoint = state.active_custom_waypoint(player, map);
     local markers = state.active_guide_markers(player);
-    local destination = markers[1];
+    local destination = custom_waypoint or markers[1];
     if (destination == nil
             or (destination.map_id ~= nil
                 and tonumber(map.page_id) ~= destination.map_id)) then
@@ -816,6 +829,7 @@ state.ensure_guide_path = function (player, map)
     local route = state.guide_path.route;
     local same_destination = route ~= nil
         and route.zone_id == player.zone_id
+        and route.destination_source == (custom_waypoint ~= nil and 'custom' or 'guide')
         and math.abs(route.destination_x - destination.x) < 0.1
         and math.abs(route.destination_y - destination.y) < 0.1;
     if (same_destination) then
@@ -861,6 +875,7 @@ state.ensure_guide_path = function (player, map)
         zone_id = player.zone_id,
         destination_x = destination.x,
         destination_y = destination.y,
+        destination_source = custom_waypoint ~= nil and 'custom' or 'guide',
         points = points,
     };
     route.projection = state.path_projection(route, player.x, player.y);
@@ -2029,15 +2044,60 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
     draw_list:AddText(
         { left + 10, panel_top + 5 },
         text_color,
-        string.format('GUIDE PATH   %.0fy remaining', route.projection.remaining));
+        string.format(
+            '%s   %.0fy remaining',
+            route.destination_source == 'custom'
+                and 'CUSTOM WAYPOINT'
+                or 'GUIDE PATH',
+            route.projection.remaining));
     draw_list:AddText(
         { left + 10, panel_top + 21 },
         accent,
-        'Shortest route from map navigation graph');
+        route.destination_source == 'custom'
+            and 'Right-click waypoint to clear'
+            or 'Shortest route from map navigation graph');
     draw_list:AddText(
         { left + size - 63, panel_top + 21 },
         accent,
         'PATH ON');
+end
+
+state.draw_custom_waypoint = function (
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale)
+    local waypoint = state.active_custom_waypoint(player, map);
+    if (waypoint == nil) then
+        return;
+    end
+    local marker_x, marker_y, offscreen = state.custom_waypoint_screen(
+        left,
+        top,
+        size,
+        camera,
+        scale,
+        waypoint);
+    local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
+    local fill = imgui.GetColorU32({ 0.10, 0.86, 1.00, 1.00 });
+    local radius = offscreen and 9 or 8;
+    draw_list:AddCircleFilled({ marker_x, marker_y }, radius + 2, outline, 20);
+    draw_list:AddCircleFilled({ marker_x, marker_y }, radius, fill, 20);
+    draw_list:AddCircle({ marker_x, marker_y }, radius + 4, fill, 20, 2.0);
+    draw_list:AddLine(
+        { marker_x - 4, marker_y },
+        { marker_x + 4, marker_y },
+        outline,
+        2.0);
+    draw_list:AddLine(
+        { marker_x, marker_y - 4 },
+        { marker_x, marker_y + 4 },
+        outline,
+        2.0);
 end
 
 state.draw_guide_markers = function (
@@ -2049,6 +2109,9 @@ state.draw_guide_markers = function (
         camera,
         map,
         scale)
+    if (state.active_custom_waypoint(player, map) ~= nil) then
+        return;
+    end
     local current_page = tonumber(map.page_id);
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
@@ -2266,6 +2329,75 @@ local function mouse_over_map(left, top, size)
         mouse_y;
 end
 
+state.custom_waypoint_screen = function (
+        left,
+        top,
+        size,
+        camera,
+        scale,
+        waypoint)
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local screen_x = center_x + ((waypoint.x - camera.x) * scale);
+    local screen_y = center_y - ((waypoint.y - camera.y) * scale);
+    local margin = 12;
+    return clamp(screen_x, left + margin, left + size - margin),
+        clamp(screen_y, top + margin, top + size - margin),
+        screen_x ~= clamp(screen_x, left + margin, left + size - margin)
+            or screen_y ~= clamp(screen_y, top + margin, top + size - margin);
+end
+
+local function handle_custom_waypoint_input(
+        left,
+        top,
+        size,
+        player,
+        map,
+        camera,
+        scale)
+    local hovered, mouse_x, mouse_y = mouse_over_map(left, top, size);
+    if (not hovered
+            or safe_read(function () return imgui.IsMouseClicked(1); end, false)
+                ~= true) then
+        return;
+    end
+
+    local waypoint = state.active_custom_waypoint(player, map);
+    if (waypoint ~= nil) then
+        local marker_x, marker_y = state.custom_waypoint_screen(
+            left,
+            top,
+            size,
+            camera,
+            scale,
+            waypoint);
+        local delta_x = mouse_x - marker_x;
+        local delta_y = mouse_y - marker_y;
+        if ((delta_x * delta_x) + (delta_y * delta_y)) <= (14 * 14) then
+            state.custom_waypoint = nil;
+            state.guide_path.route = nil;
+            state.guide_path.last_attempt = 0;
+            log('Custom waypoint cleared; AshitaGuide routing restored.');
+            return;
+        end
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    state.custom_waypoint = {
+        zone_id = player.zone_id,
+        page_id = tonumber(map.page_id),
+        x = camera.x + ((mouse_x - center_x) / scale),
+        y = camera.y - ((mouse_y - center_y) / scale),
+    };
+    state.guide_path.route = nil;
+    state.guide_path.last_attempt = 0;
+    log(string.format(
+        'Custom waypoint set at %.1f, %.1f; it overrides AshitaGuide routing.',
+        state.custom_waypoint.x,
+        state.custom_waypoint.y));
+end
+
 local function handle_map_input(left, top, size, map)
     local hovered, mouse_x, mouse_y = mouse_over_map(left, top, size);
     local wheel = hovered
@@ -2473,6 +2605,14 @@ local function render_minimap()
             mark_configuration_changed();
         end
         local camera = camera_for_map(player, map, size, scale);
+        handle_custom_waypoint_input(
+            left,
+            top,
+            size,
+            player,
+            map,
+            camera,
+            scale);
         local visual_scale = marker_zoom_scale(scale);
         local entity_visual_scale = visual_scale
             * clamp(state.settings.marker_size, 0.25, 2.00);
@@ -2566,6 +2706,15 @@ local function render_minimap()
             top,
             size,
             guide_route);
+        state.draw_custom_waypoint(
+            draw_list,
+            left,
+            top,
+            size,
+            player,
+            camera,
+            map,
+            scale);
         if (nm_spawn_hover ~= nil) then
             draw_nm_spawn_range_card(
                 draw_list,
@@ -2830,6 +2979,9 @@ local function render_config_window()
         config_checkbox(
             'AshitaGuide shortest path##ashitaminimap_guide_paths',
             'show_guide_paths');
+        imgui.TextColored(
+            { 0.65, 0.68, 0.70, 1.00 },
+            'Right-click map to set a waypoint; right-click it to clear.');
         config_checkbox('Players##ashitaminimap_players', 'show_players');
         config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
         config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');
@@ -2947,6 +3099,7 @@ local function print_help()
     log('/aminimap zoomin | zoomout');
     log('/aminimap page [auto | next | prev | number]');
     log('/aminimap grid | reload');
+    log('Right-click the map to set a custom waypoint; right-click it to clear.');
 end
 
 local function current_zoom_minimum()
@@ -3034,6 +3187,7 @@ ashita.events.register('unload', 'unload_cb', function ()
     state.guide_markers.payload = nil;
     state.guide_path.route = nil;
     state.path_graphs = {};
+    state.custom_waypoint = nil;
     state.device = nil;
     state.config_visible[1] = false;
 end);
