@@ -45,7 +45,10 @@ calibration, component selection, elevation bands, or structure assets.
   perpendicular to travel: alternate cyan and violet, widen cyan toward the
   main floor, and widen violet toward the alternate floor. Do not blend the
   colors or place a stair glyph, opaque block, arrow, or inferred destination
-  marker over the map.
+  marker over the map. Generate the shared tapered-threshold treatment and
+  declare its structure layer with `role = 'floor_transition'` so overview
+  opacity, close-zoom opacity, and single-pass visibility are consistent on
+  every authored map.
 - For multi-floor pages, give each floor layer truthful
   `minimum_player_z`/`maximum_player_z` bounds. Keep the matching current floor
   at full opacity and make nonmatching floors substantially fainter with

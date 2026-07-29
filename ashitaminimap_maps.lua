@@ -170,7 +170,7 @@ return {
                 },
                 {
                     image = 'assets/maps/174_01_transition_structure.png',
-                    opacity = 0.72,
+                    role = 'floor_transition',
                 },
             },
             [2] = {

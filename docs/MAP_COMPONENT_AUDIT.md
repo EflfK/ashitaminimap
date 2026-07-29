@@ -107,6 +107,24 @@ centered on a live-verified connector and point toward the alternate floor.
 First fix disconnected geometry and raster seam gaps. Do not blend the colors
 or use an opaque block, glyph, arrow, or invented connector.
 
+Use the shared tapered-threshold preset rather than a circular stripe field.
+The threshold is a narrow path-aligned capsule with alpha feathering only at
+its travel-direction ends. Declare its structure layer with
+`role = 'floor_transition'`. The runtime renders this role in one pass and
+fades it from subtle overview opacity to stronger close-zoom opacity so the
+transition never becomes a pasted-on landmark:
+
+```lua
+{
+    image = 'assets/maps/example_transition_structure.png',
+    role = 'floor_transition',
+}
+```
+
+Transition position, direction, and geometry remain map-specific verified
+data. The role standardizes presentation; it does not infer or invent
+transitions on maps that have not received a live route audit.
+
 ## Emphasize the player's current floor
 
 Color is secondary to opacity. Give each floor layer verified

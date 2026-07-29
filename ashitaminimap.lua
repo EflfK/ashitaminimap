@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.9.1';
+addon.version   = '1.10.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -18,6 +18,9 @@ local commands = T{
 local ZOOM_MIN = 0.25;
 local ZOOM_MAX = 20.00;
 local ZOOM_STEP = 1.12;
+local TRANSITION_OVERVIEW_OPACITY = 0.28;
+local TRANSITION_CLOSE_OPACITY = 0.64;
+local TRANSITION_CLOSE_ZOOM_RATIO = 3.00;
 local MARKER_REFERENCE_ZOOM = 4.41;
 local ENTITY_FLOOR_TOLERANCE = 8.0;
 local MAP_CORNER_RADIUS = 7.0;
@@ -1303,6 +1306,32 @@ local function draw_map_backdrop(draw_list, left, top, size)
         MAP_CORNER_RADIUS);
 end
 
+local function layer_zoom_opacity(layer, scale, minimum_zoom)
+    if (type(layer) ~= 'table' or layer.role ~= 'floor_transition') then
+        return 1;
+    end
+
+    local overview_opacity = clamp(
+        layer.overview_opacity or TRANSITION_OVERVIEW_OPACITY,
+        0,
+        1);
+    local close_opacity = clamp(
+        layer.close_opacity or TRANSITION_CLOSE_OPACITY,
+        0,
+        1);
+    local close_zoom_ratio = math.max(
+        1.01,
+        tonumber(layer.close_zoom_ratio) or TRANSITION_CLOSE_ZOOM_RATIO);
+    local zoom_ratio = minimum_zoom > 0 and (scale / minimum_zoom) or 1;
+    local progress = clamp(
+        (zoom_ratio - 1) / (close_zoom_ratio - 1),
+        0,
+        1);
+    progress = progress * progress * (3 - (2 * progress));
+    return overview_opacity
+        + ((close_opacity - overview_opacity) * progress);
+end
+
 local function mouse_over_map(left, top, size)
     local mouse_x, mouse_y = imgui.GetMousePos();
     mouse_x = tonumber(mouse_x);
@@ -1466,6 +1495,19 @@ local function render_minimap()
                     structure_layers[#structure_layers + 1] = {
                         texture = texture,
                         opacity = opacity,
+                        role = type(layer) == 'table' and layer.role or nil,
+                        overview_opacity = type(layer) == 'table'
+                            and layer.overview_opacity
+                            or nil,
+                        close_opacity = type(layer) == 'table'
+                            and layer.close_opacity
+                            or nil,
+                        close_zoom_ratio = type(layer) == 'table'
+                            and layer.close_zoom_ratio
+                            or nil,
+                        visibility_boost = type(layer) == 'table'
+                            and layer.visibility_boost
+                            or nil,
                     };
                 end
             end
@@ -1533,6 +1575,14 @@ local function render_minimap()
                 1);
         end
         for _, layer in ipairs(structure_layers) do
+            local zoom_opacity = layer_zoom_opacity(
+                layer,
+                scale,
+                minimum_zoom);
+            local visibility_boost = tonumber(layer.visibility_boost)
+                or (layer.role == 'floor_transition'
+                    and 1
+                    or state.settings.structure_visibility_boost);
             draw_map_layer(
                 draw_list,
                 left,
@@ -1542,8 +1592,8 @@ local function render_minimap()
                 map,
                 layer.texture,
                 scale,
-                layer.opacity,
-                state.settings.structure_visibility_boost);
+                layer.opacity * zoom_opacity,
+                visibility_boost);
         end
         draw_grid(draw_list, left, top, size, camera, map, scale);
         draw_coffer_spawns(draw_list, left, top, size, camera, map, scale);

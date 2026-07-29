@@ -73,11 +73,15 @@ The expanded seam closure prevents raw elevation thresholds from breaking
 walkable slopes and tile seams into dots. Both geometry layers use
 `--seam-closure-radius 1.25`; the default remains `0.25` for other maps. The
 verified live position `(22.445, -195.267, -9.982)` maps to source pixel
-`(290,252)`. A small geometry-clipped stripe field points southwest from that
-position toward the violet lower route. The stripes cross the path direction:
-cyan stripes widen toward the cyan floor, violet stripes widen toward the
-violet floor, and both have equal width at the midpoint. Regenerate with
-radius `10`, stripe period `5`, direction `(-0.6,0.8)`, and alpha `190`.
+`(290,252)`. A small geometry-clipped tapered threshold points southwest from
+that position toward the violet lower route. The stripes cross the path
+direction: cyan stripes widen toward the cyan floor, violet stripes widen
+toward the violet floor, and both have equal width at the midpoint. The
+path-aligned capsule avoids the previous circular sticker shape, and alpha is
+feathered only at its two ends. Regenerate with the shared defaults: half
+length `7`, half width `4.5`, stripe period `5`, end feather `1.5`, direction
+`(-0.6,0.8)`, and alpha `190`. Its `floor_transition` runtime role uses one
+visibility pass and fades from overview to close-zoom opacity.
 
 Every Kuftal floor layer declares player-Z bounds. The matching floor uses
 `structure_opacity`; all other floors use the independent
