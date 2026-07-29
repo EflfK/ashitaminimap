@@ -99,7 +99,10 @@ custom waypoint is session-only and remains display-only.
 Navigation graphs are deterministic build artifacts generated from the same
 verified Detour source used for authored walkable structure. They are
 display-only and never move, target, interact, queue commands, or automate
-gameplay. See [Path graph authoring](docs/PATH_GRAPHS.md).
+gameplay. Every zone with a committed non-vanilla map component now has a
+registered graph; multi-page Kuftal Tunnel and Garlaige Citadel select a
+separate graph for the active authored page. See
+[Path graph authoring](docs/PATH_GRAPHS.md).
 
 Kuftal Tunnel can optionally draw filled gold coffer icons at all authored
 possible Treasure Coffer locations. These are fixed, page-filtered reference

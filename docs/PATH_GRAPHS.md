@@ -8,7 +8,7 @@ from duplicating routes and lets all guides benefit when a zone graph improves.
 
 For a fresh destination, AshitaMinimap:
 
-1. loads the graph registered for the current zone;
+1. loads the graph registered for the current zone and active authored page;
 2. rejects a graph or destination for another map page;
 3. snaps the player and destination to graph nodes within `snap_radius`;
 4. runs A* across graph edges using world distance as both edge cost and
@@ -32,14 +32,32 @@ python tools/generate_path_graph.py <zone.nav> assets/paths/<zone-id>.lua \
   --seed=<verified-world-x>,<verified-world-y>
 ```
 
-`--seed` limits the artifact to the connected component containing that
-verified walkable point. The generator recognizes exact shared polygon edges
-and split axis-aligned tile seams whose interpolated vertical difference is no
-greater than `--maximum-step` (default `0.65` yalms). It converts Detour's
-horizontal Z axis to the negated FFXI world-Y convention used by the addon.
+Repeat `--seed` to retain multiple verified components without inventing edges
+between them. Use repeated `--mask` arguments with the map's exact
+`--origin-x`, `--origin-y`, and `--pixels-per-yalm` to constrain graph nodes to
+the union of already-authored structure layers. Page/floor maps may also use
+the same verified `--minimum-elevation` and `--maximum-elevation` bounds as
+their structure generation.
 
-Register the generated file in `ashitaminimap_paths.lua`. Generated graph files
-must not be hand-edited.
+The generator recognizes exact shared polygon edges and split axis-aligned tile
+seams whose interpolated vertical difference is no greater than
+`--maximum-step` (default `0.65` yalms). It converts Detour's horizontal Z axis
+to the negated FFXI world-Y convention used by the addon.
+
+Register a single-page generated file directly in `ashitaminimap_paths.lua`.
+For a multi-page zone, register a table keyed by active stock page. Generated
+graph files must not be hand-edited.
+
+Regenerate the complete current catalog with:
+
+```text
+python tools/generate_all_path_graphs.py <xiNavmeshes>
+python tools/validate_path_graphs.py assets/paths/*.lua
+```
+
+The catalog generation script records every source selector in one reviewable
+place. `assets/paths/README.md` records the pinned source revision, hashes,
+node/edge counts, and deterministic output hashes.
 
 ## Validation checklist
 

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.2';
+addon.version   = '1.13.3';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -612,15 +612,22 @@ state.active_custom_waypoint = function (player, map)
     return waypoint;
 end
 
-state.path_graph_for = function (zone_id)
-    if (state.path_graphs[zone_id] ~= nil) then
-        return state.path_graphs[zone_id] ~= false
-            and state.path_graphs[zone_id]
+state.path_graph_for = function (zone_id, page_id)
+    local page_key = tonumber(page_id) ~= nil
+        and math.floor(tonumber(page_id))
+        or -1;
+    local cache_key = string.format('%d:%d', zone_id, page_key);
+    if (state.path_graphs[cache_key] ~= nil) then
+        return state.path_graphs[cache_key] ~= false
+            and state.path_graphs[cache_key]
             or nil;
     end
-    local filename = state.path_catalog[zone_id];
+    local catalog_entry = state.path_catalog[zone_id];
+    local filename = type(catalog_entry) == 'table'
+        and (catalog_entry[page_key] or catalog_entry.default)
+        or catalog_entry;
     if (type(filename) ~= 'string' or filename == '') then
-        state.path_graphs[zone_id] = false;
+        state.path_graphs[cache_key] = false;
         return nil;
     end
     local graph, error_message = load_module_file(filename);
@@ -628,14 +635,14 @@ state.path_graph_for = function (zone_id)
             or tonumber(graph.zone_id) ~= zone_id
             or type(graph.nodes) ~= 'table'
             or #graph.nodes < 2) then
-        state.path_graphs[zone_id] = false;
+        state.path_graphs[cache_key] = false;
         log(string.format(
             'Invalid path graph for zone %d: %s',
             zone_id,
             tostring(error_message or filename)));
         return nil;
     end
-    state.path_graphs[zone_id] = graph;
+    state.path_graphs[cache_key] = graph;
     return graph;
 end
 
@@ -820,7 +827,7 @@ state.ensure_guide_path = function (player, map)
         return nil;
     end
 
-    local graph = state.path_graph_for(player.zone_id);
+    local graph = state.path_graph_for(player.zone_id, map.page_id);
     if (graph == nil
             or (graph.page_id ~= nil
                 and tonumber(map.page_id) ~= tonumber(graph.page_id))) then
@@ -831,6 +838,7 @@ state.ensure_guide_path = function (player, map)
     local route = state.guide_path.route;
     local same_destination = route ~= nil
         and route.zone_id == player.zone_id
+        and route.page_id == tonumber(map.page_id)
         and route.destination_source == (custom_waypoint ~= nil and 'custom' or 'guide')
         and math.abs(route.destination_x - destination.x) < 0.1
         and math.abs(route.destination_y - destination.y) < 0.1;
@@ -875,6 +883,7 @@ state.ensure_guide_path = function (player, map)
     points[#points + 1] = { x = destination.x, y = destination.y };
     route = {
         zone_id = player.zone_id,
+        page_id = tonumber(map.page_id),
         destination_x = destination.x,
         destination_y = destination.y,
         destination_source = custom_waypoint ~= nil and 'custom' or 'guide',

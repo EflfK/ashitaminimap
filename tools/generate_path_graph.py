@@ -8,6 +8,7 @@ from collections import defaultdict, deque
 from pathlib import Path
 
 from generate_walkable_map import point_in_polygon, read_navmesh
+from PIL import Image
 
 
 def parse_seed(value: str) -> tuple[float, float]:
@@ -26,8 +27,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--page-id", type=int)
     parser.add_argument(
         "--seed",
+        action="append",
         type=parse_seed,
-        help="optional world-x,world-y limiting output to one connected component",
+        default=[],
+        help=(
+            "verified world-x,world-y selecting a connected component; "
+            "repeat for disconnected authored components"
+        ),
     )
     parser.add_argument(
         "--maximum-step",
@@ -40,6 +46,41 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=24.0,
         help="maximum runtime endpoint snap distance in yalms (default: 24)",
+    )
+    parser.add_argument(
+        "--minimum-elevation",
+        type=float,
+        help="minimum Detour polygon mean elevation to include",
+    )
+    parser.add_argument(
+        "--maximum-elevation",
+        type=float,
+        help="maximum Detour polygon mean elevation to include",
+    )
+    parser.add_argument(
+        "--mask",
+        action="append",
+        type=Path,
+        default=[],
+        help=(
+            "authored structure PNG used to retain graph-node centroids; "
+            "repeat to union multiple floor/component layers"
+        ),
+    )
+    parser.add_argument(
+        "--origin-x",
+        type=float,
+        help="source-image X coordinate for world (0,0), required with --mask",
+    )
+    parser.add_argument(
+        "--origin-y",
+        type=float,
+        help="source-image Y coordinate for world (0,0), required with --mask",
+    )
+    parser.add_argument(
+        "--pixels-per-yalm",
+        type=float,
+        help="source-image scale, required with --mask",
     )
     return parser.parse_args()
 
@@ -120,41 +161,47 @@ def polygon_adjacency(
 def selected_indices(
     polygons: list[list[tuple[float, ...]]],
     adjacency: list[set[int]],
-    seed: tuple[float, float] | None,
+    seeds: list[tuple[float, float]],
     maximum_seed_snap: float,
 ) -> list[int]:
-    if seed is None:
+    if not seeds:
         return list(range(len(polygons)))
-    start = next(
-        (
-            index
-            for index, polygon in enumerate(polygons)
-            if point_in_polygon(polygon, seed[0], -seed[1])
-        ),
-        None,
-    )
-    if start is None:
-        nearest = min(
+    visited = set()
+    pending = deque()
+    for seed in seeds:
+        start = next(
             (
-                (
-                    math.hypot(
-                        sum(vertex[0] for vertex in polygon) / len(polygon) - seed[0],
-                        -sum(vertex[2] for vertex in polygon) / len(polygon) - seed[1],
-                    ),
-                    index,
-                )
+                index
                 for index, polygon in enumerate(polygons)
+                if point_in_polygon(polygon, seed[0], -seed[1])
             ),
-            default=None,
+            None,
         )
-        if nearest is None or nearest[0] > maximum_seed_snap:
-            raise ValueError(
-                f"seed {seed} is outside every navigation polygon and "
-                f"more than {maximum_seed_snap:g} yalms from the nearest center"
+        if start is None:
+            nearest = min(
+                (
+                    (
+                        math.hypot(
+                            sum(vertex[0] for vertex in polygon) / len(polygon)
+                            - seed[0],
+                            -sum(vertex[2] for vertex in polygon) / len(polygon)
+                            - seed[1],
+                        ),
+                        index,
+                    )
+                    for index, polygon in enumerate(polygons)
+                ),
+                default=None,
             )
-        start = nearest[1]
-    visited = {start}
-    pending = deque([start])
+            if nearest is None or nearest[0] > maximum_seed_snap:
+                raise ValueError(
+                    f"seed {seed} is outside every navigation polygon and "
+                    f"more than {maximum_seed_snap:g} yalms from the nearest center"
+                )
+            start = nearest[1]
+        if start not in visited:
+            visited.add(start)
+            pending.append(start)
     while pending:
         current = pending.popleft()
         for neighbor in adjacency[current]:
@@ -162,6 +209,71 @@ def selected_indices(
                 visited.add(neighbor)
                 pending.append(neighbor)
     return sorted(visited)
+
+
+def filter_elevation(
+    polygons: list[list[tuple[float, ...]]],
+    minimum: float | None,
+    maximum: float | None,
+) -> list[list[tuple[float, ...]]]:
+    lower = minimum if minimum is not None else float("-inf")
+    upper = maximum if maximum is not None else float("inf")
+    if lower > upper:
+        raise ValueError("--minimum-elevation cannot exceed --maximum-elevation")
+    return [
+        polygon
+        for polygon in polygons
+        if lower
+        <= sum(vertex[1] for vertex in polygon) / len(polygon)
+        <= upper
+    ]
+
+
+def filter_masks(
+    polygons: list[list[tuple[float, ...]]],
+    masks: list[Path],
+    origin_x: float | None,
+    origin_y: float | None,
+    pixels_per_yalm: float | None,
+) -> list[list[tuple[float, ...]]]:
+    if not masks:
+        return polygons
+    if origin_x is None or origin_y is None or pixels_per_yalm is None:
+        raise ValueError(
+            "--origin-x, --origin-y, and --pixels-per-yalm are required with --mask"
+        )
+    if pixels_per_yalm <= 0:
+        raise ValueError("--pixels-per-yalm must be positive")
+    images = [Image.open(path).convert("RGBA") for path in masks]
+    sizes = {image.size for image in images}
+    if len(sizes) != 1:
+        raise ValueError("--mask images must have identical dimensions")
+    width, height = images[0].size
+
+    def authored_at(x: float, y: float) -> bool:
+        image_x = round(origin_x + x * pixels_per_yalm)
+        image_y = round(origin_y - y * pixels_per_yalm)
+        for image in images:
+            for offset_y in (-1, 0, 1):
+                for offset_x in (-1, 0, 1):
+                    sample_x = image_x + offset_x
+                    sample_y = image_y + offset_y
+                    if (
+                        0 <= sample_x < width
+                        and 0 <= sample_y < height
+                        and image.getpixel((sample_x, sample_y))[3] > 0
+                    ):
+                        return True
+        return False
+
+    return [
+        polygon
+        for polygon in polygons
+        if authored_at(
+            sum(vertex[0] for vertex in polygon) / len(polygon),
+            -sum(vertex[2] for vertex in polygon) / len(polygon),
+        )
+    ]
 
 
 def centroid(polygon: list[tuple[float, ...]]) -> tuple[float, float, float]:
@@ -219,6 +331,20 @@ def write_graph(
 def main() -> None:
     args = parse_args()
     _, polygons = read_navmesh(args.nav)
+    polygons = filter_elevation(
+        polygons,
+        args.minimum_elevation,
+        args.maximum_elevation,
+    )
+    polygons = filter_masks(
+        polygons,
+        args.mask,
+        args.origin_x,
+        args.origin_y,
+        args.pixels_per_yalm,
+    )
+    if not polygons:
+        raise ValueError("graph filters excluded every navigation polygon")
     adjacency = polygon_adjacency(polygons, args.maximum_step)
     indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
     selected = set(indices)
