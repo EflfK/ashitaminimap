@@ -75,13 +75,15 @@ return {
     },
     [244] = {
         name = 'Upper Jeuno',
+        stock_calibration = true,
         vanilla_image = 'assets/maps/244_vanilla.png',
         structure_image = 'assets/maps/244_structure.png',
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
-        origin_x = 255.0,
-        origin_y = 256.0,
+        -- Exact FFXiMain map record offsets are (-272, -304).
+        origin_x = 272.0,
+        origin_y = 304.0,
         grid_origin_x = 255.0,
         grid_origin_y = 256.0,
         grid_yalms = 40,

@@ -108,23 +108,31 @@ shift every displayed quadrant by a full row or column.
    per map; do not use a repository-wide default as calibration. The earlier
    `32 / (map_scale_byte * 10)` formula only agrees when the scale byte is `4`
    and mis-scales every other page.
-6. Determine the image pixel represented by world `(0, 0)`. When
-   `Minimap.dll` is available, its runtime doubles at `runtime + 0x18` and
-   `runtime + 0x20` are the final computed map-space position of the player.
-   Combine them with the player's live world position and the scale from step 5:
+6. Determine the image pixel represented by world `(0, 0)`. Read the signed
+   `OffsetX` and `OffsetY` fields at `+0x0A` and `+0x0C` of the matching
+   14-byte FFXiMain map-table record:
+
+   ```text
+   origin_x = -OffsetX
+   origin_y = -OffsetY
+   ```
+
+   Minimap.dll's coordinate converter calculates
+   `image_x = world_x * scale - OffsetX` and
+   `image_y = -world_y * scale - OffsetY`, so these negations are the exact
+   source-image origin. The earlier conclusion that the offsets were not final
+   pixels came from combining them with an incorrect reciprocal scale. Upper
+   Jeuno independently confirms record offsets `(-272,-304)` and source origin
+   `(272,304)`.
+
+   If the map record cannot be read, Minimap.dll's runtime doubles at
+   `runtime + 0x18` and `runtime + 0x20` can provide a live fallback:
 
    ```text
    origin_x = runtime_map_x - world_x * image_pixels_per_yalm
    origin_y = runtime_map_y + world_y * image_pixels_per_yalm
    ```
 
-   This produces the origin in the same post-reconstruction 512-by-512 source
-   coordinates used by the imported image. It was checked against Ru'Lude
-   Gardens' known authored origin and Castle Oztroja's live page-specific
-   placement. The signed page-record fields at `+0x0A` and `+0x0C` are named
-   `OffsetX` and `OffsetY` in the plugin's own diagnostics, but the renderer
-   does not use them directly as final source pixels. Do not negate or store
-   them as the origin.
    Separately record the printed H-8 cell center as `grid_origin_x`,
    `grid_origin_y` when it differs from world `(0, 0)`.
 7. Derive `image_pixels_per_yalm` from source metadata or at least two verified,

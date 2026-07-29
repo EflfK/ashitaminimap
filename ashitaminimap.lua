@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.4.1';
+addon.version   = '1.5.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -69,6 +69,9 @@ local state = {
     reported_fallback = nil,
     stock_minimap_pointer_address = 0,
     stock_minimap_checked_at = 0,
+    stock_map_table_address = 0,
+    stock_map_table_checked_at = 0,
+    stock_map_records = {},
     config_visible = { false },
     config_dirty = false,
     config_changed_at = 0,
@@ -474,6 +477,82 @@ local letters = {
 
 local STOCK_MINIMAP_SIGNATURE =
     'A1????????F30F104044C3CCCCCCCCCCA1????????F30F10402C';
+local STOCK_MAP_TABLE_SIGNATURE =
+    '8A0D????????5333C05684C95774??8A5424188B7424148B7C2410B9';
+local STOCK_MAP_ENTRY_SIZE = 0x0E;
+
+local function signed_uint16(value)
+    value = tonumber(value);
+    if (value == nil) then
+        return nil;
+    end
+    return value >= 0x8000 and (value - 0x10000) or value;
+end
+
+local function stock_map_record(zone_id, page_id)
+    zone_id = tonumber(zone_id);
+    page_id = tonumber(page_id);
+    local cache_key = tostring(zone_id) .. ':' .. tostring(page_id);
+    local cached = state.stock_map_records[cache_key];
+    if (cached ~= nil) then
+        return cached;
+    end
+
+    local now = os.clock();
+    if (state.stock_map_table_address == 0
+            and now - state.stock_map_table_checked_at >= 1.0) then
+        state.stock_map_table_checked_at = now;
+        local signature = tonumber(safe_read(function ()
+            return ashita.memory.find(
+                'FFXiMain.dll',
+                0,
+                STOCK_MAP_TABLE_SIGNATURE,
+                0,
+                0);
+        end, 0)) or 0;
+        if (signature ~= 0) then
+            state.stock_map_table_address = tonumber(safe_read(function ()
+                return ashita.memory.read_uint32(signature + 0x1C);
+            end, 0)) or 0;
+        end
+    end
+
+    local table_address = state.stock_map_table_address;
+    if (table_address == 0) then
+        return nil;
+    end
+    for index = 0, 999 do
+        local entry = table_address + (index * STOCK_MAP_ENTRY_SIZE);
+        local entry_zone = tonumber(safe_read(function ()
+            return ashita.memory.read_uint16(entry + 0x00);
+        end, 0)) or 0;
+        local entry_page = tonumber(safe_read(function ()
+            return ashita.memory.read_uint8(entry + 0x02);
+        end, 0)) or 0;
+        if (entry_zone == zone_id and entry_page == page_id) then
+            local scale_raw = tonumber(safe_read(function ()
+                return ashita.memory.read_uint8(entry + 0x05);
+            end, nil));
+            local offset_x = signed_uint16(safe_read(function ()
+                return ashita.memory.read_uint16(entry + 0x0A);
+            end, nil));
+            local offset_y = signed_uint16(safe_read(function ()
+                return ashita.memory.read_uint16(entry + 0x0C);
+            end, nil));
+            if (scale_raw ~= nil and offset_x ~= nil and offset_y ~= nil) then
+                local record = {
+                    scale_raw = scale_raw,
+                    offset_x = offset_x,
+                    offset_y = offset_y,
+                };
+                state.stock_map_records[cache_key] = record;
+                return record;
+            end
+            return nil;
+        end
+    end
+    return nil;
+end
 
 local function stock_minimap_info()
     local now = os.clock();
@@ -569,7 +648,9 @@ local function fallback_page(zone_id, player)
 
     local stock_matches_page = stock ~= nil
         and tonumber(stock.page_id) == page_id;
-    local scale_raw = stock_matches_page and tonumber(stock.scale_raw) or nil;
+    local record = stock_map_record(zone_id, page_id);
+    local scale_raw = record ~= nil and tonumber(record.scale_raw)
+        or (stock_matches_page and tonumber(stock.scale_raw) or nil);
     local has_live_scale = scale_raw ~= nil and scale_raw > 0;
     if (scale_raw == nil or scale_raw <= 0) then
         scale_raw = 4;
@@ -579,21 +660,27 @@ local function fallback_page(zone_id, player)
     -- when scale_raw is 4, which hid the error on the first maps.
     local image_scale = scale_raw / 5;
     local grid_yalms = 32 / image_scale;
+    local record_origin = record ~= nil
+        and tonumber(record.offset_x) ~= nil
+        and tonumber(record.offset_y) ~= nil;
     local map_x = stock_matches_page and tonumber(stock.map_x) or nil;
     local map_y = stock_matches_page and tonumber(stock.map_y) or nil;
-    local has_live_origin = player ~= nil
+    local has_runtime_origin = player ~= nil
         and map_x ~= nil
         and map_y ~= nil
         and map_x == map_x
         and map_y == map_y
         and math.abs(map_x) < 1000000
         and math.abs(map_y) < 1000000;
-    local origin_x = has_live_origin
-        and (map_x - ((tonumber(player.x) or 0) * image_scale))
-        or 255.0;
-    local origin_y = has_live_origin
-        and (map_y + ((tonumber(player.y) or 0) * image_scale))
-        or 256.0;
+    local origin_x = record_origin and -record.offset_x
+        or (has_runtime_origin
+            and (map_x - ((tonumber(player.x) or 0) * image_scale))
+            or 255.0);
+    local origin_y = record_origin and -record.offset_y
+        or (has_runtime_origin
+            and (map_y + ((tonumber(player.y) or 0) * image_scale))
+            or 256.0);
+    local has_live_origin = record_origin or has_runtime_origin;
     return {
         name = zone_name(zone_id),
         vanilla_image = image,
@@ -611,6 +698,9 @@ local function fallback_page(zone_id, player)
         live_scale = has_live_scale,
         live_origin = has_live_origin,
         stock_scale_raw = scale_raw,
+        stock_offset_x = record ~= nil and record.offset_x or nil,
+        stock_offset_y = record ~= nil and record.offset_y or nil,
+        stock_record_origin = record_origin,
     };
 end
 
@@ -668,10 +758,24 @@ local function map_for_player(player)
         return apply_origin_adjustment(copy_table(authored), player.zone_id);
     end
     local merged = merge_table(copy_table(fallback), authored);
-    if (authored.origin_x ~= nil or authored.origin_y ~= nil) then
+    if (authored.stock_calibration == true
+            and fallback.stock_record_origin == true) then
+        merged.origin_x = fallback.origin_x;
+        merged.origin_y = fallback.origin_y;
+        merged.image_pixels_per_yalm = fallback.image_pixels_per_yalm;
+        merged.grid_yalms = fallback.grid_yalms;
+        merged.live_origin = fallback.live_origin;
+        merged.live_scale = fallback.live_scale;
+        merged.stock_scale_raw = fallback.stock_scale_raw;
+        merged.stock_offset_x = fallback.stock_offset_x;
+        merged.stock_offset_y = fallback.stock_offset_y;
+        merged.stock_record_origin = true;
+    elseif (authored.origin_x ~= nil or authored.origin_y ~= nil) then
         merged.live_origin = false;
     end
-    if (authored.image_pixels_per_yalm ~= nil or authored.grid_yalms ~= nil) then
+    if (authored.stock_calibration ~= true
+            and (authored.image_pixels_per_yalm ~= nil
+                or authored.grid_yalms ~= nil)) then
         merged.live_scale = false;
     end
     return apply_origin_adjustment(merged, player.zone_id);
@@ -1186,14 +1290,16 @@ local function render_minimap()
         if (state.reported_fallback ~= token) then
             state.reported_fallback = token;
             log(string.format(
-                'Vanilla fallback: %s page %d (%s scale raw %d, %s origin %.1f, %.1f).',
+                'Vanilla fallback: %s page %d (%s scale raw %d, %s origin %.1f, %.1f; record offsets %s, %s).',
                 map.name or ('zone ' .. tostring(player.zone_id)),
                 map.page_id,
                 map.live_scale == true and 'stock' or 'default',
                 tonumber(map.stock_scale_raw) or 0,
                 map.live_origin == true and 'stock' or 'provisional',
                 tonumber(map.base_origin_x) or tonumber(map.origin_x) or 0,
-                tonumber(map.base_origin_y) or tonumber(map.origin_y) or 0));
+                tonumber(map.base_origin_y) or tonumber(map.origin_y) or 0,
+                map.stock_offset_x ~= nil and tostring(map.stock_offset_x) or '?',
+                map.stock_offset_y ~= nil and tostring(map.stock_offset_y) or '?'));
         end
     end
 

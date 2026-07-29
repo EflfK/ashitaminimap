@@ -93,19 +93,19 @@ The scale byte at page-record offset `+0x05` gives
 routine performs this multiplication directly. The older
 `32 / (scale_byte * 10)` expression only produced the same result for scale
 byte `4` and caused live entities to spread incorrectly on every other scale.
-The plugin runtime's
-computed player position in map space is stored as doubles at `runtime + 0x18`
-and `runtime + 0x20`. The fallback origin is recovered each frame with:
+The matching 14-byte FFXiMain map-table record stores signed `OffsetX` and
+`OffsetY` values at `+0x0A` and `+0x0C`. Minimap.dll's own converter uses:
 
 ```text
-origin_x = runtime_map_x - player_world_x * image_pixels_per_yalm
-origin_y = runtime_map_y + player_world_y * image_pixels_per_yalm
+image_x = world_x * image_pixels_per_yalm - OffsetX
+image_y = -world_y * image_pixels_per_yalm - OffsetY
 ```
 
-This is the stock renderer's final post-reconstruction coordinate space and
-therefore accounts for page-specific placement without a per-map table. It has
-been validated against Ru'Lude Gardens' authored calibration and live Castle
-Oztroja pages.
+The exact source origin is therefore `(-OffsetX,-OffsetY)`. AshitaMinimap looks
+up the active zone and page in this table before using Minimap.dll's live player
+map-space doubles as a fallback. This is stable while the player moves and is
+available for every imported stock page, including maps that have no authored
+layers.
 
 The stock renderer also rejects entities assigned to a different active map
 page. AshitaMinimap applies a zone-independent elevation tolerance before
@@ -113,10 +113,15 @@ drawing live entities so monsters loaded from floors above or below do not
 pollute the current page. This same filter is used for every authored and
 fallback map; it is not a Castle-specific correction.
 
-The signed page-record values at `+0x0A` and `+0x0C` are diagnostic `OffsetX`
-and `OffsetY` metadata, not final source-image origin pixels. Treating their
-negations as `origin_x` and `origin_y` displaced Castle Oztroja's markers far
-from its floor geometry. Do not use them directly.
+The former warning against using the signed offsets was based on the obsolete
+reciprocal scale formula. The offsets were correct; the scale paired with them
+was not.
+
+An authored map that shares the imported stock page's coordinate system can set
+`stock_calibration = true`. Its custom layers will then use the exact live
+record origin and scale rather than masking those values with provisional
+authored defaults. Regenerate every geometry-derived structure layer using the
+same record origin before enabling this flag.
 
 ## Correcting a provisional fallback origin
 
