@@ -51,6 +51,9 @@ calibration, component selection, elevation bands, or structure assets.
   at full opacity and make nonmatching floors substantially fainter with
   the user-level `inactive_floor_opacity` setting; do not hardcode inactive
   opacity per map or rely on color alone to show the player's floor.
+- Map-calibration controls are intentionally hidden from the normal config UI
+  with `SHOW_MAP_CALIBRATION = false`. Existing origin adjustments remain
+  active; only expose the controls temporarily for attended development.
 - A visually plausible overview is not coverage validation. Inspect close zoom
   and record live control points on every floor and at the entrance, middle,
   and exit of every transition. If full traversal is unavailable, document the

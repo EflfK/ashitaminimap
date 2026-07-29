@@ -90,11 +90,10 @@ Changes are saved automatically to `ashitaminimap_config.lua` after a short
 delay. The **Save** button and `/aminimap save` command save immediately.
 You can still edit the Lua configuration manually and run `/aminimap reload`.
 
-For a stock fallback whose geometry is uniformly displaced, use the **Map
-calibration** X/Y source-pixel controls. The adjustment is scoped to the
-current zone and vanilla page. Slider changes move the map immediately but
-remain session-only until **Save calibration** is selected. Reloading the addon
-before saving restores the last persisted values.
+Map-calibration controls are currently hidden from the configuration window.
+Existing per-zone and per-page `origin_adjustments` remain active and are still
+loaded and saved. The retained controls can be restored for development by
+setting `SHOW_MAP_CALIBRATION` to `true` in `ashitaminimap.lua`.
 
 If the transparent map linework is difficult to see, raise **Structure
 visibility**. This composites its alpha layer more strongly than an ordinary

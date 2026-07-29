@@ -125,13 +125,13 @@ same record origin before enabling this flag.
 
 ## Correcting a provisional fallback origin
 
-Open `/aminimap config` while standing in the affected zone. The **Map
-calibration** section exposes X and Y source-image pixel adjustments for the
-active zone and active vanilla page. Ctrl-click either slider to type an exact
-value. Slider changes preview immediately in the current session but do not
-alter `ashitaminimap_config.lua`. Choose **Save calibration** to persist the
-current values across addon reloads. Reloading before saving restores the last
-saved calibration.
+The map-calibration controls are currently hidden from `/aminimap config`
+because normal play does not need them. Existing adjustments continue to load
+and render. For attended development calibration, temporarily set
+`SHOW_MAP_CALIBRATION` to `true` in `ashitaminimap.lua`; the restored section
+provides X and Y source-image pixel adjustments for the active zone and vanilla
+page. Slider changes preview immediately, and **Save calibration** persists
+them across addon reloads.
 
 Adjustments are stored per zone and page because separate floors can use
 different source origins. They change the navigation origin while leaving the

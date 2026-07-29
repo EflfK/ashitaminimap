@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.8.2';
+addon.version   = '1.8.3';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -21,6 +21,7 @@ local ZOOM_STEP = 1.12;
 local MARKER_REFERENCE_ZOOM = 4.41;
 local ENTITY_FLOOR_TOLERANCE = 8.0;
 local MAP_CORNER_RADIUS = 7.0;
+local SHOW_MAP_CALIBRATION = false;
 
 local DEFAULTS = {
     visible = true,
@@ -1548,7 +1549,7 @@ local function render_config_window()
                     manual_page ~= nil and 'manual' or 'automatic'));
         end
 
-        if (config_player ~= nil and config_map ~= nil) then
+        if (SHOW_MAP_CALIBRATION and config_player ~= nil and config_map ~= nil) then
             local page_key = map_page_key(config_map);
             if (state.origin_editor.zone_id ~= config_player.zone_id
                     or state.origin_editor.page_key ~= page_key) then
