@@ -10,6 +10,7 @@ Files are named by FFXI zone ID.
 - `241_structure.png` — Windurst Woods walkable-area mask
 - `243_vanilla.png` / `243_structure.png` — Ru'Lude Gardens
 - `244_vanilla.png` / `244_structure.png` — Upper Jeuno
+- `200_16_structure.png` — Garlaige Citadel, verified stock page 16
 - `245_vanilla.png` / `245_structure.png` — Lower Jeuno
 - `246_structure.png` — Port Jeuno walkable-area mask
 

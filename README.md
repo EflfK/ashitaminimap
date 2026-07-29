@@ -175,6 +175,9 @@ collision and navigation geometry to render only the accessible-area fill and
 its boundaries. Ru'Lude Gardens, Upper Jeuno, and Lower Jeuno also include
 committed reference layers. Port Jeuno obtains its optional vanilla layer from
 the local universal fallback import.
+Garlaige Citadel uses page-aware structure selection; its verified page 16
+layer is generated from a bounded Detour elevation band, while its remaining
+pages intentionally fall back to vanilla only.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.

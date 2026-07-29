@@ -149,6 +149,13 @@ shift every displayed quadrant by a full row or column.
    arbitrary X and Y tuning.
 8. Add the resulting values to `ashitaminimap_maps.lua`.
 
+For a multi-page zone, use `structure_pages[page_id]` rather than one
+`structure_image` when the stock pages do not share identical geometry. The
+walkable-map generator accepts `--minimum-elevation` and
+`--maximum-elevation` to isolate a verified Detour height band before
+connectivity filtering and rendering. Detour elevation is the navmesh
+vertex's second coordinate; record its bounds in the map provenance.
+
 Metalworks is the reference example:
 
 ```text

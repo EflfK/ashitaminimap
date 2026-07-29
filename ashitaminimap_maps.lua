@@ -116,4 +116,21 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
     },
+    [200] = {
+        name = 'Garlaige Citadel',
+        stock_calibration = true,
+        structure_pages = {
+            [16] = 'assets/maps/200_16_structure.png',
+        },
+        width = 512,
+        height = 512,
+        view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
+        -- Page 16 fallback values; the live page record supplies exact values.
+        origin_x = 352.0,
+        origin_y = 336.0,
+        grid_origin_x = 256.0,
+        grid_origin_y = 256.0,
+        grid_yalms = 80,
+        image_pixels_per_yalm = 0.40,
+    },
 }

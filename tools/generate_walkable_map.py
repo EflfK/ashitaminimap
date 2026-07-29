@@ -60,6 +60,16 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--maximum-step", type=float, default=0.65)
     parser.add_argument(
+        "--minimum-elevation",
+        type=float,
+        help="minimum Detour polygon mean elevation to include",
+    )
+    parser.add_argument(
+        "--maximum-elevation",
+        type=float,
+        help="maximum Detour polygon mean elevation to include",
+    )
+    parser.add_argument(
         "--exclude-box",
         action="append",
         type=parse_box,
@@ -319,6 +329,31 @@ def main() -> None:
     nav_origin, polygons = read_navmesh(args.nav)
     validate_sources(obj_bounds, nav_origin)
     total_polygons = len(polygons)
+    if (
+        args.minimum_elevation is not None
+        or args.maximum_elevation is not None
+    ):
+        minimum = (
+            args.minimum_elevation
+            if args.minimum_elevation is not None
+            else float("-inf")
+        )
+        maximum = (
+            args.maximum_elevation
+            if args.maximum_elevation is not None
+            else float("inf")
+        )
+        if minimum > maximum:
+            raise ValueError("--minimum-elevation cannot exceed --maximum-elevation")
+        polygons = [
+            polygon
+            for polygon in polygons
+            if minimum
+            <= sum(vertex[1] for vertex in polygon) / len(polygon)
+            <= maximum
+        ]
+        if not polygons:
+            raise ValueError("elevation filter excluded every nav polygon")
     if args.seed:
         selected_ids = set()
         for seed_x, seed_y in args.seed:
