@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.12.0';
+addon.version   = '1.13.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -44,6 +44,7 @@ local DEFAULTS = {
     show_coordinate = true,
     show_coffer_spawns = true,
     show_nm_spawn_ranges = true,
+    show_guide_paths = true,
     show_players = true,
     show_npcs = true,
     show_monsters = true,
@@ -72,6 +73,8 @@ local DEFAULTS = {
 local state = {
     settings = DEFAULTS,
     maps = {},
+    path_catalog = {},
+    path_graphs = {},
     vanilla_maps = {},
     textures = {},
     device = nil,
@@ -97,6 +100,11 @@ local state = {
     guide_markers = {
         payload = nil,
         last_poll = 0,
+        last_error = nil,
+    },
+    guide_path = {
+        route = nil,
+        last_attempt = 0,
         last_error = nil,
     },
 };
@@ -274,6 +282,7 @@ local function config_text()
         string.format('    show_coordinate = %s,', bool_text(settings.show_coordinate)),
         string.format('    show_coffer_spawns = %s,', bool_text(settings.show_coffer_spawns)),
         string.format('    show_nm_spawn_ranges = %s,', bool_text(settings.show_nm_spawn_ranges)),
+        string.format('    show_guide_paths = %s,', bool_text(settings.show_guide_paths)),
         string.format('    show_players = %s,', bool_text(settings.show_players)),
         string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
@@ -473,6 +482,17 @@ local function load_configuration()
         log('Map calibration warning: ' .. tostring(maps_error));
     end
 
+    local path_catalog, path_catalog_error =
+        load_module_file('ashitaminimap_paths.lua');
+    state.path_catalog = type(path_catalog) == 'table' and path_catalog or {};
+    state.path_graphs = {};
+    state.guide_path.route = nil;
+    state.guide_path.last_attempt = 0;
+    state.guide_path.last_error = nil;
+    if (path_catalog_error ~= nil) then
+        log('Path graph catalog unavailable: ' .. tostring(path_catalog_error));
+    end
+
     local vanilla_maps, vanilla_error =
         load_module_file('ashitaminimap_vanilla_maps.lua');
     state.vanilla_maps = type(vanilla_maps) == 'table' and vanilla_maps or {};
@@ -576,6 +596,277 @@ state.active_guide_markers = function (player)
         return {};
     end
     return payload.markers;
+end
+
+state.path_graph_for = function (zone_id)
+    if (state.path_graphs[zone_id] ~= nil) then
+        return state.path_graphs[zone_id] ~= false
+            and state.path_graphs[zone_id]
+            or nil;
+    end
+    local filename = state.path_catalog[zone_id];
+    if (type(filename) ~= 'string' or filename == '') then
+        state.path_graphs[zone_id] = false;
+        return nil;
+    end
+    local graph, error_message = load_module_file(filename);
+    if (type(graph) ~= 'table'
+            or tonumber(graph.zone_id) ~= zone_id
+            or type(graph.nodes) ~= 'table'
+            or #graph.nodes < 2) then
+        state.path_graphs[zone_id] = false;
+        log(string.format(
+            'Invalid path graph for zone %d: %s',
+            zone_id,
+            tostring(error_message or filename)));
+        return nil;
+    end
+    state.path_graphs[zone_id] = graph;
+    return graph;
+end
+
+state.path_nearest_node = function (graph, x, y)
+    local best_index = nil;
+    local best_distance_squared = nil;
+    for index, node in ipairs(graph.nodes) do
+        local delta_x = (tonumber(node[1]) or 0) - x;
+        local delta_y = (tonumber(node[2]) or 0) - y;
+        local distance_squared = (delta_x * delta_x) + (delta_y * delta_y);
+        if (best_distance_squared == nil or distance_squared < best_distance_squared) then
+            best_index = index;
+            best_distance_squared = distance_squared;
+        end
+    end
+    local distance = best_distance_squared ~= nil
+        and math.sqrt(best_distance_squared)
+        or math.huge;
+    if (distance > (tonumber(graph.snap_radius) or 24)) then
+        return nil, distance;
+    end
+    return best_index, distance;
+end
+
+state.path_find = function (graph, start_index, target_index)
+    if (start_index == target_index) then
+        return { start_index };
+    end
+
+    local nodes = graph.nodes;
+    local open = {};
+    local open_count = 0;
+    local previous = {};
+    local cost = { [start_index] = 0 };
+    local closed = {};
+
+    local function heuristic(index)
+        local node = nodes[index];
+        local target = nodes[target_index];
+        local delta_x = node[1] - target[1];
+        local delta_y = node[2] - target[2];
+        return math.sqrt((delta_x * delta_x) + (delta_y * delta_y));
+    end
+
+    local function push(index, score)
+        open_count = open_count + 1;
+        local position = open_count;
+        while position > 1 do
+            local parent = math.floor(position / 2);
+            if (open[parent].score <= score) then
+                break;
+            end
+            open[position] = open[parent];
+            position = parent;
+        end
+        open[position] = { index = index, score = score };
+    end
+
+    local function pop()
+        if (open_count == 0) then
+            return nil;
+        end
+        local result = open[1];
+        local tail = open[open_count];
+        open[open_count] = nil;
+        open_count = open_count - 1;
+        if (open_count > 0) then
+            local position = 1;
+            while true do
+                local left = position * 2;
+                if (left > open_count) then
+                    break;
+                end
+                local right = left + 1;
+                local child = right <= open_count
+                    and open[right].score < open[left].score
+                    and right
+                    or left;
+                if (open[child].score >= tail.score) then
+                    break;
+                end
+                open[position] = open[child];
+                position = child;
+            end
+            open[position] = tail;
+        end
+        return result;
+    end
+
+    push(start_index, heuristic(start_index));
+    while open_count > 0 do
+        local current = pop();
+        local current_index = current.index;
+        if (not closed[current_index]) then
+            if (current_index == target_index) then
+                local result = { target_index };
+                while result[1] ~= start_index do
+                    local parent = previous[result[1]];
+                    if (parent == nil) then
+                        return nil;
+                    end
+                    table.insert(result, 1, parent);
+                end
+                return result;
+            end
+            closed[current_index] = true;
+            local current_node = nodes[current_index];
+            for _, neighbor_index in ipairs(current_node[4] or {}) do
+                local neighbor = nodes[neighbor_index];
+                if (neighbor ~= nil and not closed[neighbor_index]) then
+                    local delta_x = current_node[1] - neighbor[1];
+                    local delta_y = current_node[2] - neighbor[2];
+                    local edge_cost = math.sqrt(
+                        (delta_x * delta_x) + (delta_y * delta_y));
+                    local candidate = cost[current_index] + edge_cost;
+                    if (cost[neighbor_index] == nil
+                            or candidate < cost[neighbor_index]) then
+                        cost[neighbor_index] = candidate;
+                        previous[neighbor_index] = current_index;
+                        push(neighbor_index, candidate + heuristic(neighbor_index));
+                    end
+                end
+            end
+        end
+    end
+    return nil;
+end
+
+state.path_projection = function (route, x, y)
+    local best = nil;
+    local traveled = 0;
+    for index = 1, #route.points - 1 do
+        local start = route.points[index];
+        local finish = route.points[index + 1];
+        local segment_x = finish.x - start.x;
+        local segment_y = finish.y - start.y;
+        local length_squared = (segment_x * segment_x) + (segment_y * segment_y);
+        local ratio = length_squared > 0
+            and clamp(
+                (((x - start.x) * segment_x) + ((y - start.y) * segment_y))
+                    / length_squared,
+                0,
+                1)
+            or 0;
+        local projected_x = start.x + (segment_x * ratio);
+        local projected_y = start.y + (segment_y * ratio);
+        local delta_x = x - projected_x;
+        local delta_y = y - projected_y;
+        local distance_squared = (delta_x * delta_x) + (delta_y * delta_y);
+        local segment_length = math.sqrt(length_squared);
+        if (best == nil or distance_squared < best.distance_squared) then
+            best = {
+                index = index,
+                ratio = ratio,
+                x = projected_x,
+                y = projected_y,
+                distance_squared = distance_squared,
+                traveled = traveled + (segment_length * ratio),
+            };
+        end
+        traveled = traveled + segment_length;
+    end
+    if (best ~= nil) then
+        best.distance = math.sqrt(best.distance_squared);
+        best.remaining = math.max(0, traveled - best.traveled);
+    end
+    return best;
+end
+
+state.ensure_guide_path = function (player, map)
+    if (state.settings.show_guide_paths ~= true) then
+        state.guide_path.route = nil;
+        return nil;
+    end
+    local markers = state.active_guide_markers(player);
+    local destination = markers[1];
+    if (destination == nil
+            or (destination.map_id ~= nil
+                and tonumber(map.page_id) ~= destination.map_id)) then
+        state.guide_path.route = nil;
+        return nil;
+    end
+
+    local graph = state.path_graph_for(player.zone_id);
+    if (graph == nil
+            or (graph.page_id ~= nil
+                and tonumber(map.page_id) ~= tonumber(graph.page_id))) then
+        state.guide_path.route = nil;
+        return nil;
+    end
+
+    local route = state.guide_path.route;
+    local same_destination = route ~= nil
+        and route.zone_id == player.zone_id
+        and math.abs(route.destination_x - destination.x) < 0.1
+        and math.abs(route.destination_y - destination.y) < 0.1;
+    if (same_destination) then
+        local projection = state.path_projection(route, player.x, player.y);
+        if (projection ~= nil and projection.distance <= 12) then
+            route.projection = projection;
+            return route;
+        end
+    end
+
+    local now = os.clock();
+    if (now - state.guide_path.last_attempt < 0.5) then
+        return same_destination and route or nil;
+    end
+    state.guide_path.last_attempt = now;
+
+    local start_index, start_distance =
+        state.path_nearest_node(graph, player.x, player.y);
+    local target_index, target_distance =
+        state.path_nearest_node(graph, destination.x, destination.y);
+    if (start_index == nil or target_index == nil) then
+        state.guide_path.route = nil;
+        state.guide_path.last_error = string.format(
+            'endpoint outside graph (player %.1fy, destination %.1fy)',
+            start_distance,
+            target_distance);
+        return nil;
+    end
+
+    local indices = state.path_find(graph, start_index, target_index);
+    if (indices == nil) then
+        state.guide_path.route = nil;
+        state.guide_path.last_error = 'no connected path';
+        return nil;
+    end
+    local points = { { x = player.x, y = player.y } };
+    for _, index in ipairs(indices) do
+        local node = graph.nodes[index];
+        points[#points + 1] = { x = node[1], y = node[2] };
+    end
+    points[#points + 1] = { x = destination.x, y = destination.y };
+    route = {
+        zone_id = player.zone_id,
+        destination_x = destination.x,
+        destination_y = destination.y,
+        points = points,
+    };
+    route.projection = state.path_projection(route, player.x, player.y);
+    state.guide_path.route = route;
+    state.guide_path.last_error = nil;
+    return route;
 end
 
 local function ensure_device()
@@ -1605,6 +1896,150 @@ local function draw_player(draw_list, center_x, center_y, yaw, visual_scale)
         math.max(1.0, 1.5 * visual_scale));
 end
 
+state.draw_guide_path = function (
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale)
+    local route = state.ensure_guide_path(player, map);
+    local projection = route ~= nil and route.projection or nil;
+    if (route == nil or projection == nil) then
+        return nil;
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
+    local active = imgui.GetColorU32({ 0.10, 0.86, 1.00, 0.96 });
+    local traveled = imgui.GetColorU32({ 0.34, 0.40, 0.44, 0.88 });
+
+    local function screen(point)
+        return {
+            center_x + ((point.x - camera.x) * scale),
+            center_y - ((point.y - camera.y) * scale),
+        };
+    end
+
+    local function segment(start, finish, fill)
+        local screen_start = screen(start);
+        local screen_finish = screen(finish);
+        draw_list:AddLine(screen_start, screen_finish, outline, 5.5);
+        draw_list:AddLine(screen_start, screen_finish, fill, 2.8);
+    end
+
+    local projected_point = { x = projection.x, y = projection.y };
+    for index = 1, #route.points - 1 do
+        local start = route.points[index];
+        local finish = route.points[index + 1];
+        if (index < projection.index) then
+            segment(start, finish, traveled);
+        elseif (index == projection.index) then
+            if (projection.ratio > 0.01) then
+                segment(start, projected_point, traveled);
+            end
+            if (projection.ratio < 0.99) then
+                segment(projected_point, finish, active);
+            end
+        else
+            segment(start, finish, active);
+        end
+    end
+
+    if (projection.distance > 2) then
+        local player_point = { x = player.x, y = player.y };
+        local start = screen(player_point);
+        local finish = screen(projected_point);
+        local delta_x = finish[1] - start[1];
+        local delta_y = finish[2] - start[2];
+        local distance = math.sqrt((delta_x * delta_x) + (delta_y * delta_y));
+        local dots = math.floor(distance / 8);
+        for index = 1, dots do
+            local ratio = index / (dots + 1);
+            draw_list:AddCircleFilled(
+                {
+                    start[1] + (delta_x * ratio),
+                    start[2] + (delta_y * ratio),
+                },
+                1.8,
+                active,
+                8);
+        end
+    end
+
+    local arrow_spacing = 58;
+    local since_arrow = 0;
+    for index = projection.index, #route.points - 1 do
+        local start = index == projection.index
+            and projected_point
+            or route.points[index];
+        local finish = route.points[index + 1];
+        local screen_start = screen(start);
+        local screen_finish = screen(finish);
+        local delta_x = screen_finish[1] - screen_start[1];
+        local delta_y = screen_finish[2] - screen_start[2];
+        local distance = math.sqrt((delta_x * delta_x) + (delta_y * delta_y));
+        if (distance > 0.01) then
+            local offset = arrow_spacing - since_arrow;
+            while offset < distance do
+                local ratio = offset / distance;
+                local x = screen_start[1] + (delta_x * ratio);
+                local y = screen_start[2] + (delta_y * ratio);
+                local direction_x = delta_x / distance;
+                local direction_y = delta_y / distance;
+                local side_x = -direction_y;
+                local side_y = direction_x;
+                draw_list:AddTriangleFilled(
+                    { x + (direction_x * 6), y + (direction_y * 6) },
+                    { x - (direction_x * 4) + (side_x * 4), y - (direction_y * 4) + (side_y * 4) },
+                    { x - (direction_x * 4) - (side_x * 4), y - (direction_y * 4) - (side_y * 4) },
+                    active);
+                offset = offset + arrow_spacing;
+            end
+            since_arrow = (since_arrow + distance) % arrow_spacing;
+        end
+    end
+    return route;
+end
+
+state.draw_guide_path_status = function (draw_list, left, top, size, route)
+    if (route == nil or route.projection == nil or size < 180) then
+        return;
+    end
+    local height = 38;
+    local panel_top = top + size - height;
+    local background = imgui.GetColorU32({ 0.015, 0.025, 0.030, 0.88 });
+    local border = color('border', { 0.67, 0.47, 0.22, 0.90 });
+    local text_color = imgui.GetColorU32({ 0.88, 0.79, 0.61, 1.00 });
+    local accent = imgui.GetColorU32({ 0.10, 0.86, 1.00, 1.00 });
+    draw_list:AddRectFilled(
+        { left + 1, panel_top },
+        { left + size - 1, top + size - 1 },
+        background,
+        MAP_CORNER_RADIUS,
+        ImDrawCornerFlags_All);
+    draw_list:AddLine(
+        { left + 1, panel_top },
+        { left + size - 1, panel_top },
+        border,
+        1.0);
+    draw_list:AddText(
+        { left + 10, panel_top + 5 },
+        text_color,
+        string.format('GUIDE PATH   %.0fy remaining', route.projection.remaining));
+    draw_list:AddText(
+        { left + 10, panel_top + 21 },
+        accent,
+        'Shortest route from map navigation graph');
+    draw_list:AddText(
+        { left + size - 63, panel_top + 21 },
+        accent,
+        'PATH ON');
+end
+
 state.draw_guide_markers = function (
         draw_list,
         left,
@@ -2098,6 +2533,15 @@ local function render_minimap()
             map,
             scale,
             player.z);
+        local guide_route = state.draw_guide_path(
+            draw_list,
+            left,
+            top,
+            size,
+            player,
+            camera,
+            map,
+            scale);
         draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
         state.draw_guide_markers(
             draw_list,
@@ -2116,6 +2560,12 @@ local function render_minimap()
             player_screen_y,
             player.yaw,
             visual_scale);
+        state.draw_guide_path_status(
+            draw_list,
+            left,
+            top,
+            size,
+            guide_route);
         if (nm_spawn_hover ~= nil) then
             draw_nm_spawn_range_card(
                 draw_list,
@@ -2377,6 +2827,9 @@ local function render_config_window()
         config_checkbox(
             'NM spawn ranges##ashitaminimap_nm_spawn_ranges',
             'show_nm_spawn_ranges');
+        config_checkbox(
+            'AshitaGuide shortest path##ashitaminimap_guide_paths',
+            'show_guide_paths');
         config_checkbox('Players##ashitaminimap_players', 'show_players');
         config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
         config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');
@@ -2579,6 +3032,8 @@ ashita.events.register('unload', 'unload_cb', function ()
     save_configuration_if_due(true);
     state.textures = {};
     state.guide_markers.payload = nil;
+    state.guide_path.route = nil;
+    state.path_graphs = {};
     state.device = nil;
     state.config_visible[1] = false;
 end);

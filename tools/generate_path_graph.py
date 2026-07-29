@@ -1,0 +1,244 @@
+"""Generate an AshitaMinimap display-only path graph from a Detour navmesh."""
+
+from __future__ import annotations
+
+import argparse
+import math
+from collections import defaultdict, deque
+from pathlib import Path
+
+from generate_walkable_map import point_in_polygon, read_navmesh
+
+
+def parse_seed(value: str) -> tuple[float, float]:
+    try:
+        x, y = value.split(",", 1)
+        return float(x), float(y)
+    except ValueError as exception:
+        raise argparse.ArgumentTypeError("seed must be world-x,world-y") from exception
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("nav", type=Path, help="compiled Detour .nav file")
+    parser.add_argument("output", type=Path, help="output Lua graph")
+    parser.add_argument("--zone-id", type=int, required=True)
+    parser.add_argument("--page-id", type=int)
+    parser.add_argument(
+        "--seed",
+        type=parse_seed,
+        help="optional world-x,world-y limiting output to one connected component",
+    )
+    parser.add_argument(
+        "--maximum-step",
+        type=float,
+        default=0.65,
+        help="maximum vertical seam step in yalms (default: 0.65)",
+    )
+    parser.add_argument(
+        "--snap-radius",
+        type=float,
+        default=24.0,
+        help="maximum runtime endpoint snap distance in yalms (default: 24)",
+    )
+    return parser.parse_args()
+
+
+def height_at(
+    start: tuple[float, ...],
+    end: tuple[float, ...],
+    position: float,
+    orientation: str,
+) -> float:
+    start_axis = start[2] if orientation == "x" else start[0]
+    end_axis = end[2] if orientation == "x" else end[0]
+    if abs(end_axis - start_axis) < 0.000001:
+        return start[1]
+    ratio = (position - start_axis) / (end_axis - start_axis)
+    return start[1] + (end[1] - start[1]) * ratio
+
+
+def polygon_adjacency(
+    polygons: list[list[tuple[float, ...]]], maximum_step: float
+) -> list[set[int]]:
+    adjacency = [set() for _ in polygons]
+
+    def connect(left: int, right: int) -> None:
+        if left != right:
+            adjacency[left].add(right)
+            adjacency[right].add(left)
+
+    def vertex_key(vertex: tuple[float, ...]) -> tuple[float, ...]:
+        return tuple(round(value, 3) for value in vertex)
+
+    exact_edges: dict[tuple[tuple[float, ...], ...], int] = {}
+    axis_edges: dict[
+        tuple[str, float],
+        list[tuple[float, float, tuple[float, ...], tuple[float, ...], int]],
+    ] = defaultdict(list)
+    for polygon_index, polygon in enumerate(polygons):
+        for edge_index, start in enumerate(polygon):
+            end = polygon[(edge_index + 1) % len(polygon)]
+            edge = tuple(sorted((vertex_key(start), vertex_key(end))))
+            previous = exact_edges.get(edge)
+            if previous is not None:
+                connect(polygon_index, previous)
+            else:
+                exact_edges[edge] = polygon_index
+
+            if abs(start[0] - end[0]) < 0.01:
+                low, high = sorted((start[2], end[2]))
+                axis_edges[("x", round((start[0] + end[0]) / 2, 2))].append(
+                    (low, high, start, end, polygon_index)
+                )
+            elif abs(start[2] - end[2]) < 0.01:
+                low, high = sorted((start[0], end[0]))
+                axis_edges[("y", round((start[2] + end[2]) / 2, 2))].append(
+                    (low, high, start, end, polygon_index)
+                )
+
+    for (orientation, _), edges in axis_edges.items():
+        edges.sort(key=lambda edge: edge[0])
+        for index, edge in enumerate(edges):
+            for candidate in edges[index + 1 :]:
+                if candidate[0] >= edge[1] - 0.01:
+                    break
+                overlap_low = max(edge[0], candidate[0])
+                overlap_high = min(edge[1], candidate[1])
+                if overlap_high - overlap_low <= 0.01:
+                    continue
+                midpoint = (overlap_low + overlap_high) / 2
+                height_delta = abs(
+                    height_at(edge[2], edge[3], midpoint, orientation)
+                    - height_at(candidate[2], candidate[3], midpoint, orientation)
+                )
+                if height_delta <= maximum_step:
+                    connect(edge[4], candidate[4])
+    return adjacency
+
+
+def selected_indices(
+    polygons: list[list[tuple[float, ...]]],
+    adjacency: list[set[int]],
+    seed: tuple[float, float] | None,
+    maximum_seed_snap: float,
+) -> list[int]:
+    if seed is None:
+        return list(range(len(polygons)))
+    start = next(
+        (
+            index
+            for index, polygon in enumerate(polygons)
+            if point_in_polygon(polygon, seed[0], -seed[1])
+        ),
+        None,
+    )
+    if start is None:
+        nearest = min(
+            (
+                (
+                    math.hypot(
+                        sum(vertex[0] for vertex in polygon) / len(polygon) - seed[0],
+                        -sum(vertex[2] for vertex in polygon) / len(polygon) - seed[1],
+                    ),
+                    index,
+                )
+                for index, polygon in enumerate(polygons)
+            ),
+            default=None,
+        )
+        if nearest is None or nearest[0] > maximum_seed_snap:
+            raise ValueError(
+                f"seed {seed} is outside every navigation polygon and "
+                f"more than {maximum_seed_snap:g} yalms from the nearest center"
+            )
+        start = nearest[1]
+    visited = {start}
+    pending = deque([start])
+    while pending:
+        current = pending.popleft()
+        for neighbor in adjacency[current]:
+            if neighbor not in visited:
+                visited.add(neighbor)
+                pending.append(neighbor)
+    return sorted(visited)
+
+
+def centroid(polygon: list[tuple[float, ...]]) -> tuple[float, float, float]:
+    count = len(polygon)
+    return (
+        sum(vertex[0] for vertex in polygon) / count,
+        -sum(vertex[2] for vertex in polygon) / count,
+        sum(vertex[1] for vertex in polygon) / count,
+    )
+
+
+def lua_number(value: float) -> str:
+    if not math.isfinite(value):
+        raise ValueError("graph contains a non-finite coordinate")
+    return f"{value:.3f}"
+
+
+def write_graph(
+    output: Path,
+    zone_id: int,
+    page_id: int | None,
+    snap_radius: float,
+    polygons: list[list[tuple[float, ...]]],
+    adjacency: list[set[int]],
+    indices: list[int],
+) -> None:
+    remap = {source: target + 1 for target, source in enumerate(indices)}
+    lines = [
+        "-- Generated by tools/generate_path_graph.py; do not hand-edit.",
+        "return {",
+        f"    zone_id = {zone_id},",
+        f"    page_id = {page_id if page_id is not None else 'nil'},",
+        f"    snap_radius = {lua_number(snap_radius)},",
+        "    nodes = {",
+    ]
+    for source_index in indices:
+        x, y, z = centroid(polygons[source_index])
+        links = sorted(
+            remap[neighbor]
+            for neighbor in adjacency[source_index]
+            if neighbor in remap
+        )
+        link_text = ", ".join(str(link) for link in links)
+        lines.append(
+            "        { "
+            f"{lua_number(x)}, {lua_number(y)}, {lua_number(z)}, "
+            f"{{ {link_text} }} "
+            "},"
+        )
+    lines.extend(("    },", "}", ""))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text("\n".join(lines), encoding="utf-8", newline="\n")
+
+
+def main() -> None:
+    args = parse_args()
+    _, polygons = read_navmesh(args.nav)
+    adjacency = polygon_adjacency(polygons, args.maximum_step)
+    indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
+    selected = set(indices)
+    write_graph(
+        args.output,
+        args.zone_id,
+        args.page_id,
+        args.snap_radius,
+        polygons,
+        adjacency,
+        indices,
+    )
+    edge_count = sum(
+        1
+        for index in indices
+        for neighbor in adjacency[index]
+        if neighbor in selected and neighbor > index
+    )
+    print(f"wrote {args.output}: {len(indices)} nodes, {edge_count} edges")
+
+
+if __name__ == "__main__":
+    main()

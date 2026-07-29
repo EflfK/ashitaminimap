@@ -27,6 +27,8 @@ return {
     show_coordinate = true,
     -- Fixed authored references only; never indicates the coffer's live position.
     show_coffer_spawns = true,
+    -- Draw a map-owned shortest path to AshitaGuide's current destination.
+    show_guide_paths = true,
     show_players = true,
     show_npcs = true,
     show_monsters = true,
