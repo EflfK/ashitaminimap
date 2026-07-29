@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.5';
+addon.version   = '1.13.6';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -23,6 +23,7 @@ local TRANSITION_CLOSE_OPACITY = 0.64;
 local TRANSITION_CLOSE_ZOOM_RATIO = 3.00;
 local MARKER_REFERENCE_ZOOM = 4.41;
 local ENTITY_FLOOR_TOLERANCE = 8.0;
+local PATH_FLOOR_TOLERANCE = 4.0;
 local MAP_CORNER_RADIUS = 7.0;
 local SHOW_MAP_CALIBRATION = false;
 
@@ -587,6 +588,7 @@ state.poll_guide_markers = function (force)
             normalized.markers[#normalized.markers + 1] = {
                 x = x,
                 y = y,
+                z = type(marker) == 'table' and tonumber(marker.z) or nil,
                 map_id = map_id ~= nil and math.floor(map_id) or nil,
                 approximate = marker.approximate == true,
             };
@@ -652,25 +654,85 @@ state.path_graph_for = function (zone_id, page_id)
     return graph;
 end
 
-state.path_nearest_node = function (graph, x, y)
+state.path_node_live_z = function (graph, node)
+    local graph_z = type(node) == 'table' and tonumber(node[3]) or nil;
+    if (graph_z == nil) then
+        return nil;
+    end
+    -- Generated Detour elevation has the opposite sign from Ashita's live Z.
+    return graph_z * (tonumber(graph.live_z_sign) or -1);
+end
+
+state.path_nearest_node = function (graph, x, y, live_z)
     local best_index = nil;
     local best_distance_squared = nil;
+    local best_planar_distance_squared = nil;
+    local floor_tolerance = tonumber(graph.floor_tolerance)
+        or PATH_FLOOR_TOLERANCE;
     for index, node in ipairs(graph.nodes) do
         local delta_x = (tonumber(node[1]) or 0) - x;
         local delta_y = (tonumber(node[2]) or 0) - y;
-        local distance_squared = (delta_x * delta_x) + (delta_y * delta_y);
-        if (best_distance_squared == nil or distance_squared < best_distance_squared) then
+        local node_z = state.path_node_live_z(graph, node);
+        local delta_z = live_z ~= nil and node_z ~= nil
+            and (node_z - live_z)
+            or 0;
+        local same_floor = live_z == nil
+            or node_z == nil
+            or math.abs(delta_z) <= floor_tolerance;
+        local planar_distance_squared =
+            (delta_x * delta_x) + (delta_y * delta_y);
+        local distance_squared = planar_distance_squared + (delta_z * delta_z);
+        if (same_floor
+                and (best_distance_squared == nil
+                    or distance_squared < best_distance_squared)) then
             best_index = index;
             best_distance_squared = distance_squared;
+            best_planar_distance_squared = planar_distance_squared;
         end
     end
-    local distance = best_distance_squared ~= nil
-        and math.sqrt(best_distance_squared)
+    local distance = best_planar_distance_squared ~= nil
+        and math.sqrt(best_planar_distance_squared)
         or math.huge;
     if (distance > (tonumber(graph.snap_radius) or 24)) then
         return nil, distance;
     end
     return best_index, distance;
+end
+
+state.path_waypoint_z = function (graph, x, y)
+    if (type(graph) ~= 'table' or type(graph.nodes) ~= 'table') then
+        return nil, false;
+    end
+    local candidates = {};
+    local nearest_distance = math.huge;
+    local snap_radius = tonumber(graph.snap_radius) or 24;
+    for _, node in ipairs(graph.nodes) do
+        local delta_x = (tonumber(node[1]) or 0) - x;
+        local delta_y = (tonumber(node[2]) or 0) - y;
+        local distance = math.sqrt(
+            (delta_x * delta_x) + (delta_y * delta_y));
+        local node_z = state.path_node_live_z(graph, node);
+        if (node_z ~= nil and distance <= snap_radius) then
+            candidates[#candidates + 1] = {
+                distance = distance,
+                z = node_z,
+            };
+            nearest_distance = math.min(nearest_distance, distance);
+        end
+    end
+    local selected_z = nil;
+    local ambiguity_radius = nearest_distance + PATH_FLOOR_TOLERANCE;
+    for _, candidate in ipairs(candidates) do
+        if (candidate.distance <= ambiguity_radius) then
+            if (selected_z == nil) then
+                selected_z = candidate.z;
+            elseif math.abs(candidate.z - selected_z)
+                    > PATH_FLOOR_TOLERANCE then
+                return nil, true;
+            end
+        end
+    end
+    return selected_z, false;
 end
 
 state.path_find = function (graph, start_index, target_index)
@@ -690,7 +752,12 @@ state.path_find = function (graph, start_index, target_index)
         local target = nodes[target_index];
         local delta_x = node[1] - target[1];
         local delta_y = node[2] - target[2];
-        return math.sqrt((delta_x * delta_x) + (delta_y * delta_y));
+        local delta_z = (tonumber(node[3]) or 0)
+            - (tonumber(target[3]) or 0);
+        return math.sqrt(
+            (delta_x * delta_x)
+                + (delta_y * delta_y)
+                + (delta_z * delta_z));
     end
 
     local function push(index, score)
@@ -761,8 +828,12 @@ state.path_find = function (graph, start_index, target_index)
                 if (neighbor ~= nil and not closed[neighbor_index]) then
                     local delta_x = current_node[1] - neighbor[1];
                     local delta_y = current_node[2] - neighbor[2];
+                    local delta_z = (tonumber(current_node[3]) or 0)
+                        - (tonumber(neighbor[3]) or 0);
                     local edge_cost = math.sqrt(
-                        (delta_x * delta_x) + (delta_y * delta_y));
+                        (delta_x * delta_x)
+                            + (delta_y * delta_y)
+                            + (delta_z * delta_z));
                     local candidate = cost[current_index] + edge_cost;
                     if (cost[neighbor_index] == nil
                             or candidate < cost[neighbor_index]) then
@@ -777,7 +848,7 @@ state.path_find = function (graph, start_index, target_index)
     return nil;
 end
 
-state.path_projection = function (route, x, y)
+state.path_projection = function (route, x, y, z)
     local best = nil;
     local traveled = 0;
     for index = 1, #route.points - 1 do
@@ -785,19 +856,30 @@ state.path_projection = function (route, x, y)
         local finish = route.points[index + 1];
         local segment_x = finish.x - start.x;
         local segment_y = finish.y - start.y;
-        local length_squared = (segment_x * segment_x) + (segment_y * segment_y);
+        local segment_z = (tonumber(finish.z) or 0)
+            - (tonumber(start.z) or 0);
+        local length_squared = (segment_x * segment_x)
+            + (segment_y * segment_y)
+            + (segment_z * segment_z);
         local ratio = length_squared > 0
             and clamp(
-                (((x - start.x) * segment_x) + ((y - start.y) * segment_y))
+                (((x - start.x) * segment_x)
+                    + ((y - start.y) * segment_y)
+                    + (((tonumber(z) or 0) - (tonumber(start.z) or 0))
+                        * segment_z))
                     / length_squared,
                 0,
                 1)
             or 0;
         local projected_x = start.x + (segment_x * ratio);
         local projected_y = start.y + (segment_y * ratio);
+        local projected_z = (tonumber(start.z) or 0) + (segment_z * ratio);
         local delta_x = x - projected_x;
         local delta_y = y - projected_y;
-        local distance_squared = (delta_x * delta_x) + (delta_y * delta_y);
+        local delta_z = (tonumber(z) or 0) - projected_z;
+        local distance_squared = (delta_x * delta_x)
+            + (delta_y * delta_y)
+            + (delta_z * delta_z);
         local segment_length = math.sqrt(length_squared);
         if (best == nil or distance_squared < best.distance_squared) then
             best = {
@@ -805,6 +887,7 @@ state.path_projection = function (route, x, y)
                 ratio = ratio,
                 x = projected_x,
                 y = projected_y,
+                z = projected_z,
                 distance_squared = distance_squared,
                 traveled = traveled + (segment_length * ratio),
             };
@@ -833,6 +916,24 @@ state.ensure_guide_path = function (player, map)
         return nil;
     end
 
+    local destination_z = tonumber(destination.z);
+    local floor_sensitive = false;
+    for _, layer in ipairs(
+            type(map.structure_layers) == 'table'
+                and map.structure_layers
+                or {}) do
+        if (layer.minimum_player_z ~= nil
+                or layer.maximum_player_z ~= nil) then
+            floor_sensitive = true;
+            break;
+        end
+    end
+    if (floor_sensitive and destination_z == nil) then
+        state.guide_path.route = nil;
+        state.guide_path.last_error = 'destination floor unknown';
+        return nil;
+    end
+
     local graph = state.path_graph_for(player.zone_id, map.page_id);
     if (graph == nil
             or (graph.page_id ~= nil
@@ -847,9 +948,17 @@ state.ensure_guide_path = function (player, map)
         and route.page_id == tonumber(map.page_id)
         and route.destination_source == (custom_waypoint ~= nil and 'custom' or 'guide')
         and math.abs(route.destination_x - destination.x) < 0.1
-        and math.abs(route.destination_y - destination.y) < 0.1;
+        and math.abs(route.destination_y - destination.y) < 0.1
+        and ((route.destination_z == nil and destination_z == nil)
+            or (route.destination_z ~= nil
+                and destination_z ~= nil
+                and math.abs(route.destination_z - destination_z) < 0.1));
     if (same_destination) then
-        local projection = state.path_projection(route, player.x, player.y);
+        local projection = state.path_projection(
+            route,
+            player.x,
+            player.y,
+            player.z);
         if (projection ~= nil and projection.distance <= 12) then
             route.projection = projection;
             return route;
@@ -863,9 +972,13 @@ state.ensure_guide_path = function (player, map)
     state.guide_path.last_attempt = now;
 
     local start_index, start_distance =
-        state.path_nearest_node(graph, player.x, player.y);
+        state.path_nearest_node(graph, player.x, player.y, player.z);
     local target_index, target_distance =
-        state.path_nearest_node(graph, destination.x, destination.y);
+        state.path_nearest_node(
+            graph,
+            destination.x,
+            destination.y,
+            destination_z);
     if (start_index == nil or target_index == nil) then
         state.guide_path.route = nil;
         state.guide_path.last_error = string.format(
@@ -881,21 +994,29 @@ state.ensure_guide_path = function (player, map)
         state.guide_path.last_error = 'no connected path';
         return nil;
     end
-    local points = { { x = player.x, y = player.y } };
+    local points = {};
     for _, index in ipairs(indices) do
         local node = graph.nodes[index];
-        points[#points + 1] = { x = node[1], y = node[2] };
+        points[#points + 1] = {
+            x = node[1],
+            y = node[2],
+            z = state.path_node_live_z(graph, node),
+        };
     end
-    points[#points + 1] = { x = destination.x, y = destination.y };
     route = {
         zone_id = player.zone_id,
         page_id = tonumber(map.page_id),
         destination_x = destination.x,
         destination_y = destination.y,
+        destination_z = destination_z,
         destination_source = custom_waypoint ~= nil and 'custom' or 'guide',
         points = points,
     };
-    route.projection = state.path_projection(route, player.x, player.y);
+    route.projection = state.path_projection(
+        route,
+        player.x,
+        player.y,
+        player.z);
     state.guide_path.route = route;
     state.guide_path.last_error = nil;
     return route;
@@ -2698,18 +2819,32 @@ local function handle_custom_waypoint_input(
 
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
+    local waypoint_x = camera.x + ((mouse_x - center_x) / scale);
+    local waypoint_y = camera.y - ((mouse_y - center_y) / scale);
+    local graph = state.path_graph_for(player.zone_id, map.page_id);
+    local waypoint_z, floor_ambiguous = state.path_waypoint_z(
+        graph,
+        waypoint_x,
+        waypoint_y);
     state.custom_waypoint = {
         zone_id = player.zone_id,
         page_id = tonumber(map.page_id),
-        x = camera.x + ((mouse_x - center_x) / scale),
-        y = camera.y - ((mouse_y - center_y) / scale),
+        x = waypoint_x,
+        y = waypoint_y,
+        z = waypoint_z,
+        floor_ambiguous = floor_ambiguous,
     };
     state.guide_path.route = nil;
     state.guide_path.last_attempt = 0;
     log(string.format(
-        'Custom waypoint set at %.1f, %.1f; it overrides AshitaGuide routing.',
+        floor_ambiguous
+            and 'Custom waypoint set at %.1f, %.1f; overlapping floors are ambiguous, so no path will be drawn.'
+            or 'Custom waypoint set at %.1f, %.1f (z %s); it overrides AshitaGuide routing.',
         state.custom_waypoint.x,
-        state.custom_waypoint.y));
+        state.custom_waypoint.y,
+        state.custom_waypoint.z ~= nil
+            and string.format('%.1f', state.custom_waypoint.z)
+            or 'unknown'));
 end
 
 local function handle_map_input(left, top, size, map)
