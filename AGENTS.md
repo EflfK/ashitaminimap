@@ -4,9 +4,10 @@
 
 Read `docs/MAP_CALIBRATION.md`, `docs/MAP_AUTHORING_PITFALLS.md`,
 `docs/MAP_COMPONENT_AUDIT.md`, and `docs/VANILLA_FALLBACKS.md` completely
-before adding, replacing, cropping, splitting, or recalibrating a map. Treat
-their validation and deployment checklists as required work, not optional
-background.
+before adding, replacing, cropping, splitting, or recalibrating a map. Also
+read `docs/PATH_GRAPHS.md` before creating or changing a map-owned navigation
+graph. Treat their validation and deployment checklists as required work, not
+optional background.
 
 Also read a zone-specific provenance document when one exists. Kuftal Tunnel
 work must read `docs/KUFTAL_TUNNEL.md` before changing its page rules,
@@ -33,14 +34,25 @@ the user to restate the workflow:
    ranges available from trustworthy CatsEyeXI-compatible data. Record their
    provenance and page/floor metadata. Do not add live detection, status
    reporting, entity-name recovery, commands, movement, or automation.
-5. Register every finished asset and overlay in `ashitaminimap_maps.lua`,
+5. Generate the map-owned display-path graph from the same pinned deterministic
+   Detour source, and register it in `ashitaminimap_paths.lua`. AshitaGuide must
+   continue to supply only destination coordinates; do not duplicate routes in
+   guides. Validate node and edge integrity, bidirectional links, connected and
+   deliberately disconnected destinations, endpoint snapping, shortest-path
+   output, off-route recovery, page/floor filtering, and close-zoom alignment
+   with verified walkable structure. Do not join disconnected components
+   without live transition evidence; leave those destinations marker-only and
+   the graph partial.
+6. Register every finished asset and overlay in `ashitaminimap_maps.lua`,
    document complete provenance, regenerate twice, and verify deterministic
-   hashes, referenced paths, dimensions, alpha, calibration, floor/page
-   filtering, overview zoom, close zoom, and marker placement.
-6. Preserve the installed user configuration, sync the finished addon into the
+   hashes for both map and path artifacts, referenced paths, dimensions, alpha,
+   calibration, floor/page filtering, overview zoom, close zoom, marker
+   placement, and rendered guide paths.
+7. Preserve the installed user configuration, sync the finished addon into the
    game installation, reload it through AshitaDevTools, and verify the expected
-   version and behavior in the live log and game.
-7. Finish the repository workflow: update relevant documentation, commit only
+   version, map layers, destination marker, and computed path behavior in the
+   live log and game.
+8. Finish the repository workflow: update relevant documentation, commit only
    the intended work in one request-specific commit, and push `main` to
    `origin/main`. If required live traversal or authoritative source data is
    unavailable, clearly leave the map partial and report the exact remaining
