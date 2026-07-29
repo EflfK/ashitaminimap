@@ -68,7 +68,9 @@ arrow are the supported dynamic representations.
 Kuftal Tunnel can optionally draw filled gold coffer icons at all authored
 possible Treasure Coffer locations. These are fixed, page-filtered reference
 points for manual searching. The addon does not inspect the live coffer,
-identify which point is occupied, or mark its current location.
+identify which point is occupied, or mark its current location. A possible
+spawn on the player's authored floor remains fully visible; a spawn on another
+floor uses the **Other floors opacity** setting.
 
 Unlock the map in the configuration window or with `/aminimap unlock`, then
 left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.

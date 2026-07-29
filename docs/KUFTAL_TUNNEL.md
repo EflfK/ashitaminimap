@@ -99,9 +99,14 @@ LandSandBoat data. Its `setPos` tuples store
 AshitaMinimap's `(x, y, z)` convention.
 
 Twelve locations belong to stock page 2. The deeper location at
-`(-27.946, -183.709, -21.825)` belongs to page 1. Markers are filtered only by
-the active stock page, not by the player's current elevation, so every possible
-location on that page remains visible for manual checking.
+`(-27.946, -183.709, -21.825)` belongs to page 1. Markers are filtered by the
+active stock page and compared with the same authored elevation bands used by
+the page's structure layers. A marker on the player's floor uses its configured
+color opacity. A marker proven to be on another authored floor uses the
+user-level `inactive_floor_opacity` setting, keeping it visible without
+competing with current-floor possibilities. If either elevation cannot be
+classified into an authored band, the marker remains fully visible rather than
+implying an unverified floor relationship.
 
 This overlay is static reference data. It does not inspect entities, locate the
 currently spawned coffer, distinguish an occupied spawn point, or imply that a

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.10.0';
+addon.version   = '1.10.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -411,6 +411,17 @@ end
 local function color(name, fallback)
     local colors = state.settings.colors or {};
     return imgui.GetColorU32(colors[name] or fallback);
+end
+
+local function color_with_opacity(name, fallback, opacity)
+    local colors = state.settings.colors or {};
+    local value = type(colors[name]) == 'table' and colors[name] or fallback;
+    return imgui.GetColorU32({
+        tonumber(value[1]) or fallback[1],
+        tonumber(value[2]) or fallback[2],
+        tonumber(value[3]) or fallback[3],
+        (tonumber(value[4]) or fallback[4]) * clamp(opacity, 0, 1),
+    });
 end
 
 local function ensure_device()
@@ -1121,7 +1132,61 @@ local function draw_entities(draw_list, left, top, size, player, camera, scale, 
     end
 end
 
-local function draw_coffer_spawns(draw_list, left, top, size, camera, map, scale)
+local function floor_layer_matches_z(layer, z)
+    if (type(layer) ~= 'table' or z == nil) then
+        return false, false;
+    end
+
+    local minimum_z = tonumber(layer.minimum_player_z);
+    local maximum_z = tonumber(layer.maximum_player_z);
+    if (minimum_z == nil and maximum_z == nil) then
+        return false, false;
+    end
+
+    return true,
+        (minimum_z == nil or z >= minimum_z)
+        and (maximum_z == nil or z <= maximum_z);
+end
+
+local function shares_authored_floor(map, player_z, marker_z)
+    player_z = tonumber(player_z);
+    marker_z = tonumber(marker_z);
+    local layers = type(map) == 'table' and map.structure_layers or nil;
+    if (player_z == nil or marker_z == nil or type(layers) ~= 'table') then
+        return true;
+    end
+
+    local player_has_floor = false;
+    local marker_has_floor = false;
+    for _, layer in ipairs(layers) do
+        local is_bounded, player_matches = floor_layer_matches_z(
+            layer,
+            player_z);
+        local _, marker_matches = floor_layer_matches_z(layer, marker_z);
+        if (is_bounded) then
+            player_has_floor = player_has_floor or player_matches;
+            marker_has_floor = marker_has_floor or marker_matches;
+            if (player_matches and marker_matches) then
+                return true;
+            end
+        end
+    end
+
+    -- Only dim a marker when both elevations map unambiguously to authored
+    -- floor bands. Unknown elevations remain fully visible rather than
+    -- implying a floor relationship the map does not prove.
+    return not (player_has_floor and marker_has_floor);
+end
+
+local function draw_coffer_spawns(
+        draw_list,
+        left,
+        top,
+        size,
+        camera,
+        map,
+        scale,
+        player_z)
     if (state.settings.show_coffer_spawns ~= true
             or type(map.coffer_spawns) ~= 'table') then
         return;
@@ -1130,9 +1195,6 @@ local function draw_coffer_spawns(draw_list, left, top, size, camera, map, scale
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local active_page = tonumber(map.page_id);
-    local shadow = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
-    local marker_color = color('coffer_spawn', { 1.000, 0.820, 0.200, 0.98 });
-
     for _, marker in ipairs(map.coffer_spawns) do
         local marker_page = type(marker) == 'table'
             and tonumber(marker.page_id)
@@ -1145,6 +1207,20 @@ local function draw_coffer_spawns(draw_list, left, top, size, camera, map, scale
             local screen_y = center_y - ((y - camera.y) * scale);
             if (screen_x >= left + 8 and screen_x <= left + size - 8
                     and screen_y >= top + 7 and screen_y <= top + size - 7) then
+                local marker_opacity = shares_authored_floor(
+                    map,
+                    player_z,
+                    marker.z)
+                    and 1
+                    or state.settings.inactive_floor_opacity;
+                local shadow = color_with_opacity(
+                    'shadow',
+                    { 0.01, 0.02, 0.025, 0.94 },
+                    marker_opacity);
+                local marker_color = color_with_opacity(
+                    'coffer_spawn',
+                    { 1.000, 0.820, 0.200, 0.98 },
+                    marker_opacity);
                 -- A filled gold coffer silhouette distinguishes fixed
                 -- possible-spawn references from live entity dots and rings.
                 draw_list:AddRectFilled(
@@ -1475,14 +1551,10 @@ local function render_minimap()
                         and clamp(layer.opacity or 1, 0, 1)
                         or 1;
                     if (type(layer) == 'table') then
-                        local minimum_z = tonumber(layer.minimum_player_z);
-                        local maximum_z = tonumber(layer.maximum_player_z);
                         local player_z = tonumber(player.z);
-                        if ((minimum_z ~= nil or maximum_z ~= nil)
-                                and player_z ~= nil) then
-                            local is_current_floor =
-                                (minimum_z == nil or player_z >= minimum_z)
-                                and (maximum_z == nil or player_z <= maximum_z);
+                        local is_bounded, is_current_floor =
+                            floor_layer_matches_z(layer, player_z);
+                        if (is_bounded and player_z ~= nil) then
                             opacity = opacity * (is_current_floor
                                 and state.settings.structure_opacity
                                 or state.settings.inactive_floor_opacity);
@@ -1596,7 +1668,15 @@ local function render_minimap()
                 visibility_boost);
         end
         draw_grid(draw_list, left, top, size, camera, map, scale);
-        draw_coffer_spawns(draw_list, left, top, size, camera, map, scale);
+        draw_coffer_spawns(
+            draw_list,
+            left,
+            top,
+            size,
+            camera,
+            map,
+            scale,
+            player.z);
         draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
         local player_screen_x = left + (size / 2) + ((player.x - camera.x) * scale);
         local player_screen_y = top + (size / 2) - ((player.y - camera.y) * scale);
