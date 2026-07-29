@@ -120,6 +120,7 @@ return {
         name = 'Garlaige Citadel',
         stock_calibration = true,
         structure_pages = {
+            [1] = 'assets/maps/200_01_structure.png',
             [16] = 'assets/maps/200_16_structure.png',
         },
         -- The Minimap DLL can leave page 1 selected after the player falls
