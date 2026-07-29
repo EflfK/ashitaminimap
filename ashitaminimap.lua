@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.11.3';
+addon.version   = '1.12.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -93,6 +93,11 @@ local state = {
         page_key = nil,
         x = 0,
         y = 0,
+    },
+    guide_markers = {
+        payload = nil,
+        last_poll = 0,
+        last_error = nil,
     },
 };
 
@@ -490,6 +495,87 @@ local function color_with_opacity(name, fallback, opacity)
         tonumber(value[3]) or fallback[3],
         (tonumber(value[4]) or fallback[4]) * clamp(opacity, 0, 1),
     });
+end
+
+state.guide_marker_file_path = function ()
+    local install_path = tostring(safe_read(function ()
+        return AshitaCore:GetInstallPath();
+    end, '') or '');
+    if (install_path == '') then
+        return nil;
+    end
+    local last = install_path:sub(#install_path);
+    if (last ~= '\\' and last ~= '/') then
+        install_path = install_path .. '\\';
+    end
+    return install_path .. 'config\\addons\\ashitaguide\\ashitaminimap_markers.lua';
+end
+
+state.poll_guide_markers = function (force)
+    local now_clock = os.clock();
+    if (force ~= true and now_clock - state.guide_markers.last_poll < 0.25) then
+        return;
+    end
+    state.guide_markers.last_poll = now_clock;
+
+    local path = state.guide_marker_file_path();
+    local chunk = nil;
+    local load_error = nil;
+    if (path ~= nil) then
+        chunk, load_error = loadfile(path);
+    end
+    if (chunk == nil) then
+        if (load_error ~= nil
+                and state.guide_markers.last_error ~= tostring(load_error)) then
+            state.guide_markers.last_error = tostring(load_error);
+        end
+        return;
+    end
+
+    local ok, value = pcall(chunk);
+    if (not ok or type(value) ~= 'table'
+            or tonumber(value.version) ~= 1
+            or value.source ~= 'ashitaguide') then
+        state.guide_markers.last_error = 'invalid marker handoff';
+        return;
+    end
+
+    local zone_id = tonumber(value.zone_id);
+    local updated_at = tonumber(value.updated_at);
+    local normalized = {
+        zone_id = zone_id ~= nil and math.floor(zone_id) or nil,
+        updated_at = updated_at,
+        markers = {},
+    };
+    for _, marker in ipairs(type(value.markers) == 'table' and value.markers or {}) do
+        local x = type(marker) == 'table' and tonumber(marker.x) or nil;
+        local y = type(marker) == 'table' and tonumber(marker.y) or nil;
+        local map_id = type(marker) == 'table' and tonumber(marker.map_id) or nil;
+        if (x ~= nil and y ~= nil
+                and math.abs(x) <= 100000
+                and math.abs(y) <= 100000
+                and #normalized.markers < 20) then
+            normalized.markers[#normalized.markers + 1] = {
+                x = x,
+                y = y,
+                map_id = map_id ~= nil and math.floor(map_id) or nil,
+                approximate = marker.approximate == true,
+            };
+        end
+    end
+    state.guide_markers.payload = normalized;
+    state.guide_markers.last_error = nil;
+end
+
+state.active_guide_markers = function (player)
+    local payload = state.guide_markers.payload;
+    if (type(payload) ~= 'table'
+            or payload.zone_id ~= player.zone_id
+            or tonumber(payload.updated_at) == nil
+            or math.abs(os.time() - payload.updated_at) > 3) then
+        return {};
+    end
+    return payload.markers;
 end
 
 local function ensure_device()
@@ -1519,6 +1605,102 @@ local function draw_player(draw_list, center_x, center_y, yaw, visual_scale)
         math.max(1.0, 1.5 * visual_scale));
 end
 
+state.draw_guide_markers = function (
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale)
+    local current_page = tonumber(map.page_id);
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local minimum_x = left + 10;
+    local maximum_x = left + size - 10;
+    local minimum_y = top + 10;
+    local maximum_y = top + size - 10;
+    local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
+    local pulse = 0.82 + ((math.sin(os.clock() * 5) + 1) * 0.09);
+    for _, marker in ipairs(state.active_guide_markers(player)) do
+        if (marker.map_id == nil or current_page == marker.map_id) then
+            local screen_x = center_x + ((marker.x - camera.x) * scale);
+            local screen_y = center_y - ((marker.y - camera.y) * scale);
+            local clamped_x = clamp(screen_x, minimum_x, maximum_x);
+            local clamped_y = clamp(screen_y, minimum_y, maximum_y);
+            local offscreen = clamped_x ~= screen_x or clamped_y ~= screen_y;
+            local distance_x = marker.x - player.x;
+            local distance_y = marker.y - player.y;
+            local distance = math.sqrt(
+                (distance_x * distance_x) + (distance_y * distance_y));
+            local fill = distance <= 2.5
+                and color('player', { 0.18, 0.88, 0.90, 1.00 })
+                or imgui.GetColorU32({ 1.00, 0.71, 0.20, pulse });
+            if (marker.approximate == true) then
+                local radius = offscreen and 9.0 or 8.0;
+                draw_list:AddLine(
+                    { clamped_x, clamped_y - radius },
+                    { clamped_x + radius, clamped_y },
+                    outline,
+                    5.0);
+                draw_list:AddLine(
+                    { clamped_x + radius, clamped_y },
+                    { clamped_x, clamped_y + radius },
+                    outline,
+                    5.0);
+                draw_list:AddLine(
+                    { clamped_x, clamped_y + radius },
+                    { clamped_x - radius, clamped_y },
+                    outline,
+                    5.0);
+                draw_list:AddLine(
+                    { clamped_x - radius, clamped_y },
+                    { clamped_x, clamped_y - radius },
+                    outline,
+                    5.0);
+                draw_list:AddLine(
+                    { clamped_x, clamped_y - radius },
+                    { clamped_x + radius, clamped_y },
+                    fill,
+                    2.0);
+                draw_list:AddLine(
+                    { clamped_x + radius, clamped_y },
+                    { clamped_x, clamped_y + radius },
+                    fill,
+                    2.0);
+                draw_list:AddLine(
+                    { clamped_x, clamped_y + radius },
+                    { clamped_x - radius, clamped_y },
+                    fill,
+                    2.0);
+                draw_list:AddLine(
+                    { clamped_x - radius, clamped_y },
+                    { clamped_x, clamped_y - radius },
+                    fill,
+                    2.0);
+            else
+                draw_list:AddCircleFilled(
+                    { clamped_x, clamped_y },
+                    6.0,
+                    outline,
+                    20);
+                draw_list:AddCircleFilled(
+                    { clamped_x, clamped_y },
+                    4.0,
+                    fill,
+                    20);
+                draw_list:AddCircle(
+                    { clamped_x, clamped_y },
+                    offscreen and 9.0 or 8.0,
+                    fill,
+                    20,
+                    2.0);
+            end
+        end
+    end
+end
+
 local function draw_badge(draw_list, left, top, player, map)
     if (state.settings.show_coordinate ~= true) then
         return;
@@ -1917,6 +2099,15 @@ local function render_minimap()
             scale,
             player.z);
         draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
+        state.draw_guide_markers(
+            draw_list,
+            left,
+            top,
+            size,
+            player,
+            camera,
+            map,
+            scale);
         local player_screen_x = left + (size / 2) + ((player.x - camera.x) * scale);
         local player_screen_y = top + (size / 2) - ((player.y - camera.y) * scale);
         draw_player(
@@ -2380,12 +2571,14 @@ end
 
 ashita.events.register('load', 'load_cb', function ()
     load_configuration();
+    state.poll_guide_markers(true);
     log('Loaded. Use /aminimap help for commands.');
 end);
 
 ashita.events.register('unload', 'unload_cb', function ()
     save_configuration_if_due(true);
     state.textures = {};
+    state.guide_markers.payload = nil;
     state.device = nil;
     state.config_visible[1] = false;
 end);
@@ -2395,6 +2588,7 @@ ashita.events.register('command', 'command_cb', function (e)
 end);
 
 ashita.events.register('d3d_present', 'present_cb', function ()
+    state.poll_guide_markers(false);
     render_minimap();
     render_config_window();
     save_configuration_if_due(false);

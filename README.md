@@ -57,6 +57,8 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - possible coffer spawn references for authored zones that provide them;
 - static NM spawn-range references for authored zones that provide them;
 - player, NPC, and monster dot markers;
+- current AshitaGuide step destinations, including page filtering and
+  edge-clamped off-map markers;
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
@@ -65,6 +67,20 @@ Dynamic entities are intentionally anonymous. AshitaMinimap does not render
 entity-name labels and must not recover names solely for minimap display. That
 capability was deliberately removed; dots, target styling, and the player
 arrow are the supported dynamic representations.
+
+## AshitaGuide marker handoff
+
+AshitaGuide publishes the focused step's destination coordinates to
+`config/addons/ashitaguide/ashitaminimap_markers.lua`. AshitaMiniMap polls this
+versioned, display-only handoff and renders valid markers through its own live
+camera transform. A marker is shown only in the matching zone and, when
+specified, on the matching map page. Off-map destinations clamp to the viewport
+edge, approximate destinations use a diamond, and handoffs older than three
+seconds are discarded so a crashed or unloaded guide cannot leave stale
+markers behind.
+
+The handoff contains no commands or player actions. AshitaGuide remains the
+source of guide state; AshitaMiniMap owns all map transforms and rendering.
 
 Kuftal Tunnel can optionally draw filled gold coffer icons at all authored
 possible Treasure Coffer locations. These are fixed, page-filtered reference
@@ -129,8 +145,9 @@ The renderer draws map content in this order:
 5. coordinate grid;
 6. fixed possible coffer spawn references, when enabled for an authored zone;
 7. live entities;
-8. player arrow;
-9. coordinate badge and unlocked-state hint.
+8. current AshitaGuide destinations;
+9. player arrow;
+10. coordinate badge and unlocked-state hint.
 
 Windurst Woods and the four Jeuno city zones use production dark-tactical
 maps. Their structure layers are filled walkable-area masks generated from
