@@ -99,11 +99,11 @@ walkable-structure source category and must share identical dimensions,
 calibration, crop, and wrap.
 
 When a verified stair or ramp still reads as an unexplained color seam at
-close zoom, add a small deterministic gold transition marker over the actual
-contact. Gold is reserved for "change floors here"; it must not represent a
-third elevation, an inferred route, or a destination. First fix disconnected
-geometry and raster seam gaps. A marker clarifies a real connector; it does not
-hide missing structure.
+close zoom, blend the two meeting floor colors over a small area clipped to
+the actual path geometry. The gradient must be centered on a live-verified
+connector and point toward the alternate floor. First fix disconnected
+geometry and raster seam gaps. Do not use an opaque block, glyph, arrow, or
+invented connector to hide missing structure.
 
 ## Required live route audit
 
