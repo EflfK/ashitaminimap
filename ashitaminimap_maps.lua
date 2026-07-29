@@ -66,6 +66,7 @@ return {
         -- edges and alternate-floor color remain visible where paths overlap.
         structure_layers = {
             { image = 'assets/maps/243_structure.png' },
+            { image = 'assets/maps/243_stairs_structure.png' },
             { image = 'assets/maps/243_upper_structure.png' },
         },
         width = 512,
