@@ -48,8 +48,9 @@ Always record both conventions and never choose a band by sign intuition.
 
 | Page | Classification | Selection |
 | --- | --- | --- |
-| 1 | Main/current southern floor | raw elevation `5..15`, clipped to the recorded page extent |
+| 1 | Continuous southern walkable base | all raw elevations, clipped to the recorded page extent, seam closure radius `1.25` |
 | 1 | Descending/deeper route | raw elevation `>=15`, clipped to the recorded page extent |
+| 1 | Verified floor transition | gold stair marker centered at source pixel `(253, 243)` |
 | 2 | Main central elevation | raw elevation `-6..6` |
 | 2 | Upper alternate elevations | raw elevation `<=-6` |
 | 2 | Lower alternate elevations | raw elevation `>=6` |
@@ -65,6 +66,13 @@ Page 2 is the broad overview and intentionally shows all verified elevation
 bands. Cyan is the main map elevation; violet layers are alternate floors or
 connectors. Drawing the cyan layer last keeps the current logical floor legible
 where layers overlap.
+
+Page 1 uses the continuous navmesh union as its cyan base, then overlays the
+deeper route in violet. This prevents raw elevation thresholds from breaking
+walkable slopes and tile seams into dots. Both geometry layers use
+`--seam-closure-radius 1.25`; the default remains `0.25` for other maps. A
+small gold stair glyph marks the verified contact at source pixel `(253,243)`.
+Gold means “floor transition here,” never another floor.
 
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
 stock artwork remains visible there, while only navmesh-backed portions receive
@@ -92,8 +100,10 @@ For any future Kuftal edit:
 2. regenerate every layer twice and compare SHA-256 hashes;
 3. overlay each result on its exact stock page at source resolution;
 4. confirm page 1 at the southern route before changing other pages;
-5. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
+5. check that page 1 renders as one connected cyan base and one connected
+   violet route, and that its gold stair marker remains over their contact;
+6. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
    lower connectors, and every visible stair or ramp;
-6. keep disconnected elevations in separate layer textures;
-7. deploy without overwriting `ashitaminimap_config.lua`, reload the addon, and
+7. keep disconnected elevations in separate layer textures;
+8. deploy without overwriting `ashitaminimap_config.lua`, reload the addon, and
    confirm the expected version and active page in the chat log.

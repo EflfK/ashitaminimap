@@ -67,6 +67,15 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--origin-y", type=float, required=True)
     parser.add_argument("--pixels-per-yalm", type=float, required=True)
     parser.add_argument("--supersample", type=int, default=4)
+    parser.add_argument(
+        "--seam-closure-radius",
+        type=float,
+        default=0.25,
+        help=(
+            "source-pixel radius used to close raster-only navmesh seam gaps; "
+            "increase only after close-zoom validation"
+        ),
+    )
     parser.add_argument("--minimum-hole-area", type=float, default=18.0)
     parser.add_argument(
         "--seed",
@@ -343,6 +352,8 @@ def main() -> None:
     args = parse_args()
     if args.supersample < 1:
         raise ValueError("--supersample must be at least 1")
+    if args.seam_closure_radius < 0:
+        raise ValueError("--seam-closure-radius cannot be negative")
 
     obj_bounds = read_obj_bounds(args.obj)
     nav_origin, polygons = read_navmesh(args.nav)
@@ -413,8 +424,14 @@ def main() -> None:
             fill=0,
         )
 
-    # Seal raster-only subpixel seams without materially expanding geometry.
-    mask = mask.filter(ImageFilter.MaxFilter(3)).filter(ImageFilter.MinFilter(3))
+    # Seal raster-only seams without materially expanding geometry. The
+    # default reproduces the former 3x3 supersampled close at scale 4.
+    closure_radius = round(args.seam_closure_radius * scale)
+    if closure_radius > 0:
+        closure_width = closure_radius * 2 + 1
+        mask = mask.filter(ImageFilter.MaxFilter(closure_width)).filter(
+            ImageFilter.MinFilter(closure_width)
+        )
     maximum_hole_area = round(args.minimum_hole_area * scale * scale)
     holes_filled = fill_small_holes(mask, maximum_hole_area)
 

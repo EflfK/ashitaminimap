@@ -41,6 +41,10 @@ calibration, component selection, elevation bands, or structure assets.
 - Never flatten disconnected overlapping floors into one PNG. Preserve their
   component boundaries with `structure_layers`; use cyan for the main
   connected network and violet for alternate floors and their connectors.
+  A small gold stair/ramp marker may be used only at a verified transition
+  between those layers when the connection remains ambiguous at close zoom.
+  Generate it deterministically and place it over actual connector geometry;
+  do not use gold as a third floor color or as an inferred destination marker.
 - A visually plausible overview is not coverage validation. Inspect close zoom
   and record live control points on every floor and at the entrance, middle,
   and exit of every transition. If full traversal is unavailable, document the
