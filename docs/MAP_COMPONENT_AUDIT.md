@@ -78,11 +78,20 @@ to a lower path beneath it.
 Use ordered `structure_layers` entries:
 
 ```lua
-structure_layers = {
-    { image = 'assets/maps/<zone>_structure.png' },
-    { image = 'assets/maps/<zone>_stairs_structure.png' },
-    { image = 'assets/maps/<zone>_upper_structure.png' },
-}
+structure_layers = structure_layer_set({
+    {
+        image = 'assets/maps/<zone>_structure.png',
+        maximum_player_z = <verified lower bound>,
+    },
+    {
+        image = 'assets/maps/<zone>_stairs_structure.png',
+        minimum_player_z = <verified upper bound>,
+    },
+    {
+        image = 'assets/maps/<zone>_upper_structure.png',
+        minimum_player_z = <verified upper bound>,
+    },
+})
 ```
 
 Generate the main connected network with the standard cyan fill and edges.
@@ -146,6 +155,14 @@ transition-only stripe layer may omit bounds and use a moderate fixed
 opacity** separately. Do not hardcode the inactive value in map metadata. Keep
 inactive floors faint but visible so they still provide orientation and warn
 about projected crossings.
+
+Every multi-texture set in `ashitaminimap_maps.lua` must use
+`structure_layer_set`. Each record must declare `minimum_player_z` and/or
+`maximum_player_z`, use `role = 'floor_transition'`, or explicitly use
+`floor_selection = 'always'` when live evidence proves that the component must
+not participate in floor selection. The catalog loader also rejects an
+unclassified set at runtime. Filenames such as `upper`, `lower`, `main`, or
+`stairs` never imply floor behavior.
 
 ## Required live route audit
 

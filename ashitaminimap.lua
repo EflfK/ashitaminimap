@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.11.2';
+addon.version   = '1.11.3';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -346,6 +346,67 @@ local function load_module_file(filename)
     return value, nil;
 end
 
+local function validate_structure_layer_set(layers, context)
+    if (type(layers) ~= 'table') then
+        return true;
+    end
+    for index, layer in ipairs(layers) do
+        local minimum_z = type(layer) == 'table'
+            and tonumber(layer.minimum_player_z)
+            or nil;
+        local maximum_z = type(layer) == 'table'
+            and tonumber(layer.maximum_player_z)
+            or nil;
+        local has_floor_bounds = minimum_z ~= nil or maximum_z ~= nil;
+        local is_transition = type(layer) == 'table'
+            and layer.role == 'floor_transition';
+        local is_always_visible = type(layer) == 'table'
+            and layer.floor_selection == 'always';
+        if (type(layer) ~= 'table'
+                or not (has_floor_bounds
+                    or is_transition
+                    or is_always_visible)
+                or (minimum_z ~= nil
+                    and maximum_z ~= nil
+                    and minimum_z > maximum_z)) then
+            log(string.format(
+                'Map calibration warning: %s layer %d (%s) has no valid '
+                    .. 'floor selection metadata; skipping this layer set.',
+                context,
+                index,
+                tostring(type(layer) == 'table' and layer.image or layer)));
+            return false;
+        end
+    end
+    return true;
+end
+
+local function validate_structure_layers(maps)
+    for zone_id, map in pairs(maps) do
+        if (type(map) == 'table') then
+            if (type(map.structure_layers) == 'table'
+                    and not validate_structure_layer_set(
+                        map.structure_layers,
+                        string.format('zone %s', tostring(zone_id)))) then
+                map.structure_layers = nil;
+            end
+            if (type(map.structure_pages) == 'table') then
+                for page_id, layers in pairs(map.structure_pages) do
+                    if (type(layers) == 'table'
+                            and not validate_structure_layer_set(
+                                layers,
+                                string.format(
+                                    'zone %s page %s',
+                                    tostring(zone_id),
+                                    tostring(page_id)))) then
+                        map.structure_pages[page_id] = nil;
+                    end
+                end
+            end
+        end
+    end
+end
+
 local function load_configuration()
     local settings, settings_error = load_module_file('ashitaminimap_config.lua');
     settings = type(settings) == 'table' and settings or {};
@@ -402,6 +463,7 @@ local function load_configuration()
 
     local maps, maps_error = load_module_file('ashitaminimap_maps.lua');
     state.maps = type(maps) == 'table' and maps or {};
+    validate_structure_layers(state.maps);
     if (maps_error ~= nil) then
         log('Map calibration warning: ' .. tostring(maps_error));
     end

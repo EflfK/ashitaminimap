@@ -4,6 +4,33 @@
 --
 -- grid_yalms is zone-specific; it is map-scale-byte * 10.
 -- Keep all calibration values separate from the on-screen zoom.
+local function structure_layer_set(layers)
+    for index, layer in ipairs(layers) do
+        assert(
+            type(layer) == 'table',
+            string.format('structure layer %d must be a metadata table', index));
+        local minimum_z = tonumber(layer.minimum_player_z);
+        local maximum_z = tonumber(layer.maximum_player_z);
+        local has_floor_bounds = minimum_z ~= nil or maximum_z ~= nil;
+        local is_transition = layer.role == 'floor_transition';
+        local is_always_visible = layer.floor_selection == 'always';
+        assert(
+            has_floor_bounds or is_transition or is_always_visible,
+            string.format(
+                'structure layer %d (%s) must declare player-Z bounds, '
+                    .. 'role = floor_transition, or floor_selection = always',
+                index,
+                tostring(layer.image)));
+        assert(
+            minimum_z == nil or maximum_z == nil or minimum_z <= maximum_z,
+            string.format(
+                'structure layer %d (%s) has reversed player-Z bounds',
+                index,
+                tostring(layer.image)));
+    end
+    return layers;
+end
+
 return {
     [107] = {
         name = 'South Gustaberg',
@@ -64,11 +91,20 @@ return {
         vanilla_image = 'assets/maps/243_vanilla.png',
         -- Keep disconnected elevations in separate textures so their boundary
         -- edges and alternate-floor color remain visible where paths overlap.
-        structure_layers = {
-            { image = 'assets/maps/243_structure.png' },
-            { image = 'assets/maps/243_stairs_structure.png' },
-            { image = 'assets/maps/243_upper_structure.png' },
-        },
+        structure_layers = structure_layer_set({
+            {
+                image = 'assets/maps/243_structure.png',
+                maximum_player_z = 2.9,
+            },
+            {
+                image = 'assets/maps/243_stairs_structure.png',
+                minimum_player_z = 3.0,
+            },
+            {
+                image = 'assets/maps/243_upper_structure.png',
+                minimum_player_z = 3.0,
+            },
+        }),
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
@@ -83,10 +119,19 @@ return {
         name = 'Upper Jeuno',
         stock_calibration = true,
         vanilla_image = 'assets/maps/244_vanilla.png',
-        structure_layers = {
-            { image = 'assets/maps/244_structure.png' },
-            { image = 'assets/maps/244_stables_structure.png' },
-        },
+        -- These disconnected components have not been proven to represent
+        -- separate player-Z floors. Keep that intentional legacy behavior
+        -- explicit so a future floor audit cannot silently skip classification.
+        structure_layers = structure_layer_set({
+            {
+                image = 'assets/maps/244_structure.png',
+                floor_selection = 'always',
+            },
+            {
+                image = 'assets/maps/244_stables_structure.png',
+                floor_selection = 'always',
+            },
+        }),
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
@@ -159,7 +204,7 @@ return {
         -- Each page is an ordered set of separately rendered elevation
         -- components so overlapping floors retain their own boundaries.
         structure_pages = {
-            [1] = {
+            [1] = structure_layer_set({
                 {
                     image = 'assets/maps/174_01_main_structure.png',
                     minimum_player_z = -14.9,
@@ -172,8 +217,8 @@ return {
                     image = 'assets/maps/174_01_transition_structure.png',
                     role = 'floor_transition',
                 },
-            },
-            [2] = {
+            }),
+            [2] = structure_layer_set({
                 {
                     image = 'assets/maps/174_02_upper_structure.png',
                     minimum_player_z = 6.1,
@@ -187,8 +232,8 @@ return {
                     minimum_player_z = -6.0,
                     maximum_player_z = 6.0,
                 },
-            },
-            [15] = {
+            }),
+            [15] = structure_layer_set({
                 {
                     image = 'assets/maps/174_15_lower_structure.png',
                     maximum_player_z = 5.0,
@@ -202,8 +247,8 @@ return {
                     minimum_player_z = 5.1,
                     maximum_player_z = 25.0,
                 },
-            },
-            [16] = {
+            }),
+            [16] = structure_layer_set({
                 {
                     image = 'assets/maps/174_16_left_lower_structure.png',
                     maximum_player_z = 14.9,
@@ -221,7 +266,7 @@ return {
                     minimum_player_z = 15.0,
                     maximum_player_z = 25.0,
                 },
-            },
+            }),
         },
         -- Fixed possible Treasure Coffer locations from CatsEyeXI's Kuftal
         -- treasure table (scripts/globals/treasure.lua). Its setPos tuples are

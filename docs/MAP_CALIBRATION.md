@@ -160,10 +160,16 @@ overlapping or disconnected elevations:
 
 ```lua
 structure_pages = {
-    [1] = {
-        { image = 'assets/maps/example_lower.png' },
-        { image = 'assets/maps/example_main.png' },
-    },
+    [1] = structure_layer_set({
+        {
+            image = 'assets/maps/example_lower.png',
+            maximum_player_z = <verified boundary>,
+        },
+        {
+            image = 'assets/maps/example_main.png',
+            minimum_player_z = <verified boundary>,
+        },
+    }),
 }
 ```
 
@@ -171,6 +177,10 @@ The walkable-map generator accepts `--minimum-elevation` and
 `--maximum-elevation` to isolate a verified Detour height band before
 connectivity filtering and rendering. Detour elevation is the navmesh
 vertex's second coordinate; record its bounds in the map provenance.
+Generation is not complete until every multi-texture output is registered
+through `structure_layer_set` with verified player-Z bounds. The Detour
+elevation filters select source polygons; they do not automatically become
+runtime player-Z bounds, and asset filenames do not supply that metadata.
 
 Metalworks is the reference example:
 
