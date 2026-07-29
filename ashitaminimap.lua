@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.4';
+addon.version   = '1.13.5';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -1819,6 +1819,117 @@ local function draw_travel_references(
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local active_page = tonumber(map.page_id);
+    local player = safe_read(function ()
+        return AshitaCore:GetMemoryManager():GetPlayer();
+    end, nil);
+    local travel_masks = player ~= nil and safe_read(function ()
+        return player:GetHomepointMasks();
+    end, nil) or nil;
+
+    local function read_mask_byte(byte_index)
+        if (travel_masks == nil or byte_index == nil) then
+            return nil;
+        end
+        local direct = safe_read(function ()
+            return tonumber(travel_masks[byte_index + 1]);
+        end, nil);
+        if (direct ~= nil) then
+            return direct;
+        end
+        return safe_read(function ()
+            local pointer = ffi.cast('const uint8_t*', travel_masks);
+            return tonumber(pointer[byte_index]);
+        end, nil);
+    end
+
+    local function is_unlocked(marker, kind)
+        local bit_index = kind == 'home_point'
+            and tonumber(marker.unlock_index)
+            or tonumber(marker.unlock_bit);
+        if (bit_index == nil) then
+            return nil;
+        end
+        local byte_offset = kind == 'survival_guide' and 16 or 0;
+        local value = read_mask_byte(
+            byte_offset + math.floor(bit_index / 8));
+        if (value == nil) then
+            return nil;
+        end
+        return bit.band(
+            value,
+            bit.lshift(1, bit_index % 8)) ~= 0;
+    end
+
+    local function draw_home_point_icon(
+            screen_x,
+            screen_y,
+            crystal,
+            shine,
+            shadow,
+            icon_scale)
+        local s = icon_scale or 1;
+        draw_list:AddTriangleFilled(
+            { screen_x, screen_y - (10 * s) },
+            { screen_x - (8 * s), screen_y + (2 * s) },
+            { screen_x + (8 * s), screen_y + (2 * s) },
+            shadow);
+        draw_list:AddTriangleFilled(
+            { screen_x - (8 * s), screen_y + (1 * s) },
+            { screen_x, screen_y + (10 * s) },
+            { screen_x + (8 * s), screen_y + (1 * s) },
+            shadow);
+        draw_list:AddTriangleFilled(
+            { screen_x, screen_y - (8 * s) },
+            { screen_x - (6 * s), screen_y + (1 * s) },
+            { screen_x + (6 * s), screen_y + (1 * s) },
+            crystal);
+        draw_list:AddTriangleFilled(
+            { screen_x - (6 * s), screen_y + (1 * s) },
+            { screen_x, screen_y + (8 * s) },
+            { screen_x + (6 * s), screen_y + (1 * s) },
+            crystal);
+        draw_list:AddTriangleFilled(
+            { screen_x, screen_y - (7 * s) },
+            { screen_x - (4 * s), screen_y },
+            { screen_x, screen_y + (6 * s) },
+            shine);
+    end
+
+    local function draw_survival_guide_icon(
+            screen_x,
+            screen_y,
+            cover,
+            page,
+            shadow,
+            icon_scale)
+        local s = icon_scale or 1;
+        draw_list:AddRectFilled(
+            { screen_x - (10 * s), screen_y - (7 * s) },
+            { screen_x + (10 * s), screen_y + (8 * s) },
+            shadow,
+            2.0 * s);
+        draw_list:AddRectFilled(
+            { screen_x - (9 * s), screen_y - (6 * s) },
+            { screen_x + (9 * s), screen_y + (7 * s) },
+            cover,
+            1.5 * s);
+        draw_list:AddTriangleFilled(
+            { screen_x - (7 * s), screen_y - (5 * s) },
+            { screen_x - (1 * s), screen_y - (3 * s) },
+            { screen_x - (1 * s), screen_y + (6 * s) },
+            page);
+        draw_list:AddTriangleFilled(
+            { screen_x + (7 * s), screen_y - (5 * s) },
+            { screen_x + (1 * s), screen_y - (3 * s) },
+            { screen_x + (1 * s), screen_y + (6 * s) },
+            page);
+        draw_list:AddLine(
+            { screen_x, screen_y - (3 * s) },
+            { screen_x, screen_y + (6 * s) },
+            shadow,
+            1.5 * s);
+    end
+
     for _, marker in ipairs(map.travel_references) do
         local kind = type(marker) == 'table' and marker.kind or nil;
         local marker_page = type(marker) == 'table'
@@ -1844,6 +1955,24 @@ local function draw_travel_references(
                     'shadow',
                     { 0.01, 0.02, 0.025, 0.94 },
                     marker_opacity);
+                local unlocked = is_unlocked(marker, kind);
+                local pulse = 0.5 + (0.5 * math.sin(os.clock() * 4.5));
+                local glow = nil;
+                if (unlocked == false) then
+                    glow = kind == 'home_point'
+                        and imgui.GetColorU32({
+                            0.310,
+                            0.900,
+                            1.000,
+                            (0.16 + (pulse * 0.24)) * marker_opacity,
+                        })
+                        or imgui.GetColorU32({
+                            0.940,
+                            0.720,
+                            0.300,
+                            (0.16 + (pulse * 0.24)) * marker_opacity,
+                        });
+                end
                 if (kind == 'home_point') then
                     local crystal = color_with_opacity(
                         'home_point',
@@ -1855,32 +1984,24 @@ local function draw_travel_references(
                         1.00,
                         0.95 * marker_opacity,
                     });
-                    -- Faceted crystal silhouette matching a Home Point.
-                    draw_list:AddTriangleFilled(
-                        { screen_x, screen_y - 10 },
-                        { screen_x - 8, screen_y + 2 },
-                        { screen_x + 8, screen_y + 2 },
-                        shadow);
-                    draw_list:AddTriangleFilled(
-                        { screen_x - 8, screen_y + 1 },
-                        { screen_x, screen_y + 10 },
-                        { screen_x + 8, screen_y + 1 },
-                        shadow);
-                    draw_list:AddTriangleFilled(
-                        { screen_x, screen_y - 8 },
-                        { screen_x - 6, screen_y + 1 },
-                        { screen_x + 6, screen_y + 1 },
-                        crystal);
-                    draw_list:AddTriangleFilled(
-                        { screen_x - 6, screen_y + 1 },
-                        { screen_x, screen_y + 8 },
-                        { screen_x + 6, screen_y + 1 },
-                        crystal);
-                    draw_list:AddTriangleFilled(
-                        { screen_x, screen_y - 7 },
-                        { screen_x - 4, screen_y },
-                        { screen_x, screen_y + 6 },
-                        shine);
+                    -- Draw the same crystal silhouette larger and translucent
+                    -- behind locked Home Points so they read as collectible.
+                    if (glow ~= nil) then
+                        draw_home_point_icon(
+                            screen_x,
+                            screen_y,
+                            glow,
+                            glow,
+                            glow,
+                            1.25 + (pulse * 0.18));
+                    end
+                    draw_home_point_icon(
+                        screen_x,
+                        screen_y,
+                        crystal,
+                        shine,
+                        shadow,
+                        1);
                 else
                     local cover = color_with_opacity(
                         'survival_guide',
@@ -1892,32 +2013,23 @@ local function draw_travel_references(
                         0.58,
                         0.98 * marker_opacity,
                     });
-                    -- Open field-guide book with a dark cover and page seam.
-                    draw_list:AddRectFilled(
-                        { screen_x - 10, screen_y - 7 },
-                        { screen_x + 10, screen_y + 8 },
-                        shadow,
-                        2.0);
-                    draw_list:AddRectFilled(
-                        { screen_x - 9, screen_y - 6 },
-                        { screen_x + 9, screen_y + 7 },
+                    -- Locked books pulse as a larger copy of the same icon.
+                    if (glow ~= nil) then
+                        draw_survival_guide_icon(
+                            screen_x,
+                            screen_y,
+                            glow,
+                            glow,
+                            glow,
+                            1.18 + (pulse * 0.15));
+                    end
+                    draw_survival_guide_icon(
+                        screen_x,
+                        screen_y,
                         cover,
-                        1.5);
-                    draw_list:AddTriangleFilled(
-                        { screen_x - 7, screen_y - 5 },
-                        { screen_x - 1, screen_y - 3 },
-                        { screen_x - 1, screen_y + 6 },
-                        page);
-                    draw_list:AddTriangleFilled(
-                        { screen_x + 7, screen_y - 5 },
-                        { screen_x + 1, screen_y - 3 },
-                        { screen_x + 1, screen_y + 6 },
-                        page);
-                    draw_list:AddLine(
-                        { screen_x, screen_y - 3 },
-                        { screen_x, screen_y + 6 },
+                        page,
                         shadow,
-                        1.5);
+                        1);
                 end
             end
         end

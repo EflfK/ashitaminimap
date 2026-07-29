@@ -2,7 +2,14 @@
 
 AshitaMinimap treats Home Points and Survival Guides as display-only,
 map-owned reference data. Guides do not supply these records, and the addon
-does not inspect unlock state, interact with an NPC, or automate travel.
+does not interact with an NPC or automate travel.
+
+The addon does read AshitaCore's existing read-only travel-registration masks
+to distinguish registered destinations from ones the current player can still
+obtain. An unregistered Home Point or Survival Guide pulses with a translucent,
+enlarged copy of its normal icon. A registered destination remains static. If
+the masks are unavailable, the addon does not guess and renders the ordinary
+static icon.
 
 ## Pinned source
 
@@ -54,6 +61,9 @@ Survival Guide reference from the same pinned source.
 
 - `kind = 'home_point'` renders a cyan faceted crystal.
 - `kind = 'survival_guide'` renders an open brown-and-parchment book.
+- Home Point records declare the retail `unlock_index`; Survival Guide records
+  declare the bit within the Survival Guide mask as `unlock_bit`.
+- An unset registration bit adds a pulsing glow in the icon's own color.
 - Every record requires a stable display name and finite `x`, `y`, and `z`.
 - The layer is controlled by **Home Points and Survival Guides** in the
   configuration window.

@@ -51,6 +51,15 @@ local function travel_reference_set(markers)
                 'travel reference %d (%s) must have x, y, and z',
                 index,
                 marker.name));
+        assert(
+            (marker.kind == 'home_point'
+                and tonumber(marker.unlock_index) ~= nil)
+                or (marker.kind == 'survival_guide'
+                    and tonumber(marker.unlock_bit) ~= nil),
+            string.format(
+                'travel reference %d (%s) must declare its unlock bit',
+                index,
+                marker.name));
     end
     return markers;
 end
@@ -77,8 +86,8 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 1.20,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', x = 126.000, y =    8.000, z = 8.500 },
-            { kind = 'home_point', name = 'Home Point #2', x =  40.000, y = -238.000, z = 8.500 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 14, x = 126.000, y =    8.000, z = 8.500 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 15, x =  40.000, y = -238.000, z = 8.500 },
         }),
     },
     [237] = {
@@ -94,7 +103,7 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', x = 46.000, y = -19.000, z = -14.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 16, x = 46.000, y = -19.000, z = -14.000 },
         }),
     },
     [241] = {
@@ -118,11 +127,11 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', x =   9.088, y =   -0.383, z = -2.500 },
-            { kind = 'home_point', name = 'Home Point #2', x = 107.000, y =  -56.000, z = -5.000 },
-            { kind = 'home_point', name = 'Home Point #3', x = -92.000, y =   62.000, z = -5.000 },
-            { kind = 'home_point', name = 'Home Point #4', x =  74.000, y = -139.000, z = -7.500 },
-            { kind = 'home_point', name = 'Home Point #5', x = -43.500, y = -145.000, z =  0.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 25, x =   9.088, y =   -0.383, z = -2.500 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 26, x = 107.000, y =  -56.000, z = -5.000 },
+            { kind = 'home_point', name = 'Home Point #3', unlock_index = 27, x = -92.000, y =   62.000, z = -5.000 },
+            { kind = 'home_point', name = 'Home Point #4', unlock_index = 28, x =  74.000, y = -139.000, z = -7.500 },
+            { kind = 'home_point', name = 'Home Point #5', unlock_index = 119, x = -43.500, y = -145.000, z =  0.000 },
         }),
     },
     [243] = {
@@ -154,9 +163,9 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', x = -6.000, y =   0.001, z =  3.000 },
-            { kind = 'home_point', name = 'Home Point #2', x = 53.000, y = -57.000, z =  9.000 },
-            { kind = 'survival_guide', name = 'Survival Guide', x = 43.000, y = -69.000, z = 10.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 29, x = -6.000, y =   0.001, z =  3.000 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 30, x = 53.000, y = -57.000, z =  9.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 27, x = 43.000, y = -69.000, z = 10.000 },
         }),
     },
     [244] = {
@@ -187,9 +196,9 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', x = -98.981, y = 167.569, z =  0.000 },
-            { kind = 'home_point', name = 'Home Point #2', x =  32.000, y = -44.000, z = -1.000 },
-            { kind = 'home_point', name = 'Home Point #3', x = -52.000, y =  16.000, z =  1.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 32, x = -98.981, y = 167.569, z =  0.000 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 33, x =  32.000, y = -44.000, z = -1.000 },
+            { kind = 'home_point', name = 'Home Point #3', unlock_index = 34, x = -52.000, y =  16.000, z =  1.000 },
         }),
     },
     [245] = {
@@ -206,8 +215,8 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', x = -98.588, y = -183.416, z =  0.000 },
-            { kind = 'home_point', name = 'Home Point #2', x =  18.000, y =   54.000, z = -1.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 35, x = -98.588, y = -183.416, z =  0.000 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 36, x =  18.000, y =   54.000, z = -1.000 },
         }),
     },
     [246] = {
@@ -223,8 +232,8 @@ return {
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', x =   37.076, y =  8.831, z =  0.000 },
-            { kind = 'home_point', name = 'Home Point #2', x = -155.000, y = -4.000, z = -1.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 37, x =   37.076, y =  8.831, z =  0.000 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 38, x = -155.000, y = -4.000, z = -1.000 },
         }),
     },
     [200] = {
@@ -257,6 +266,7 @@ return {
             {
                 kind = 'survival_guide',
                 name = 'Survival Guide',
+                unlock_bit = 23,
                 x = -383.000,
                 y = 363.500,
                 z = -6.118,
@@ -462,6 +472,7 @@ return {
             {
                 kind = 'survival_guide',
                 name = 'Survival Guide',
+                unlock_bit = 51,
                 x = -16.000,
                 y = -237.000,
                 z = -20.809,
