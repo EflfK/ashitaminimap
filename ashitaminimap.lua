@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.3';
+addon.version   = '1.13.4';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -43,6 +43,7 @@ local DEFAULTS = {
     show_grid = true,
     show_coordinate = true,
     show_coffer_spawns = true,
+    show_travel_references = true,
     show_nm_spawn_ranges = true,
     show_guide_paths = true,
     show_players = true,
@@ -58,6 +59,8 @@ local DEFAULTS = {
         grid_text = { 0.82, 0.71, 0.51, 0.88 },
         chest_spawn = { 0.545, 0.306, 0.145, 0.98 },
         coffer_spawn = { 1.000, 0.820, 0.200, 0.98 },
+        home_point = { 0.310, 0.900, 1.000, 0.98 },
+        survival_guide = { 0.690, 0.420, 0.180, 0.98 },
         nm_spawn_range = { 0.690, 0.145, 0.190, 0.075 },
         nm_spawn_border = { 0.890, 0.660, 0.260, 0.78 },
         player = { 0.18, 0.88, 0.90, 1.00 },
@@ -283,6 +286,7 @@ local function config_text()
         string.format('    show_grid = %s,', bool_text(settings.show_grid)),
         string.format('    show_coordinate = %s,', bool_text(settings.show_coordinate)),
         string.format('    show_coffer_spawns = %s,', bool_text(settings.show_coffer_spawns)),
+        string.format('    show_travel_references = %s,', bool_text(settings.show_travel_references)),
         string.format('    show_nm_spawn_ranges = %s,', bool_text(settings.show_nm_spawn_ranges)),
         string.format('    show_guide_paths = %s,', bool_text(settings.show_guide_paths)),
         string.format('    show_players = %s,', bool_text(settings.show_players)),
@@ -303,6 +307,8 @@ local function config_text()
         string.format('        grid_text = %s,', color_text(colors.grid_text, DEFAULTS.colors.grid_text)),
         string.format('        chest_spawn = %s,', color_text(colors.chest_spawn, DEFAULTS.colors.chest_spawn)),
         string.format('        coffer_spawn = %s,', color_text(colors.coffer_spawn, DEFAULTS.colors.coffer_spawn)),
+        string.format('        home_point = %s,', color_text(colors.home_point, DEFAULTS.colors.home_point)),
+        string.format('        survival_guide = %s,', color_text(colors.survival_guide, DEFAULTS.colors.survival_guide)),
         string.format('        nm_spawn_range = %s,', color_text(colors.nm_spawn_range, DEFAULTS.colors.nm_spawn_range)),
         string.format('        nm_spawn_border = %s,', color_text(colors.nm_spawn_border, DEFAULTS.colors.nm_spawn_border)),
         string.format('        player = %s,', color_text(colors.player, DEFAULTS.colors.player)),
@@ -1796,6 +1802,128 @@ local function draw_treasure_spawns(
     end
 end
 
+local function draw_travel_references(
+        draw_list,
+        left,
+        top,
+        size,
+        camera,
+        map,
+        scale,
+        player_z)
+    if (state.settings.show_travel_references ~= true
+            or type(map.travel_references) ~= 'table') then
+        return;
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local active_page = tonumber(map.page_id);
+    for _, marker in ipairs(map.travel_references) do
+        local kind = type(marker) == 'table' and marker.kind or nil;
+        local marker_page = type(marker) == 'table'
+            and tonumber(marker.page_id)
+            or nil;
+        local x = type(marker) == 'table' and tonumber(marker.x) or nil;
+        local y = type(marker) == 'table' and tonumber(marker.y) or nil;
+        if ((kind == 'home_point' or kind == 'survival_guide')
+                and x ~= nil and y ~= nil
+                and (marker_page == nil or marker_page == active_page)) then
+            local screen_x = center_x + ((x - camera.x) * scale);
+            local screen_y = center_y - ((y - camera.y) * scale);
+            if (screen_x >= left + 9 and screen_x <= left + size - 9
+                    and screen_y >= top + 9
+                    and screen_y <= top + size - 9) then
+                local marker_opacity = shares_authored_floor(
+                    map,
+                    player_z,
+                    marker.z)
+                    and 1
+                    or state.settings.inactive_floor_opacity;
+                local shadow = color_with_opacity(
+                    'shadow',
+                    { 0.01, 0.02, 0.025, 0.94 },
+                    marker_opacity);
+                if (kind == 'home_point') then
+                    local crystal = color_with_opacity(
+                        'home_point',
+                        { 0.310, 0.900, 1.000, 0.98 },
+                        marker_opacity);
+                    local shine = imgui.GetColorU32({
+                        0.84,
+                        0.98,
+                        1.00,
+                        0.95 * marker_opacity,
+                    });
+                    -- Faceted crystal silhouette matching a Home Point.
+                    draw_list:AddTriangleFilled(
+                        { screen_x, screen_y - 10 },
+                        { screen_x - 8, screen_y + 2 },
+                        { screen_x + 8, screen_y + 2 },
+                        shadow);
+                    draw_list:AddTriangleFilled(
+                        { screen_x - 8, screen_y + 1 },
+                        { screen_x, screen_y + 10 },
+                        { screen_x + 8, screen_y + 1 },
+                        shadow);
+                    draw_list:AddTriangleFilled(
+                        { screen_x, screen_y - 8 },
+                        { screen_x - 6, screen_y + 1 },
+                        { screen_x + 6, screen_y + 1 },
+                        crystal);
+                    draw_list:AddTriangleFilled(
+                        { screen_x - 6, screen_y + 1 },
+                        { screen_x, screen_y + 8 },
+                        { screen_x + 6, screen_y + 1 },
+                        crystal);
+                    draw_list:AddTriangleFilled(
+                        { screen_x, screen_y - 7 },
+                        { screen_x - 4, screen_y },
+                        { screen_x, screen_y + 6 },
+                        shine);
+                else
+                    local cover = color_with_opacity(
+                        'survival_guide',
+                        { 0.690, 0.420, 0.180, 0.98 },
+                        marker_opacity);
+                    local page = imgui.GetColorU32({
+                        0.94,
+                        0.83,
+                        0.58,
+                        0.98 * marker_opacity,
+                    });
+                    -- Open field-guide book with a dark cover and page seam.
+                    draw_list:AddRectFilled(
+                        { screen_x - 10, screen_y - 7 },
+                        { screen_x + 10, screen_y + 8 },
+                        shadow,
+                        2.0);
+                    draw_list:AddRectFilled(
+                        { screen_x - 9, screen_y - 6 },
+                        { screen_x + 9, screen_y + 7 },
+                        cover,
+                        1.5);
+                    draw_list:AddTriangleFilled(
+                        { screen_x - 7, screen_y - 5 },
+                        { screen_x - 1, screen_y - 3 },
+                        { screen_x - 1, screen_y + 6 },
+                        page);
+                    draw_list:AddTriangleFilled(
+                        { screen_x + 7, screen_y - 5 },
+                        { screen_x + 1, screen_y - 3 },
+                        { screen_x + 1, screen_y + 6 },
+                        page);
+                    draw_list:AddLine(
+                        { screen_x, screen_y - 3 },
+                        { screen_x, screen_y + 6 },
+                        shadow,
+                        1.5);
+                end
+            end
+        end
+    end
+end
+
 local function draw_nm_spawn_range_card(
         draw_list,
         left,
@@ -2747,6 +2875,15 @@ local function render_minimap()
             map,
             scale,
             player.z);
+        draw_travel_references(
+            draw_list,
+            left,
+            top,
+            size,
+            camera,
+            map,
+            scale,
+            player.z);
         local guide_route = state.draw_guide_path(
             draw_list,
             left,
@@ -3047,6 +3184,9 @@ local function render_config_window()
         config_checkbox(
             'Possible treasure spawns##ashitaminimap_coffer_spawns',
             'show_coffer_spawns');
+        config_checkbox(
+            'Home Points and Survival Guides##ashitaminimap_travel_references',
+            'show_travel_references');
         config_checkbox(
             'NM spawn ranges##ashitaminimap_nm_spawn_ranges',
             'show_nm_spawn_ranges');

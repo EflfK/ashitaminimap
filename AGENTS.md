@@ -29,14 +29,17 @@ the user to restate the workflow:
    destinations to visit, capture entrance/middle/exit positions for every
    floor transition, and continue when live evidence arrives. Never substitute
    an overview image for traversal evidence or call unresolved work complete.
-4. Add display-only static references for all verified Treasure Chest or
-   Treasure Coffer locations and relevant notorious-monster spawn points or
-   ranges available from trustworthy CatsEyeXI-compatible data. Every treasure
-   record must declare `kind = 'chest'` or `kind = 'coffer'`: Treasure Chests
-   use the wooden chest symbol and Treasure Coffers use the gold coffer symbol.
-   Never combine or relabel the two types. Record their provenance and
-   page/floor metadata. Do not add live detection, status reporting,
-   entity-name recovery, commands, movement, or automation.
+4. Add display-only static references for every active Home Point and Survival
+   Guide, all verified Treasure Chest or Treasure Coffer locations, and relevant
+   notorious-monster spawn points or ranges available from trustworthy
+   CatsEyeXI-compatible data. Home Points use the cyan crystal symbol and
+   Survival Guides use the open-book symbol. Every treasure record must declare
+   `kind = 'chest'` or `kind = 'coffer'`: Treasure Chests use the wooden chest
+   symbol and Treasure Coffers use the gold coffer symbol. Never combine or
+   relabel the two types. Record provenance plus exact coordinates and
+   page/floor metadata; explicitly register an empty travel-reference set when
+   an audited zone has neither travel NPC. Do not add live detection, status
+   reporting, entity-name recovery, commands, movement, or automation.
 5. Generate the map-owned display-path graph from the same pinned deterministic
    Detour source, and register it in `ashitaminimap_paths.lua`. AshitaGuide must
    continue to supply only destination coordinates; do not duplicate routes in

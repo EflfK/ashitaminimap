@@ -31,6 +31,30 @@ local function structure_layer_set(layers)
     return layers;
 end
 
+-- Static travel references are active NPC records from CatsEyeXI npc_list.sql
+-- at commit 314deaf03465f2b24b6a1e4e73a016ca036f1084. SQL coordinates are
+-- (pos_x, vertical, pos_z); minimap records use (x, y, z). Empty sets are
+-- intentional and record that a supported map was audited.
+local function travel_reference_set(markers)
+    for index, marker in ipairs(markers) do
+        assert(
+            marker.kind == 'home_point' or marker.kind == 'survival_guide',
+            string.format('travel reference %d has an invalid kind', index));
+        assert(
+            type(marker.name) == 'string' and marker.name ~= '',
+            string.format('travel reference %d must have a name', index));
+        assert(
+            tonumber(marker.x) ~= nil
+                and tonumber(marker.y) ~= nil
+                and tonumber(marker.z) ~= nil,
+            string.format(
+                'travel reference %d (%s) must have x, y, and z',
+                index,
+                marker.name));
+    end
+    return markers;
+end
+
 return {
     [107] = {
         name = 'South Gustaberg',
@@ -41,6 +65,7 @@ return {
         origin_y = 384,
         grid_yalms = 100,
         image_pixels_per_yalm = 0.48,
+        travel_references = travel_reference_set({}),
     },
     [236] = {
         name = 'Port Bastok',
@@ -51,6 +76,10 @@ return {
         origin_y = 384,
         grid_yalms = 40,
         image_pixels_per_yalm = 1.20,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', x = 126.000, y =    8.000, z = 8.500 },
+            { kind = 'home_point', name = 'Home Point #2', x =  40.000, y = -238.000, z = 8.500 },
+        }),
     },
     [237] = {
         name = 'Metalworks',
@@ -64,6 +93,9 @@ return {
         origin_y = 255.5,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', x = 46.000, y = -19.000, z = -14.000 },
+        }),
     },
     [241] = {
         name = 'Windurst Woods',
@@ -85,6 +117,13 @@ return {
         grid_origin_y = 256.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', x =   9.088, y =   -0.383, z = -2.500 },
+            { kind = 'home_point', name = 'Home Point #2', x = 107.000, y =  -56.000, z = -5.000 },
+            { kind = 'home_point', name = 'Home Point #3', x = -92.000, y =   62.000, z = -5.000 },
+            { kind = 'home_point', name = 'Home Point #4', x =  74.000, y = -139.000, z = -7.500 },
+            { kind = 'home_point', name = 'Home Point #5', x = -43.500, y = -145.000, z =  0.000 },
+        }),
     },
     [243] = {
         name = 'Ru\'Lude Gardens',
@@ -114,6 +153,11 @@ return {
         grid_origin_y = 256.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', x = -6.000, y =   0.001, z =  3.000 },
+            { kind = 'home_point', name = 'Home Point #2', x = 53.000, y = -57.000, z =  9.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', x = 43.000, y = -69.000, z = 10.000 },
+        }),
     },
     [244] = {
         name = 'Upper Jeuno',
@@ -142,6 +186,11 @@ return {
         grid_origin_y = 256.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', x = -98.981, y = 167.569, z =  0.000 },
+            { kind = 'home_point', name = 'Home Point #2', x =  32.000, y = -44.000, z = -1.000 },
+            { kind = 'home_point', name = 'Home Point #3', x = -52.000, y =  16.000, z =  1.000 },
+        }),
     },
     [245] = {
         name = 'Lower Jeuno',
@@ -156,6 +205,10 @@ return {
         grid_origin_y = 256.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', x = -98.588, y = -183.416, z =  0.000 },
+            { kind = 'home_point', name = 'Home Point #2', x =  18.000, y =   54.000, z = -1.000 },
+        }),
     },
     [246] = {
         name = 'Port Jeuno',
@@ -169,6 +222,10 @@ return {
         grid_origin_y = 256.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', x =   37.076, y =  8.831, z =  0.000 },
+            { kind = 'home_point', name = 'Home Point #2', x = -155.000, y = -4.000, z = -1.000 },
+        }),
     },
     [200] = {
         name = 'Garlaige Citadel',
@@ -196,6 +253,16 @@ return {
         grid_origin_y = 256.0,
         grid_yalms = 80,
         image_pixels_per_yalm = 0.40,
+        travel_references = travel_reference_set({
+            {
+                kind = 'survival_guide',
+                name = 'Survival Guide',
+                x = -383.000,
+                y = 363.500,
+                z = -6.118,
+                page_id = 1,
+            },
+        }),
     },
     [174] = {
         name = 'Kuftal Tunnel',
@@ -391,5 +458,15 @@ return {
         grid_origin_y = 256.0,
         grid_yalms = 40,
         image_pixels_per_yalm = 0.80,
+        travel_references = travel_reference_set({
+            {
+                kind = 'survival_guide',
+                name = 'Survival Guide',
+                x = -16.000,
+                y = -237.000,
+                z = -20.809,
+                page_id = 1,
+            },
+        }),
     },
 }
