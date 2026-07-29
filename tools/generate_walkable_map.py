@@ -39,6 +39,23 @@ def parse_box(value: str) -> tuple[int, int, int, int]:
     return box
 
 
+def parse_rgb(value: str) -> tuple[int, int, int]:
+    parts = value.split(",")
+    if len(parts) != 3:
+        raise argparse.ArgumentTypeError("RGB color must be red,green,blue")
+    try:
+        color = tuple(int(part) for part in parts)
+    except ValueError as exception:
+        raise argparse.ArgumentTypeError(
+            "RGB color must contain three integers"
+        ) from exception
+    if any(channel < 0 or channel > 255 for channel in color):
+        raise argparse.ArgumentTypeError(
+            "RGB color channels must be between 0 and 255"
+        )
+    return color
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("obj", type=Path, help="decompressed zone collision OBJ")
@@ -78,6 +95,8 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--fill-alpha", type=int, default=76)
     parser.add_argument("--edge-alpha", type=int, default=235)
+    parser.add_argument("--fill-rgb", type=parse_rgb, default=(8, 56, 62))
+    parser.add_argument("--edge-rgb", type=parse_rgb, default=(64, 211, 205))
     return parser.parse_args()
 
 
@@ -402,8 +421,8 @@ def main() -> None:
     edge_width = max(3, scale * 2 - 1)
     edge = ImageChops.subtract(mask, mask.filter(ImageFilter.MinFilter(edge_width)))
     output = Image.new("RGBA", mask.size, (0, 0, 0, 0))
-    output.paste((8, 56, 62, args.fill_alpha), mask=mask)
-    output.paste((64, 211, 205, args.edge_alpha), mask=edge)
+    output.paste((*args.fill_rgb, args.fill_alpha), mask=mask)
+    output.paste((*args.edge_rgb, args.edge_alpha), mask=edge)
     output = output.resize((args.width, args.height), Image.Resampling.LANCZOS)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     output.save(args.output)

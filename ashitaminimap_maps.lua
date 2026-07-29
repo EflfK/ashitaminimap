@@ -62,7 +62,12 @@ return {
     [243] = {
         name = 'Ru\'Lude Gardens',
         vanilla_image = 'assets/maps/243_vanilla.png',
-        structure_image = 'assets/maps/243_structure.png',
+        -- Keep disconnected elevations in separate textures so their boundary
+        -- edges and alternate-floor color remain visible where paths overlap.
+        structure_layers = {
+            { image = 'assets/maps/243_structure.png' },
+            { image = 'assets/maps/243_upper_structure.png' },
+        },
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
@@ -77,7 +82,10 @@ return {
         name = 'Upper Jeuno',
         stock_calibration = true,
         vanilla_image = 'assets/maps/244_vanilla.png',
-        structure_image = 'assets/maps/244_structure.png',
+        structure_layers = {
+            { image = 'assets/maps/244_structure.png' },
+            { image = 'assets/maps/244_stables_structure.png' },
+        },
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },

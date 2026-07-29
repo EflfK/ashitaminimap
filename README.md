@@ -101,7 +101,8 @@ The renderer draws map content in this order:
 
 1. optional dark backdrop;
 2. optional calibrated vanilla map;
-3. calibrated map structure;
+3. calibrated map structure layers, preserving separate outlines for
+   disconnected overlapping floors;
 4. coordinate grid;
 5. live entities and player arrow;
 6. coordinate badge and unlocked-state hint.
@@ -110,7 +111,11 @@ Windurst Woods and the four Jeuno city zones use production dark-tactical
 maps. Their structure layers are filled walkable-area masks generated from
 collision geometry plus Detour traversability data; the background is truly
 transparent. Optional vanilla parchment layers have independently adjustable
-opacity. Authored layers share the same calibrated origin and scale. Port
+opacity. Disconnected floors may use multiple structure textures so a bridge
+crossing another level does not become a false walkable junction when flattened
+to two dimensions. These alternate-floor components use violet structure
+linework while the main connected network remains cyan. Authored layers share
+the same calibrated origin and scale. Port
 Jeuno pairs its structure with the locally imported stock page; Metalworks
 keeps its authored structure-focused presentation.
 South Gustaberg and Port Bastok still use flattened prototype assets, so their

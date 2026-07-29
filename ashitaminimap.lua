@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.6.3';
+addon.version   = '1.6.4';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -1323,13 +1323,36 @@ local function render_minimap()
     end
 
     local vanilla_image = map.vanilla_image;
-    local structure_image = map.structure_image or map.image;
     local vanilla_texture = state.settings.show_map_vanilla == true
         and texture_for(vanilla_image)
         or nil;
-    local structure_texture = state.settings.show_map_structure == true
-        and texture_for(structure_image)
-        or nil;
+    local structure_layers = {};
+    if (state.settings.show_map_structure == true) then
+        if (type(map.structure_layers) == 'table') then
+            for _, layer in ipairs(map.structure_layers) do
+                local image = type(layer) == 'table' and layer.image or layer;
+                local texture = type(image) == 'string'
+                    and texture_for(image)
+                    or nil;
+                if (texture ~= nil) then
+                    structure_layers[#structure_layers + 1] = {
+                        texture = texture,
+                        opacity = type(layer) == 'table'
+                            and clamp(layer.opacity or 1, 0, 1)
+                            or 1,
+                    };
+                end
+            end
+        else
+            local texture = texture_for(map.structure_image or map.image);
+            if (texture ~= nil) then
+                structure_layers[1] = {
+                    texture = texture,
+                    opacity = 1,
+                };
+            end
+        end
+    end
 
     local size = clamp(state.settings.size, 120, 700);
     local minimum_zoom = zoom_minimum_for_map(map, size);
@@ -1383,7 +1406,7 @@ local function render_minimap()
                 state.settings.vanilla_opacity,
                 1);
         end
-        if (structure_texture ~= nil) then
+        for _, layer in ipairs(structure_layers) do
             draw_map_layer(
                 draw_list,
                 left,
@@ -1391,9 +1414,9 @@ local function render_minimap()
                 size,
                 camera,
                 map,
-                structure_texture,
+                layer.texture,
                 scale,
-                state.settings.structure_opacity,
+                state.settings.structure_opacity * layer.opacity,
                 state.settings.structure_visibility_boost);
         end
         draw_grid(draw_list, left, top, size, camera, map, scale);
