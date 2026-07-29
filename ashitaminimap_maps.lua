@@ -122,6 +122,15 @@ return {
         structure_pages = {
             [16] = 'assets/maps/200_16_structure.png',
         },
+        -- The Minimap DLL can leave page 1 selected after the player falls
+        -- through an upper-floor hole. Page 16 is the verified basement band.
+        page_rules = {
+            {
+                page_id = 16,
+                minimum_z = 14.0,
+                maximum_z = 21.0,
+            },
+        },
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },

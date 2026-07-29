@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.6.1';
+addon.version   = '1.6.2';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -618,6 +618,35 @@ local function zone_name(zone_id)
     return 'Zone ' .. tostring(zone_id);
 end
 
+local function authored_page_for_player(zone_id, player)
+    local authored = state.maps[zone_id];
+    local rules = type(authored) == 'table' and authored.page_rules or nil;
+    if (type(rules) ~= 'table' or player == nil) then
+        return nil;
+    end
+    local player_x = tonumber(player.x);
+    local player_y = tonumber(player.y);
+    local player_z = tonumber(player.z);
+    for _, rule in ipairs(rules) do
+        local page_id = tonumber(rule.page_id);
+        local matches = page_id ~= nil and player_z ~= nil
+            and player_z >= (tonumber(rule.minimum_z) or -math.huge)
+            and player_z <= (tonumber(rule.maximum_z) or math.huge)
+            and (rule.minimum_x == nil
+                or (player_x ~= nil and player_x >= tonumber(rule.minimum_x)))
+            and (rule.maximum_x == nil
+                or (player_x ~= nil and player_x <= tonumber(rule.maximum_x)))
+            and (rule.minimum_y == nil
+                or (player_y ~= nil and player_y >= tonumber(rule.minimum_y)))
+            and (rule.maximum_y == nil
+                or (player_y ~= nil and player_y <= tonumber(rule.maximum_y)));
+        if (matches) then
+            return math.floor(page_id);
+        end
+    end
+    return nil;
+end
+
 local function fallback_page(zone_id, player)
     local zone = state.vanilla_maps[zone_id];
     if (type(zone) ~= 'table' or type(zone.pages) ~= 'table') then
@@ -626,6 +655,12 @@ local function fallback_page(zone_id, player)
     local manual_page = tonumber(state.settings.map_pages[zone_id]);
     local page_id = manual_page;
     local stock = stock_minimap_info();
+    if (page_id == nil) then
+        local authored_page = authored_page_for_player(zone_id, player);
+        if (authored_page ~= nil and zone.pages[authored_page] ~= nil) then
+            page_id = authored_page;
+        end
+    end
     if (page_id == nil and stock ~= nil
             and zone.pages[tonumber(stock.page_id)] ~= nil) then
         page_id = tonumber(stock.page_id);

@@ -121,6 +121,20 @@ Detour elevation band, while pages `1`, `2`, `3`, and `14` remain un-authored
 until their page membership can be proven. Shipping no structure is safer than
 flattening unrelated floors into a plausible-looking but false map.
 
+The Minimap DLL's active-page pointer can remain on the previous page after an
+in-zone vertical transition such as falling through a hole. When a page has a
+verified, non-overlapping player-elevation band, add a `page_rules` entry:
+
+```lua
+page_rules = {
+    { page_id = 16, minimum_z = 14.0, maximum_z = 21.0 },
+}
+```
+
+Rules run continuously only in automatic page mode. A user-selected manual
+page remains authoritative. Derive the bounds from verified navmesh geometry
+and live player coordinates; do not estimate them from visual map labels.
+
 ## Navigation origin and printed-grid origin are different concepts
 
 `origin_x` and `origin_y` identify the image pixel for navigation world
