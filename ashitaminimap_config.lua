@@ -27,7 +27,6 @@ return {
     show_players = true,
     show_npcs = true,
     show_monsters = true,
-    show_names = false,
     scale_markers_with_zoom = true,
     -- Scales entity dots and target rings independently of map zoom.
     marker_size = 1.00,

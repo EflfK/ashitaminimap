@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.6.0';
+addon.version   = '1.6.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -39,7 +39,6 @@ local DEFAULTS = {
     show_players = true,
     show_npcs = true,
     show_monsters = true,
-    show_names = false,
     scale_markers_with_zoom = true,
     marker_size = 1.00,
     map_pages = {},
@@ -245,7 +244,6 @@ local function config_text()
         string.format('    show_players = %s,', bool_text(settings.show_players)),
         string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
-        string.format('    show_names = %s,', bool_text(settings.show_names)),
         string.format('    scale_markers_with_zoom = %s,', bool_text(settings.scale_markers_with_zoom)),
         string.format('    marker_size = %.2f,', clamp(settings.marker_size, 0.25, 2.00)),
         string.format('    map_pages = %s,', number_map_text(settings.map_pages)),
@@ -1004,13 +1002,12 @@ local function draw_entities(draw_list, left, top, size, player, camera, scale, 
         if (index ~= player.index) then
             local render_flags = tonumber(safe_read(function () return entity:GetRenderFlags0(index); end, 0)) or 0;
             if (bit.band(render_flags, 0x200) == 0x200 and bit.band(render_flags, 0x4000) == 0) then
-                local name = tostring(safe_read(function () return entity:GetName(index); end, '') or '');
                 local x = tonumber(safe_read(function () return entity:GetLocalPositionX(index); end, nil));
                 local y = tonumber(safe_read(function () return entity:GetLocalPositionY(index); end, nil));
                 local z = tonumber(safe_read(function () return entity:GetLocalPositionZ(index); end, nil));
                 local same_floor = z ~= nil
                     and math.abs(z - player.z) <= ENTITY_FLOOR_TOLERANCE;
-                if (name ~= '' and x ~= nil and y ~= nil and same_floor) then
+                if (x ~= nil and y ~= nil and same_floor) then
                     local kind = entity_kind(entity, index);
                     local enabled = (kind == 'player' and state.settings.show_players == true)
                         or (kind == 'npc' and state.settings.show_npcs == true)
@@ -1038,22 +1035,6 @@ local function draw_entities(draw_list, left, top, size, player, camera, scale, 
                                 color('target', { 1.00, 0.71, 0.20, 1.00 }),
                                 20,
                                 math.max(1.0, 2.0 * visual_scale));
-                        end
-                        if (state.settings.show_names == true) then
-                            draw_list:AddText(
-                                {
-                                    screen_x + (6 * visual_scale),
-                                    screen_y - (7 * visual_scale),
-                                },
-                                shadow,
-                                name);
-                            draw_list:AddText(
-                                {
-                                    screen_x + (5 * visual_scale),
-                                    screen_y - (8 * visual_scale),
-                                },
-                                dot_color,
-                                name);
                         end
                     end
                 end
@@ -1622,7 +1603,6 @@ local function render_config_window()
         config_checkbox('Players##ashitaminimap_players', 'show_players');
         config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
         config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');
-        config_checkbox('Entity names##ashitaminimap_names', 'show_names');
         config_checkbox(
             'Scale dynamic markers with zoom##ashitaminimap_scale_markers',
             'scale_markers_with_zoom');
@@ -1736,7 +1716,7 @@ local function print_help()
     log('/aminimap lock | unlock | save');
     log('/aminimap zoomin | zoomout');
     log('/aminimap page [auto | next | prev | number]');
-    log('/aminimap grid | names | reload');
+    log('/aminimap grid | reload');
 end
 
 local function current_zoom_minimum()
@@ -1802,9 +1782,6 @@ local function handle_command(e)
         select_map_page(args[3] and args[3]:lower() or 'next');
     elseif (action == 'grid') then
         state.settings.show_grid = not state.settings.show_grid;
-        mark_configuration_changed();
-    elseif (action == 'names') then
-        state.settings.show_names = not state.settings.show_names;
         mark_configuration_changed();
     elseif (action == 'reload') then
         state.textures = {};

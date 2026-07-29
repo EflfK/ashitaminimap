@@ -38,7 +38,6 @@ The first prototype includes:
 /aminimap page prev
 /aminimap page 2
 /aminimap grid
-/aminimap names
 /aminimap reload
 ```
 
@@ -53,7 +52,7 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - adjustable structure line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
-- player, NPC, monster, and entity-name markers.
+- player, NPC, and monster dot markers;
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
