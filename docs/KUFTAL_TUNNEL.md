@@ -113,6 +113,27 @@ currently spawned coffer, distinguish an occupied spawn point, or imply that a
 coffer is present. Filled gold coffer icons distinguish these references from
 the solid live entity dots.
 
+## Amemet spawn-range reference
+
+Kuftal page 2 has an optional filled range veil for Amemet. Its 50 points come
+from the initial `spawnPoints` table in CatsEyeXI's public
+`scripts/zones/Kuftal_Tunnel/mobs/Amemet.lua`; source tuples are converted from
+`(x, vertical, horizontal)` to minimap `(x, y)`. The 13-entry `phList` supplies
+the placeholder count shown in the hover card. The declared level is 66.
+
+Each verified starting point contributes one small translucent disc. Their
+overlap reads as a continuous area rather than 50 individual markers, while
+remaining faithful to the non-convex distribution of the source positions.
+The grid and live markers render above the veil. No singular Amemet marker is
+drawn.
+
+This is intentionally static reference data. It neither checks whether Amemet
+is alive nor selects a current placeholder or location. The separate patrol
+paths in the source script are not included because they describe movement
+after a spawn, not possible initial-spawn positions. The range is assigned to
+page 2's `MAIN` floor and uses `inactive_floor_opacity` whenever the player is
+on a different authored floor.
+
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
 stock artwork remains visible there, while only navmesh-backed portions receive
 the structure overlay. Do not invent a permanently walkable polygon across the

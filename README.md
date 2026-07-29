@@ -55,6 +55,7 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
 - possible coffer spawn references for authored zones that provide them;
+- static NM spawn-range references for authored zones that provide them;
 - player, NPC, and monster dot markers;
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
@@ -71,6 +72,13 @@ points for manual searching. The addon does not inspect the live coffer,
 identify which point is occupied, or mark its current location. A possible
 spawn on the player's authored floor remains fully visible; a spawn on another
 floor uses the **Other floors opacity** setting.
+
+Kuftal Tunnel also provides an optional filled Amemet spawn-range veil on page
+2. It is derived from the 50 authored initial-spawn positions and deliberately
+draws no singular NM marker. Hover the veil for its compact static-reference
+card. The overlay does not inspect Amemet, report its status, or draw its patrol
+route. Like coffer references, a range on another authored floor uses the
+**Other floors opacity** setting.
 
 Unlock the map in the configuration window or with `/aminimap unlock`, then
 left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.
@@ -117,10 +125,11 @@ The renderer draws map content in this order:
 2. optional calibrated vanilla map;
 3. calibrated map structure layers, preserving separate outlines for
    disconnected overlapping floors;
-4. coordinate grid;
-5. fixed possible coffer spawn references, when enabled for an authored zone;
-6. live entities and player arrow;
-7. coordinate badge and unlocked-state hint.
+4. static NM spawn-range veils, when enabled for an authored zone;
+5. coordinate grid;
+6. fixed possible coffer spawn references, when enabled for an authored zone;
+7. live entities and player arrow;
+8. coordinate badge and unlocked-state hint.
 
 Windurst Woods and the four Jeuno city zones use production dark-tactical
 maps. Their structure layers are filled walkable-area masks generated from

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.10.1';
+addon.version   = '1.11.0';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -43,6 +43,7 @@ local DEFAULTS = {
     show_grid = true,
     show_coordinate = true,
     show_coffer_spawns = true,
+    show_nm_spawn_ranges = true,
     show_players = true,
     show_npcs = true,
     show_monsters = true,
@@ -55,6 +56,8 @@ local DEFAULTS = {
         grid = { 0.48, 0.60, 0.61, 0.25 },
         grid_text = { 0.82, 0.71, 0.51, 0.88 },
         coffer_spawn = { 1.000, 0.820, 0.200, 0.98 },
+        nm_spawn_range = { 0.690, 0.145, 0.190, 0.075 },
+        nm_spawn_border = { 0.890, 0.660, 0.260, 0.78 },
         player = { 0.18, 0.88, 0.90, 1.00 },
         other_player = { 0.275, 0.553, 1.000, 0.96 },
         npc = { 0.000, 0.784, 0.176, 0.96 },
@@ -265,6 +268,7 @@ local function config_text()
         string.format('    show_grid = %s,', bool_text(settings.show_grid)),
         string.format('    show_coordinate = %s,', bool_text(settings.show_coordinate)),
         string.format('    show_coffer_spawns = %s,', bool_text(settings.show_coffer_spawns)),
+        string.format('    show_nm_spawn_ranges = %s,', bool_text(settings.show_nm_spawn_ranges)),
         string.format('    show_players = %s,', bool_text(settings.show_players)),
         string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
@@ -282,6 +286,8 @@ local function config_text()
         string.format('        grid = %s,', color_text(colors.grid, DEFAULTS.colors.grid)),
         string.format('        grid_text = %s,', color_text(colors.grid_text, DEFAULTS.colors.grid_text)),
         string.format('        coffer_spawn = %s,', color_text(colors.coffer_spawn, DEFAULTS.colors.coffer_spawn)),
+        string.format('        nm_spawn_range = %s,', color_text(colors.nm_spawn_range, DEFAULTS.colors.nm_spawn_range)),
+        string.format('        nm_spawn_border = %s,', color_text(colors.nm_spawn_border, DEFAULTS.colors.nm_spawn_border)),
         string.format('        player = %s,', color_text(colors.player, DEFAULTS.colors.player)),
         string.format('        other_player = %s,', color_text(colors.other_player, DEFAULTS.colors.other_player)),
         string.format('        npc = %s,', color_text(colors.npc, DEFAULTS.colors.npc)),
@@ -1262,6 +1268,166 @@ local function draw_coffer_spawns(
     end
 end
 
+local function draw_nm_spawn_range_card(
+        draw_list,
+        left,
+        top,
+        size,
+        anchor_x,
+        anchor_y,
+        reference,
+        opacity)
+    local width = 236;
+    local height = 82;
+    local card_left = clamp(anchor_x + 14, left + 8, left + size - width - 8);
+    local card_top = clamp(anchor_y - (height / 2), top + 38, top + size - height - 8);
+    local card_right = card_left + width;
+    local card_bottom = card_top + height;
+    local background = color_with_opacity(
+        'badge',
+        { 0.025, 0.055, 0.070, 0.88 },
+        opacity);
+    local border = color_with_opacity(
+        'nm_spawn_border',
+        { 0.890, 0.660, 0.260, 0.78 },
+        opacity);
+    local heading = color_with_opacity(
+        'grid_text',
+        { 0.82, 0.71, 0.51, 0.88 },
+        opacity);
+    local body = color_with_opacity(
+        'text',
+        { 0.86, 0.90, 0.88, 0.92 },
+        opacity);
+    local muted = color_with_opacity(
+        'grid_text',
+        { 0.82, 0.71, 0.51, 0.88 },
+        opacity * 0.75);
+    local points = type(reference.points) == 'table'
+        and #reference.points
+        or 0;
+    local placeholders = tonumber(reference.placeholder_count) or 0;
+    local floor = tostring(reference.floor or 'UNKNOWN');
+    local spawn_type = tostring(reference.spawn_type or 'Spawn');
+    local level = tostring(reference.level or '?');
+
+    draw_list:AddRectFilled(
+        { card_left, card_top },
+        { card_right, card_bottom },
+        background,
+        4.0);
+    draw_list:AddRect(
+        { card_left, card_top },
+        { card_right, card_bottom },
+        border,
+        4.0,
+        0,
+        1.0);
+    draw_list:AddText(
+        { card_left + 10, card_top + 7 },
+        heading,
+        string.upper(tostring(reference.name or 'NM')));
+    draw_list:AddText(
+        { card_left + 10, card_top + 24 },
+        body,
+        string.format(
+            'Static spawn range  |  %d starts / %d PHs',
+            points,
+            placeholders));
+    draw_list:AddText(
+        { card_left + 10, card_top + 41 },
+        body,
+        string.format('%s  |  Lv. %s  |  %s floor', spawn_type, level, floor));
+    draw_list:AddText(
+        { card_left + 10, card_top + 58 },
+        muted,
+        'Reference only - no live tracking');
+end
+
+local function draw_nm_spawn_ranges(
+        draw_list,
+        left,
+        top,
+        size,
+        camera,
+        map,
+        scale,
+        player_z)
+    if (state.settings.show_nm_spawn_ranges ~= true
+            or type(map.nm_spawn_ranges) ~= 'table') then
+        return;
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local active_page = tonumber(map.page_id);
+    local mouse_x, mouse_y = imgui.GetMousePos();
+    for _, reference in ipairs(map.nm_spawn_ranges) do
+        local reference_page = type(reference) == 'table'
+            and tonumber(reference.page_id)
+            or nil;
+        local points = type(reference) == 'table'
+            and reference.points
+            or nil;
+        if (type(points) == 'table'
+                and (reference_page == nil or reference_page == active_page)) then
+            local floor_opacity = shares_authored_floor(
+                map,
+                player_z,
+                reference.z)
+                and 1
+                or state.settings.inactive_floor_opacity;
+            local fill = color_with_opacity(
+                'nm_spawn_range',
+                { 0.690, 0.145, 0.190, 0.075 },
+                floor_opacity);
+            local radius = clamp(
+                (tonumber(reference.radius_yalms) or 4.5) * scale,
+                3.0,
+                14.0);
+            local hovered = false;
+            local hover_x = nil;
+            local hover_y = nil;
+            for _, point in ipairs(points) do
+                local x = type(point) == 'table' and tonumber(point.x) or nil;
+                local y = type(point) == 'table' and tonumber(point.y) or nil;
+                if (x ~= nil and y ~= nil) then
+                    local screen_x = center_x + ((x - camera.x) * scale);
+                    local screen_y = center_y - ((y - camera.y) * scale);
+                    if (screen_x >= left - radius
+                            and screen_x <= left + size + radius
+                            and screen_y >= top - radius
+                            and screen_y <= top + size + radius) then
+                        -- Overlapping translucent discs turn the verified
+                        -- initial-spawn points into one readable range veil.
+                        -- No disc represents Amemet's current position.
+                        draw_list:AddCircleFilled(
+                            { screen_x, screen_y },
+                            radius,
+                            fill,
+                            20);
+                        local dx = mouse_x - screen_x;
+                        local dy = mouse_y - screen_y;
+                        if ((dx * dx) + (dy * dy)) <= (radius * radius) then
+                            hovered = true;
+                            hover_x = screen_x;
+                            hover_y = screen_y;
+                        end
+                    end
+                end
+            end
+            if (hovered) then
+                return {
+                    x = hover_x,
+                    y = hover_y,
+                    reference = reference,
+                    opacity = floor_opacity,
+                };
+            end
+        end
+    end
+end
+
 local function draw_player(draw_list, center_x, center_y, yaw, visual_scale)
     local heading_x = math.cos(yaw);
     local heading_y = math.sin(yaw);
@@ -1667,6 +1833,15 @@ local function render_minimap()
                 layer.opacity * zoom_opacity,
                 visibility_boost);
         end
+        local nm_spawn_hover = draw_nm_spawn_ranges(
+            draw_list,
+            left,
+            top,
+            size,
+            camera,
+            map,
+            scale,
+            player.z);
         draw_grid(draw_list, left, top, size, camera, map, scale);
         draw_coffer_spawns(
             draw_list,
@@ -1686,6 +1861,17 @@ local function render_minimap()
             player_screen_y,
             player.yaw,
             visual_scale);
+        if (nm_spawn_hover ~= nil) then
+            draw_nm_spawn_range_card(
+                draw_list,
+                left,
+                top,
+                size,
+                nm_spawn_hover.x,
+                nm_spawn_hover.y,
+                nm_spawn_hover.reference,
+                nm_spawn_hover.opacity);
+        end
         draw_badge(draw_list, left, top, player, map);
         draw_unlocked_hint(draw_list, left, top, size);
         draw_list:AddRect(
@@ -1933,6 +2119,9 @@ local function render_config_window()
         config_checkbox(
             'Possible coffer spawns##ashitaminimap_coffer_spawns',
             'show_coffer_spawns');
+        config_checkbox(
+            'NM spawn ranges##ashitaminimap_nm_spawn_ranges',
+            'show_nm_spawn_ranges');
         config_checkbox('Players##ashitaminimap_players', 'show_players');
         config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
         config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');
