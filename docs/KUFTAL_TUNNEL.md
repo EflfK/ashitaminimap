@@ -110,8 +110,8 @@ implying an unverified floor relationship.
 
 This overlay is static reference data. It does not inspect entities, locate the
 currently spawned coffer, distinguish an occupied spawn point, or imply that a
-coffer is present. Filled gold coffer icons distinguish these references from
-the solid live entity dots.
+coffer is present. Rounded gold coffer icons distinguish these references from
+wooden Treasure Chest icons and the solid live entity dots.
 
 ## Amemet spawn-range reference
 

@@ -274,19 +274,19 @@ return {
         -- second and third coordinates are swapped here. These records are
         -- reference markers only and never inspect or imply live spawns.
         coffer_spawns = {
-            { x = 103.708, y =  208.367, z = -11.326, page_id = 2 },
-            { x = 127.993, y =   96.500, z = -11.318, page_id = 2 },
-            { x = 126.990, y =   49.802, z =  -1.319, page_id = 2 },
-            { x = 154.813, y =  -68.138, z = -10.473, page_id = 2 },
-            { x =  41.657, y =   29.949, z = -11.623, page_id = 2 },
-            { x =  15.489, y =    8.337, z = -11.354, page_id = 2 },
-            { x = -10.184, y =  127.082, z =  -1.373, page_id = 2 },
-            { x =  26.277, y =  134.207, z =  -1.554, page_id = 2 },
-            { x = -15.217, y =   51.530, z =  -1.907, page_id = 2 },
-            { x = -92.888, y =    2.676, z =  -0.282, page_id = 2 },
-            { x = -14.067, y = -132.941, z = -11.940, page_id = 2 },
-            { x = -25.934, y = -142.247, z = -11.000, page_id = 2 },
-            { x = -27.946, y = -183.709, z = -21.825, page_id = 1 },
+            { kind = 'coffer', x = 103.708, y =  208.367, z = -11.326, page_id = 2 },
+            { kind = 'coffer', x = 127.993, y =   96.500, z = -11.318, page_id = 2 },
+            { kind = 'coffer', x = 126.990, y =   49.802, z =  -1.319, page_id = 2 },
+            { kind = 'coffer', x = 154.813, y =  -68.138, z = -10.473, page_id = 2 },
+            { kind = 'coffer', x =  41.657, y =   29.949, z = -11.623, page_id = 2 },
+            { kind = 'coffer', x =  15.489, y =    8.337, z = -11.354, page_id = 2 },
+            { kind = 'coffer', x = -10.184, y =  127.082, z =  -1.373, page_id = 2 },
+            { kind = 'coffer', x =  26.277, y =  134.207, z =  -1.554, page_id = 2 },
+            { kind = 'coffer', x = -15.217, y =   51.530, z =  -1.907, page_id = 2 },
+            { kind = 'coffer', x = -92.888, y =    2.676, z =  -0.282, page_id = 2 },
+            { kind = 'coffer', x = -14.067, y = -132.941, z = -11.940, page_id = 2 },
+            { kind = 'coffer', x = -25.934, y = -142.247, z = -11.000, page_id = 2 },
+            { kind = 'coffer', x = -27.946, y = -183.709, z = -21.825, page_id = 1 },
         },
         -- Static initial-spawn references from CatsEyeXI's public
         -- scripts/zones/Kuftal_Tunnel/mobs/Amemet.lua. The source tuples use

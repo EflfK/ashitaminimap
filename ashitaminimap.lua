@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.1';
+addon.version   = '1.13.2';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -56,6 +56,7 @@ local DEFAULTS = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
         grid_text = { 0.82, 0.71, 0.51, 0.88 },
+        chest_spawn = { 0.545, 0.306, 0.145, 0.98 },
         coffer_spawn = { 1.000, 0.820, 0.200, 0.98 },
         nm_spawn_range = { 0.690, 0.145, 0.190, 0.075 },
         nm_spawn_border = { 0.890, 0.660, 0.260, 0.78 },
@@ -300,6 +301,7 @@ local function config_text()
         string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
         string.format('        grid = %s,', color_text(colors.grid, DEFAULTS.colors.grid)),
         string.format('        grid_text = %s,', color_text(colors.grid_text, DEFAULTS.colors.grid_text)),
+        string.format('        chest_spawn = %s,', color_text(colors.chest_spawn, DEFAULTS.colors.chest_spawn)),
         string.format('        coffer_spawn = %s,', color_text(colors.coffer_spawn, DEFAULTS.colors.coffer_spawn)),
         string.format('        nm_spawn_range = %s,', color_text(colors.nm_spawn_range, DEFAULTS.colors.nm_spawn_range)),
         string.format('        nm_spawn_border = %s,', color_text(colors.nm_spawn_border, DEFAULTS.colors.nm_spawn_border)),
@@ -1638,7 +1640,7 @@ local function shares_authored_floor(map, player_z, marker_z)
     return not (player_has_floor and marker_has_floor);
 end
 
-local function draw_coffer_spawns(
+local function draw_treasure_spawns(
         draw_list,
         left,
         top,
@@ -1647,21 +1649,41 @@ local function draw_coffer_spawns(
         map,
         scale,
         player_z)
+    local marker_sets = {
+        {
+            markers = map.treasure_spawns,
+            default_kind = nil,
+        },
+        {
+            markers = map.coffer_spawns,
+            default_kind = 'coffer',
+        },
+    };
     if (state.settings.show_coffer_spawns ~= true
-            or type(map.coffer_spawns) ~= 'table') then
+            or (type(map.treasure_spawns) ~= 'table'
+                and type(map.coffer_spawns) ~= 'table')) then
         return;
     end
 
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local active_page = tonumber(map.page_id);
-    for _, marker in ipairs(map.coffer_spawns) do
+    for _, marker_set in ipairs(marker_sets) do
+        for _, marker in ipairs(
+                type(marker_set.markers) == 'table'
+                    and marker_set.markers
+                    or {}) do
         local marker_page = type(marker) == 'table'
             and tonumber(marker.page_id)
             or nil;
+        local marker_kind = type(marker) == 'table'
+            and marker.kind
+            or nil;
+        marker_kind = marker_kind or marker_set.default_kind;
         local x = type(marker) == 'table' and tonumber(marker.x) or nil;
         local y = type(marker) == 'table' and tonumber(marker.y) or nil;
-        if (x ~= nil and y ~= nil
+        if ((marker_kind == 'chest' or marker_kind == 'coffer')
+                and x ~= nil and y ~= nil
                 and (marker_page == nil or marker_page == active_page)) then
             local screen_x = center_x + ((x - camera.x) * scale);
             local screen_y = center_y - ((y - camera.y) * scale);
@@ -1678,46 +1700,89 @@ local function draw_coffer_spawns(
                     { 0.01, 0.02, 0.025, 0.94 },
                     marker_opacity);
                 local marker_color = color_with_opacity(
-                    'coffer_spawn',
-                    { 1.000, 0.820, 0.200, 0.98 },
+                    marker_kind == 'chest'
+                        and 'chest_spawn'
+                        or 'coffer_spawn',
+                    marker_kind == 'chest'
+                        and { 0.545, 0.306, 0.145, 0.98 }
+                        or { 1.000, 0.820, 0.200, 0.98 },
                     marker_opacity);
-                -- A filled gold coffer silhouette distinguishes fixed
-                -- possible-spawn references from live entity dots and rings.
-                draw_list:AddRectFilled(
-                    { screen_x - 8, screen_y - 7 },
-                    { screen_x + 8, screen_y + 1 },
-                    shadow,
-                    3.0);
-                draw_list:AddRectFilled(
-                    { screen_x - 8, screen_y - 1 },
-                    { screen_x + 8, screen_y + 7 },
-                    shadow,
-                    1.5);
-                draw_list:AddRectFilled(
-                    { screen_x - 7, screen_y - 6 },
-                    { screen_x + 7, screen_y },
-                    marker_color,
-                    2.5);
-                draw_list:AddRectFilled(
-                    { screen_x - 7, screen_y - 0.5 },
-                    { screen_x + 7, screen_y + 6 },
-                    marker_color,
-                    1.0);
-                draw_list:AddRectFilled(
-                    { screen_x - 7, screen_y - 1 },
-                    { screen_x + 7, screen_y + 1 },
-                    shadow);
-                draw_list:AddRectFilled(
-                    { screen_x - 2, screen_y - 2 },
-                    { screen_x + 2, screen_y + 3 },
-                    shadow,
-                    0.8);
-                draw_list:AddCircleFilled(
-                    { screen_x, screen_y + 0.5 },
-                    0.9,
-                    marker_color,
-                    8);
+                if (marker_kind == 'chest') then
+                    -- Wooden plank chest: square lid, crossed front boards,
+                    -- and a small gold latch. This must remain visibly
+                    -- different from the rounded gold coffer silhouette.
+                    draw_list:AddRectFilled(
+                        { screen_x - 9, screen_y - 7 },
+                        { screen_x + 9, screen_y + 7 },
+                        shadow,
+                        1.0);
+                    draw_list:AddRectFilled(
+                        { screen_x - 8, screen_y - 6 },
+                        { screen_x + 8, screen_y + 6 },
+                        marker_color,
+                        0.5);
+                    draw_list:AddLine(
+                        { screen_x - 8, screen_y - 1 },
+                        { screen_x + 8, screen_y - 1 },
+                        shadow,
+                        2.0);
+                    draw_list:AddLine(
+                        { screen_x - 6, screen_y },
+                        { screen_x + 5, screen_y + 6 },
+                        shadow,
+                        1.5);
+                    draw_list:AddLine(
+                        { screen_x + 6, screen_y },
+                        { screen_x - 5, screen_y + 6 },
+                        shadow,
+                        1.5);
+                    draw_list:AddRectFilled(
+                        { screen_x - 2, screen_y - 2 },
+                        { screen_x + 2, screen_y + 2 },
+                        color_with_opacity(
+                            'coffer_spawn',
+                            { 1.000, 0.820, 0.200, 0.98 },
+                            marker_opacity),
+                        0.5);
+                else
+                    -- Rounded gold coffer silhouette.
+                    draw_list:AddRectFilled(
+                        { screen_x - 8, screen_y - 7 },
+                        { screen_x + 8, screen_y + 1 },
+                        shadow,
+                        3.0);
+                    draw_list:AddRectFilled(
+                        { screen_x - 8, screen_y - 1 },
+                        { screen_x + 8, screen_y + 7 },
+                        shadow,
+                        1.5);
+                    draw_list:AddRectFilled(
+                        { screen_x - 7, screen_y - 6 },
+                        { screen_x + 7, screen_y },
+                        marker_color,
+                        2.5);
+                    draw_list:AddRectFilled(
+                        { screen_x - 7, screen_y - 0.5 },
+                        { screen_x + 7, screen_y + 6 },
+                        marker_color,
+                        1.0);
+                    draw_list:AddRectFilled(
+                        { screen_x - 7, screen_y - 1 },
+                        { screen_x + 7, screen_y + 1 },
+                        shadow);
+                    draw_list:AddRectFilled(
+                        { screen_x - 2, screen_y - 2 },
+                        { screen_x + 2, screen_y + 3 },
+                        shadow,
+                        0.8);
+                    draw_list:AddCircleFilled(
+                        { screen_x, screen_y + 0.5 },
+                        0.9,
+                        marker_color,
+                        8);
+                end
             end
+        end
         end
     end
 end
@@ -2664,7 +2729,7 @@ local function render_minimap()
             scale,
             player.z);
         draw_grid(draw_list, left, top, size, camera, map, scale);
-        draw_coffer_spawns(
+        draw_treasure_spawns(
             draw_list,
             left,
             top,
@@ -2971,7 +3036,7 @@ local function render_config_window()
         config_checkbox('Coordinate grid##ashitaminimap_grid', 'show_grid');
         config_checkbox('Coordinate badge##ashitaminimap_coordinate', 'show_coordinate');
         config_checkbox(
-            'Possible coffer spawns##ashitaminimap_coffer_spawns',
+            'Possible treasure spawns##ashitaminimap_coffer_spawns',
             'show_coffer_spawns');
         config_checkbox(
             'NM spawn ranges##ashitaminimap_nm_spawn_ranges',

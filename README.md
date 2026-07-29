@@ -54,7 +54,7 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - adjustable structure line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility;
-- possible coffer spawn references for authored zones that provide them;
+- possible Treasure Chest or Coffer spawn references for authored zones;
 - static NM spawn-range references for authored zones that provide them;
 - player, NPC, and monster dot markers;
 - current AshitaGuide step destinations, including page filtering and
@@ -162,7 +162,8 @@ The renderer draws map content in this order:
    disconnected overlapping floors;
 4. static NM spawn-range veils, when enabled for an authored zone;
 5. coordinate grid;
-6. fixed possible coffer spawn references, when enabled for an authored zone;
+6. fixed possible Treasure Chest (wood) or Treasure Coffer (gold) references,
+   when enabled;
 7. live entities;
 8. current AshitaGuide destinations;
 9. player arrow;

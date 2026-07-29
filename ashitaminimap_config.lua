@@ -25,7 +25,7 @@ return {
 
     show_grid = true,
     show_coordinate = true,
-    -- Fixed authored references only; never indicates the coffer's live position.
+    -- Fixed authored references only; never indicates live treasure positions.
     show_coffer_spawns = true,
     -- Draw a map-owned shortest path to AshitaGuide's current destination.
     show_guide_paths = true,
@@ -40,6 +40,7 @@ return {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
         grid_text = { 0.82, 0.71, 0.51, 0.88 },
+        chest_spawn = { 0.545, 0.306, 0.145, 0.98 },
         coffer_spawn = { 1.000, 0.820, 0.200, 0.98 },
         player = { 0.18, 0.88, 0.90, 1.00 },
         other_player = { 0.275, 0.553, 1.000, 0.96 },

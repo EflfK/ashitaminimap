@@ -31,9 +31,12 @@ the user to restate the workflow:
    an overview image for traversal evidence or call unresolved work complete.
 4. Add display-only static references for all verified Treasure Chest or
    Treasure Coffer locations and relevant notorious-monster spawn points or
-   ranges available from trustworthy CatsEyeXI-compatible data. Record their
-   provenance and page/floor metadata. Do not add live detection, status
-   reporting, entity-name recovery, commands, movement, or automation.
+   ranges available from trustworthy CatsEyeXI-compatible data. Every treasure
+   record must declare `kind = 'chest'` or `kind = 'coffer'`: Treasure Chests
+   use the wooden chest symbol and Treasure Coffers use the gold coffer symbol.
+   Never combine or relabel the two types. Record their provenance and
+   page/floor metadata. Do not add live detection, status reporting,
+   entity-name recovery, commands, movement, or automation.
 5. Generate the map-owned display-path graph from the same pinned deterministic
    Detour source, and register it in `ashitaminimap_paths.lua`. AshitaGuide must
    continue to supply only destination coordinates; do not duplicate routes in
