@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.8.1';
+addon.version   = '1.8.2';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -20,6 +20,7 @@ local ZOOM_MAX = 20.00;
 local ZOOM_STEP = 1.12;
 local MARKER_REFERENCE_ZOOM = 4.41;
 local ENTITY_FLOOR_TOLERANCE = 8.0;
+local MAP_CORNER_RADIUS = 7.0;
 
 local DEFAULTS = {
     visible = true,
@@ -1181,13 +1182,15 @@ local function draw_map_layer(
     local passes = math.floor(clamp(visibility_boost, 1, 12) + 0.5);
     local tint = imgui.GetColorU32({ 1, 1, 1, opacity });
     for _ = 1, passes do
-        draw_list:AddImage(
+        draw_list:AddImageRounded(
             texture.handle,
             { destination_left, destination_top },
             { destination_right, destination_bottom },
             { u0, v0 },
             { u1, v1 },
-            tint);
+            tint,
+            MAP_CORNER_RADIUS,
+            ImDrawCornerFlags_All);
     end
 end
 
@@ -1206,7 +1209,7 @@ local function draw_map_backdrop(draw_list, left, top, size)
             tonumber(configured[3]) or DEFAULTS.colors.backdrop[3],
             opacity,
         }),
-        0);
+        MAP_CORNER_RADIUS);
 end
 
 local function mouse_over_map(left, top, size)
@@ -1467,8 +1470,8 @@ local function render_minimap()
             { left, top },
             { left + size, top + size },
             color('border', { 0.67, 0.47, 0.22, 0.90 }),
-            0,
-            0,
+            MAP_CORNER_RADIUS,
+            ImDrawCornerFlags_All,
             1.0);
         imgui.Dummy({ size, size });
     end
