@@ -1170,6 +1170,38 @@ return {
     [238] = {
         name = 'Windurst Waters',
         stock_calibration = true,
+        -- Page 0 is an unrecorded, compressed overview and cannot use the
+        -- logical pages' world transform. When stock page metadata is absent,
+        -- keep the northern and southern walks on their recorded detail pages.
+        page_rules = {
+            {
+                page_id = 2,
+                maximum_y = -100.0,
+            },
+            {
+                page_id = 1,
+            },
+        },
+        -- Exact FFXiMain records. These are used only when neither the stock
+        -- record lookup nor Minimap.dll supplies live calibration metadata.
+        page_calibrations = {
+            [1] = {
+                origin_x = 240.0,
+                origin_y = 328.0,
+                grid_origin_x = 255.0,
+                grid_origin_y = 256.0,
+                grid_yalms = 40,
+                image_pixels_per_yalm = 0.80,
+            },
+            [2] = {
+                origin_x = 304.0,
+                origin_y = 120.0,
+                grid_origin_x = 255.0,
+                grid_origin_y = 256.0,
+                grid_yalms = 40,
+                image_pixels_per_yalm = 0.80,
+            },
+        },
         travel_references = travel_reference_set({
             { kind = 'home_point', name = 'Home Point #1', unlock_index = 17, x = -32.022, y =  131.741, z = -5.000 },
             { kind = 'home_point', name = 'Home Point #2', unlock_index = 18, x = 138.000, y =  -14.000, z =  0.001 },

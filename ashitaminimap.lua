@@ -2151,6 +2151,31 @@ local function map_for_player(player)
                 or authored.grid_yalms ~= nil)) then
         merged.live_scale = false;
     end
+    local page_calibrations = authored.page_calibrations;
+    local page_calibration = type(page_calibrations) == 'table'
+        and page_calibrations[map_page_key(merged)]
+        or nil;
+    if (type(page_calibration) == 'table') then
+        if (fallback.live_origin ~= true) then
+            merged.origin_x = tonumber(page_calibration.origin_x)
+                or merged.origin_x;
+            merged.origin_y = tonumber(page_calibration.origin_y)
+                or merged.origin_y;
+            merged.live_origin = false;
+        end
+        if (fallback.live_scale ~= true) then
+            merged.image_pixels_per_yalm =
+                tonumber(page_calibration.image_pixels_per_yalm)
+                or merged.image_pixels_per_yalm;
+            merged.grid_yalms = tonumber(page_calibration.grid_yalms)
+                or merged.grid_yalms;
+            merged.live_scale = false;
+        end
+        merged.grid_origin_x = tonumber(page_calibration.grid_origin_x)
+            or merged.grid_origin_x;
+        merged.grid_origin_y = tonumber(page_calibration.grid_origin_y)
+            or merged.grid_origin_y;
+    end
     if (type(authored.structure_pages) == 'table') then
         local page_structure = authored.structure_pages[map_page_key(merged)];
         if (type(page_structure) == 'table') then

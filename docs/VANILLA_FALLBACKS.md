@@ -75,6 +75,13 @@ Manual selections are stored per zone in `ashitaminimap_config.lua`. They are
 useful for multi-floor zones and remain available whether or not the stock
 plugin is loaded.
 
+An authored multi-page zone may define `page_rules` to avoid an unrecorded
+overview page when live page metadata is unavailable. If its recorded detail
+pages use different transforms, `page_calibrations[page_id]` supplies an exact
+per-page fallback origin, scale, and grid anchor. These values are used only
+when neither the stock record nor Minimap.dll provides the corresponding live
+metadata; live calibration remains authoritative.
+
 ## Validation
 
 After each import:
