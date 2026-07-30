@@ -35,6 +35,19 @@ the user to restate the workflow:
    destinations to visit, capture entrance/middle/exit positions for every
    floor transition, and continue when live evidence arrives. Never substitute
    an overview image for traversal evidence or call unresolved work complete.
+   Before asking the player to traverse, publish a temporary AshitaGuide map
+   audit guide with a stable zone-specific key such as
+   `ashitaminimap-<zone>-audit`. Put every requested control point and every
+   transition entrance, midpoint, and exit in its own ordered step with the
+   exact zone, X/Y destination, stock map/page id when known, and an explicit
+   instruction to stop and report ready. Keep the guide updated as component
+   evidence changes so the player can follow map markers instead of raw chat
+   coordinates. Do not treat reaching or advancing an AshitaGuide step as
+   traversal proof: capture the live X/Y/Z and confirm the rendered structure
+   at each stop before recording the audit. Prefer the structured temporary
+   guide publisher; if it is unavailable, preserve all existing AI guides when
+   publishing through AshitaGuide's supported local guide file, then reload and
+   verify the addon before continuing.
 4. Add display-only static references for every active Home Point and Survival
    Guide, all verified Treasure Chest or Treasure Coffer locations, and relevant
    notorious-monster spawn points or ranges available from trustworthy
