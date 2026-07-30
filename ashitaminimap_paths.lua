@@ -1,7 +1,10 @@
 -- Display-only navigation graphs owned by AshitaMinimap.
 -- AshitaGuide supplies destinations; it never selects or authors a route.
 return {
+    [100] = 'assets/paths/100.lua',
+    [101] = 'assets/paths/101.lua',
     [105] = 'assets/paths/105.lua',
+    [106] = 'assets/paths/106.lua',
     [107] = 'assets/paths/107.lua',
     [115] = 'assets/paths/115.lua',
     [116] = 'assets/paths/116.lua',

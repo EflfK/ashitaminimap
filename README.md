@@ -126,7 +126,8 @@ verified Detour topology plus live-verified transition and blocked-link
 exceptions. They do not require a visible structure image. They are
 display-only and never move, target, interact, queue commands, or automate
 gameplay. Multi-page zones select the graph for the active authored page. See
-[Path graph authoring](docs/PATH_GRAPHS.md).
+[Path graph authoring](docs/PATH_GRAPHS.md). The level-ordered production
+campaign is tracked in [the level 1-60 map queue](docs/LEVEL_60_MAP_BACKLOG.md).
 
 Kuftal Tunnel can optionally draw filled gold coffer icons at all authored
 possible Treasure Coffer locations. These are fixed, page-filtered reference

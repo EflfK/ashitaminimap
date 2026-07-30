@@ -65,6 +65,29 @@ local function travel_reference_set(markers)
 end
 
 return {
+    [100] = {
+        name = 'West Ronfaure',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 6, x = -451.400, y = -218.000, z = -19.750 },
+        }),
+        treasure_spawns = {},
+        nm_spawn_ranges = {
+            { name = 'Fungus Beetle', z = -20.740, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -226.570, y = -164.240 } } },
+            { name = 'Jaggedy-Eared Jack', z = -19.000, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -281.000, y = -220.000 } } },
+            { name = 'Marauder Dvogzog', z = -39.630, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -695.249, y = 21.575 } } },
+        },
+    },
+    [101] = {
+        name = 'East Ronfaure',
+        stock_calibration = true,
+        travel_references = travel_reference_set({}),
+        treasure_spawns = {},
+        nm_spawn_ranges = {
+            { name = 'Rambukk', z = -20.000, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 236.000, y = -114.000 } } },
+            { name = 'Bigmouth Billy', z = -30.000, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 476.000, y = -32.000 } } },
+        },
+    },
     [105] = {
         name = 'Batallia Downs',
         stock_calibration = true,
@@ -83,6 +106,29 @@ return {
             { name = 'Badshah', z = -9.124, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -45.625, y = 310.523 } } },
             { name = 'Vegnix Greenthumb', z = -23.507, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -407.526, y = 412.544 } } },
             { name = 'Suparna', z = 15.000, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 210.000, y = -606.000 } } },
+        },
+    },
+    [106] = {
+        name = 'North Gustaberg',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 3, x = -582.687, y = 52.281, z = 40.107 },
+        }),
+        treasure_spawns = {},
+        nm_spawn_ranges = {
+            {
+                name = 'Stinging Sophie',
+                z = -40.400,
+                floor = 'SURFACE',
+                spawn_type = 'Fixed',
+                placeholder_count = 0,
+                points = {
+                    { x = 234.104, y = 462.288 },
+                    { x = 340.381, y = 601.786 },
+                },
+            },
+            { name = 'Bedrock Barry', z = -0.650, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -189.000, y = 268.000 } } },
+            { name = 'Maighdean Uaine', z = -0.324, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 272.000, y = 797.800 } } },
         },
     },
     [107] = {
