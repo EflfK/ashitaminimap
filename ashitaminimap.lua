@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.9';
+addon.version   = '1.13.10';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -699,14 +699,20 @@ state.path_nearest_node = function (graph, x, y, live_z)
     return best_index, distance;
 end
 
-state.path_waypoint_z = function (graph, x, y, preferred_z)
+state.path_waypoint_z = function (
+        graph,
+        x,
+        y,
+        player_x,
+        player_y,
+        player_z)
     if (type(graph) ~= 'table' or type(graph.nodes) ~= 'table') then
         return nil, false;
     end
     local candidates = {};
     local nearest_distance = math.huge;
     local snap_radius = tonumber(graph.snap_radius) or 24;
-    for _, node in ipairs(graph.nodes) do
+    for index, node in ipairs(graph.nodes) do
         local delta_x = (tonumber(node[1]) or 0) - x;
         local delta_y = (tonumber(node[2]) or 0) - y;
         local distance = math.sqrt(
@@ -715,6 +721,7 @@ state.path_waypoint_z = function (graph, x, y, preferred_z)
         if (node_z ~= nil and distance <= snap_radius) then
             candidates[#candidates + 1] = {
                 distance = distance,
+                index = index,
                 z = node_z,
             };
             nearest_distance = math.min(nearest_distance, distance);
@@ -722,10 +729,73 @@ state.path_waypoint_z = function (graph, x, y, preferred_z)
     end
     local selected_z = nil;
     local ambiguity_radius = nearest_distance + PATH_FLOOR_TOLERANCE;
-    if (preferred_z ~= nil) then
+    local nearest_candidate = nil;
+    local first_floor_z = nil;
+    local multiple_floors = false;
+    for _, candidate in ipairs(candidates) do
+        if (candidate.distance <= ambiguity_radius) then
+            if (nearest_candidate == nil
+                    or candidate.distance < nearest_candidate.distance) then
+                nearest_candidate = candidate;
+            end
+            if (first_floor_z == nil) then
+                first_floor_z = candidate.z;
+            elseif math.abs(candidate.z - first_floor_z)
+                    > PATH_FLOOR_TOLERANCE then
+                multiple_floors = true;
+            end
+        end
+    end
+    if (nearest_candidate ~= nil and not multiple_floors) then
+        return nearest_candidate.z, false;
+    end
+
+    local start_index = player_x ~= nil
+        and player_y ~= nil
+        and state.path_nearest_node(
+            graph,
+            player_x,
+            player_y,
+            player_z)
+        or nil;
+    if (start_index ~= nil and type(state.path_find) == 'function') then
+        local best_score = math.huge;
+        for _, candidate in ipairs(candidates) do
+            if (candidate.distance <= ambiguity_radius) then
+                local indices = state.path_find(
+                    graph,
+                    start_index,
+                    candidate.index);
+                if (indices ~= nil) then
+                    local route_length = candidate.distance;
+                    for route_index = 1, #indices - 1 do
+                        local start = graph.nodes[indices[route_index]];
+                        local finish = graph.nodes[indices[route_index + 1]];
+                        local delta_x = start[1] - finish[1];
+                        local delta_y = start[2] - finish[2];
+                        local delta_z = (tonumber(start[3]) or 0)
+                            - (tonumber(finish[3]) or 0);
+                        route_length = route_length + math.sqrt(
+                            (delta_x * delta_x)
+                                + (delta_y * delta_y)
+                                + (delta_z * delta_z));
+                    end
+                    if (route_length < best_score) then
+                        best_score = route_length;
+                        selected_z = candidate.z;
+                    end
+                end
+            end
+        end
+        if (selected_z ~= nil) then
+            return selected_z, false;
+        end
+    end
+
+    if (player_z ~= nil) then
         local preferred_distance = math.huge;
         for _, candidate in ipairs(candidates) do
-            if (math.abs(candidate.z - preferred_z)
+            if (math.abs(candidate.z - player_z)
                     <= PATH_FLOOR_TOLERANCE
                     and candidate.distance <= ambiguity_radius
                     and candidate.distance < preferred_distance) then
@@ -2842,6 +2912,8 @@ local function handle_custom_waypoint_input(
         graph,
         waypoint_x,
         waypoint_y,
+        player.x,
+        player.y,
         player.z);
     state.custom_waypoint = {
         zone_id = player.zone_id,
