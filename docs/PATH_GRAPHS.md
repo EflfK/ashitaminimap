@@ -4,6 +4,45 @@ AshitaMinimap owns reusable, display-only navigation graphs. AshitaGuide
 continues to publish only the current destination. This prevents every guide
 from duplicating routes and lets all guides benefit when a zone graph improves.
 
+## Lessons from the Ru'Lude Gardens route audit
+
+Ru'Lude Gardens exposed three distinct failure modes that a plausible-looking
+route did not reveal:
+
+1. The source Detour mesh contained a polygon adjacency across an impassable
+   boundary. A* correctly followed the graph, but the graph was not truthful
+   for a player, so the displayed route appeared to jump floors or cross a
+   blocked passage.
+2. Real staircases were split into disconnected navmesh components. Without
+   explicit connections, valid nearby destinations produced no route or a
+   longer route using a different staircase.
+3. The generator originally selected seeded components before removing a
+   verified blocked edge. The bad edge therefore pulled an unreachable
+   16-node floor fragment into the output even though the edge itself was later
+   deleted.
+
+The durable fixes are:
+
+- read native `dtPoly.neis` topology and resolve geometry only across Detour
+  external tile portals rather than reconstructing every adjacency from
+  similar-looking polygon edges;
+- add `--transition` only for a connection verified from live entrance,
+  middle, and exit coordinates;
+- add `--blocked-link` for a source edge proven impassable in game;
+- apply blocked links before seed-based component selection; and
+- run the catalog auditor after every graph change.
+
+Native Detour topology reduces invented connections, but it is not guaranteed
+to describe player movement. The LandSandBoat meshes were built primarily for
+server navigation use, and their absence or presence of an edge is not by
+itself proof that a player can traverse it. The rendered structure, exact live
+X/Y/Z samples, and an attended traversal remain authoritative for exceptions.
+
+These rules apply to every existing graph when it is revisited and to every
+future map. A shortest-path result is only accepted after its complete route
+has been checked for walls, railings, floor changes, stairs, ramps, doors, and
+other transitions.
+
 ## Runtime behavior
 
 For a fresh destination, AshitaMinimap:
@@ -115,6 +154,13 @@ It reports production drift, topology deltas, component health, stacked-floor
 overlaps, and one closest review lead per pair of substantial disconnected
 components. A suggested component pair is never proof of a staircase, door, or
 other transition.
+
+The auditor is a required completion gate, not an optional diagnostic. Its
+production/native comparison must pass. Disconnected-component advisories must
+be reviewed against structure and live evidence, but they must never be
+converted automatically into links. Traveling-salesman or nearest-neighbor
+logic may choose an order among multiple destinations only after each leg has
+a truthful graph route; it must never infer map connectivity.
 
 ## Validation checklist
 

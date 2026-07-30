@@ -41,14 +41,21 @@ the user to restate the workflow:
    an audited zone has neither travel NPC. Do not add live detection, status
    reporting, entity-name recovery, commands, movement, or automation.
 5. Generate the map-owned display-path graph from the same pinned deterministic
-   Detour source, and register it in `ashitaminimap_paths.lua`. AshitaGuide must
+   Detour source using native `dtPoly.neis` topology and authored external tile
+   portals, and register it in `ashitaminimap_paths.lua`. AshitaGuide must
    continue to supply only destination coordinates; do not duplicate routes in
-   guides. Validate node and edge integrity, bidirectional links, connected and
-   deliberately disconnected destinations, endpoint snapping, shortest-path
-   output, off-route recovery, page/floor filtering, and close-zoom alignment
-   with verified walkable structure. Do not join disconnected components
-   without live transition evidence; leave those destinations marker-only and
-   the graph partial.
+   guides. Run `tools/audit_path_graphs.py` and require production/native parity
+   before publishing. Treat Detour as source evidence, not unquestionable
+   player-route truth: record a verified `--blocked-link` for every source edge
+   that crosses an impassable boundary, and record a verified `--transition`
+   for every real stair, ramp, door, or landing connection missing from the
+   source topology. Never create either from 2D proximity alone. Validate node
+   and edge integrity, bidirectional links, connected and deliberately
+   disconnected destinations, endpoint snapping, shortest-path output,
+   off-route recovery, page/floor filtering, and close-zoom alignment with
+   verified walkable structure. Do not join disconnected components without
+   live transition evidence; leave those destinations marker-only and the
+   graph partial.
 6. Register every finished asset and overlay in `ashitaminimap_maps.lua`,
    document complete provenance, regenerate twice, and verify deterministic
    hashes for both map and path artifacts, referenced paths, dimensions, alpha,
