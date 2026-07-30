@@ -65,6 +65,26 @@ local function travel_reference_set(markers)
 end
 
 return {
+    [105] = {
+        name = 'Batallia Downs',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 29, x = -67.000, y = 449.000, z = -2.000 },
+        }),
+        treasure_spawns = {},
+        nm_spawn_ranges = {
+            { name = 'Lumber Jack', z = -23.000, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -670.000, y = 352.000 } } },
+            { name = 'Skirling Liger', z = -16.000, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -394.000, y = 206.000 } } },
+            { name = 'Tottering Toby', z = -7.872, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -255.542, y = 185.826 } } },
+            { name = 'Eyegouger', z = -2.100, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 177.300, y = -54.540 } } },
+            { name = 'Prankster Maverix', z = 7.500, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 159.000, y = -314.000 } } },
+            { name = 'Ahtu', z = 15.258, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 187.811, y = -554.714 } } },
+            { name = 'Sturmtiger', z = 16.462, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 145.373, y = -548.560 } } },
+            { name = 'Badshah', z = -9.124, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -45.625, y = 310.523 } } },
+            { name = 'Vegnix Greenthumb', z = -23.507, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = -407.526, y = 412.544 } } },
+            { name = 'Suparna', z = 15.000, floor = 'SURFACE', spawn_type = 'Fixed', placeholder_count = 0, points = { { x = 210.000, y = -606.000 } } },
+        },
+    },
     [107] = {
         name = 'South Gustaberg',
         image = 'assets/maps/107.png',
@@ -280,6 +300,17 @@ return {
                 },
             },
         },
+    },
+    [235] = {
+        name = 'Bastok Markets',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 11, x = -344.000, y = -155.000, z = -10.000 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 12, x = -328.000, y = -33.000, z = -12.000 },
+            { kind = 'home_point', name = 'Home Point #3', unlock_index = 13, x = -189.000, y = 26.000, z = -8.000 },
+            { kind = 'home_point', name = 'Home Point #4', unlock_index = 100, x = -191.000, y = -69.000, z = -6.000 },
+        }),
+        treasure_spawns = {},
     },
     [236] = {
         name = 'Port Bastok',
@@ -924,6 +955,17 @@ return {
             { kind = 'chest', x = -220.087, y = 19.370, z = -143.601 },
         },
     },
+    [169] = {
+        name = 'Toraimarai Canal',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 115, x = -257.500, y = 82.000, z = 24.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 20, x = -308.216, y = 262.000, z = 15.999 },
+        }),
+        treasure_spawns = {
+            { kind = 'coffer', x = 219.993, y = -49.049, z = 16.003 },
+        },
+    },
     [184] = {
         name = 'Lower Delkfutt\'s Tower',
         stock_calibration = true,
@@ -940,6 +982,34 @@ return {
         }),
         treasure_spawns = {
             { kind = 'chest', x = -177.956, y = -220.058, z = -0.002 },
+        },
+    },
+    [195] = {
+        name = 'The Eldieme Necropolis',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 21, x = 418.000, y = -99.500, z = -52.500 },
+        }),
+        treasure_spawns = {
+            { kind = 'chest', x = 171.927, y = 20.008, z = -7.999 },
+            { kind = 'chest', x = 261.094, y = 100.014, z = -33.250 },
+            { kind = 'chest', x = 98.908, y = 100.046, z = -33.250 },
+            { kind = 'chest', x = 98.894, y = -60.000, z = -33.250 },
+            { kind = 'chest', x = 260.965, y = -59.905, z = -33.250 },
+            { kind = 'chest', x = 179.926, y = -51.239, z = -32.000 },
+            { kind = 'chest', x = 251.208, y = 20.054, z = -32.000 },
+            { kind = 'chest', x = -518.830, y = 500.082, z = -8.000 },
+            { kind = 'chest', x = -411.948, y = 499.879, z = 8.000 },
+            { kind = 'chest', x = -438.279, y = 304.854, z = 0.350 },
+            { kind = 'coffer', x = 159.011, y = 161.005, z = -27.999 },
+            { kind = 'coffer', x = 179.864, y = 91.100, z = -32.000 },
+            { kind = 'coffer', x = 108.749, y = 19.951, z = -32.000 },
+            { kind = 'coffer', x = 39.264, y = -0.712, z = -28.000 },
+            { kind = 'coffer', x = 174.753, y = -100.369, z = -0.418 },
+            { kind = 'coffer', x = 299.967, y = 69.413, z = 0.000 },
+            { kind = 'coffer', x = 300.082, y = -29.448, z = 0.000 },
+            { kind = 'coffer', x = 188.319, y = 128.702, z = -0.590 },
+            { kind = 'coffer', x = -386.548, y = 335.046, z = -3.000 },
         },
     },
     [240] = {
@@ -988,6 +1058,15 @@ return {
             { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 33, x = -485.700, y = 46.000, z = -32.000 },
         }),
         treasure_spawns = {},
+    },
+    [249] = {
+        name = 'Mhaura',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 40, x = -12.750, y = 87.286, z = -15.791 },
+        }),
+        treasure_spawns = {},
+        nm_spawn_ranges = {},
     },
     [145] = {
         name = 'Giddeus',

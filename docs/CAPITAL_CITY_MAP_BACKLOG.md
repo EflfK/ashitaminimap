@@ -16,7 +16,7 @@ verification, and attended live-route tests:
 | San d'Oria | Port San d'Oria (`232`) | Vanilla fallback only |
 | San d'Oria | Chateau d'Oraguille (`233`) | Vanilla fallback only |
 | Bastok | Bastok Mines (`234`) | Vanilla fallback only |
-| Bastok | Bastok Markets (`235`) | Vanilla fallback only |
+| Bastok | Bastok Markets (`235`) | Destination-bearing graph authored; partial pending three attended transition audits |
 | Bastok | Port Bastok (`236`) | Existing graph; routing and destination re-audit required |
 | Bastok | Metalworks (`237`) | Existing graph; routing and destination re-audit required |
 | Windurst | Windurst Waters (`238`) | Routing-first graph and destination catalog complete across stock pages `0`, `1`, and `2` |

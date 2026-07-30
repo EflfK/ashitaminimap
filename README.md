@@ -273,6 +273,11 @@ authored layers generated from bounded Detour elevation bands; their
 calibration is registered, but the zone remains partial pending complete
 component and live-transition audits. Pages 2, 3, and 14 intentionally fall
 back to vanilla only.
+Batallia Downs, Toraimarai Canal, The Eldieme Necropolis, Bastok Markets, and
+Mhaura now have deterministic destination-bearing graphs with exact stock
+calibration. They remain partial where native components meet at stairs,
+gates, drops, platforms, or thresholds that still require attended transition
+captures; those cross-component legs deliberately remain marker-only.
 The South Gustaberg and Port Bastok images remain flattened transparency and
 calibration prototypes generated from locally installed reference maps. They
 are not yet precision-traced walkable-area masks.
