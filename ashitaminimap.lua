@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.6';
+addon.version   = '1.13.7';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -699,7 +699,7 @@ state.path_nearest_node = function (graph, x, y, live_z)
     return best_index, distance;
 end
 
-state.path_waypoint_z = function (graph, x, y)
+state.path_waypoint_z = function (graph, x, y, preferred_z)
     if (type(graph) ~= 'table' or type(graph.nodes) ~= 'table') then
         return nil, false;
     end
@@ -722,6 +722,22 @@ state.path_waypoint_z = function (graph, x, y)
     end
     local selected_z = nil;
     local ambiguity_radius = nearest_distance + PATH_FLOOR_TOLERANCE;
+    if (preferred_z ~= nil) then
+        local preferred_distance = math.huge;
+        for _, candidate in ipairs(candidates) do
+            if (math.abs(candidate.z - preferred_z)
+                    <= PATH_FLOOR_TOLERANCE
+                    and candidate.distance <= ambiguity_radius
+                    and candidate.distance < preferred_distance) then
+                selected_z = candidate.z;
+                preferred_distance = candidate.distance;
+            end
+        end
+        if (selected_z ~= nil) then
+            return selected_z, false;
+        end
+    end
+
     for _, candidate in ipairs(candidates) do
         if (candidate.distance <= ambiguity_radius) then
             if (selected_z == nil) then
@@ -2825,7 +2841,8 @@ local function handle_custom_waypoint_input(
     local waypoint_z, floor_ambiguous = state.path_waypoint_z(
         graph,
         waypoint_x,
-        waypoint_y);
+        waypoint_y,
+        player.z);
     state.custom_waypoint = {
         zone_id = player.zone_id,
         page_id = tonumber(map.page_id),

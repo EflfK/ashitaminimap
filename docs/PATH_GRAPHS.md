@@ -25,14 +25,17 @@ AshitaGuide destination marker remains visible and no path is drawn.
 
 Generated Detour elevation has the opposite sign from Ashita's live player Z.
 Runtime snapping converts graph elevation back to live Z and rejects nodes
-more than four yalms above or below the endpoint. A custom waypoint adopts an
+more than four yalms above or below the endpoint. A custom waypoint first
+prefers a nearby graph node on the player's current floor. This makes an
+overlapping X/Y click route on the floor the player can presently traverse.
+When no nearby node matches the player's elevation, the waypoint adopts an
 unambiguous graph elevation only when nearby candidates belong to one floor.
-If lower and upper nodes overlap near the click, the waypoint remains visible
-but marker-only. AshitaGuide publishes `targetZ` when an authored destination
-supplies it or a named live entity exposes it. On maps with authored elevation
-bands, a guide destination without truthful Z likewise remains marker-only
-instead of selecting whichever overlapping floor is closest in two
-dimensions.
+If lower and upper nodes remain unresolved near the click, the waypoint stays
+visible but marker-only. AshitaGuide publishes `targetZ` when an authored
+destination supplies it or a named live entity exposes it. On maps with
+authored elevation bands, a guide destination without truthful Z likewise
+remains marker-only instead of selecting whichever overlapping floor is
+closest in two dimensions.
 
 Route projection is also three-dimensional. Walking above or below a route no
 longer counts as remaining on it, and route recalculation cannot silently
