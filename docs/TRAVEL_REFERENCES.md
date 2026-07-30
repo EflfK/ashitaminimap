@@ -44,15 +44,23 @@ structure maps use `z` to dim references that belong to another authored floor.
 | Zone | Map | Home Points | Survival Guides |
 | ---: | --- | ---: | ---: |
 | 107 | South Gustaberg | 0 | 0 |
+| 115 | West Sarutabaruta | 0 | 1 |
+| 116 | East Sarutabaruta | 0 | 0 |
+| 117 | Tahrongi Canyon | 0 | 1 |
+| 118 | Buburimu Peninsula | 0 | 1 |
+| 145 | Giddeus | 1 | 0 |
 | 151 | Castle Oztroja | 0 | 1 |
 | 157 | Middle Delkfutt's Tower | 0 | 0 |
 | 158 | Upper Delkfutt's Tower | 1 | 0 |
 | 174 | Kuftal Tunnel | 0 | 1 |
 | 184 | Lower Delkfutt's Tower | 0 | 1 |
 | 192 | Inner Horutoto Ruins | 0 | 1 |
+| 194 | Outer Horutoto Ruins | 0 | 0 |
+| 198 | Maze of Shakhrami | 0 | 1 |
 | 200 | Garlaige Citadel | 0 | 1 |
 | 236 | Port Bastok | 2 | 0 |
 | 237 | Metalworks | 1 | 0 |
+| 238 | Windurst Waters | 4 | 0 |
 | 239 | Windurst Walls | 3 | 0 |
 | 240 | Port Windurst | 3 | 1 |
 | 241 | Windurst Woods | 5 | 0 |

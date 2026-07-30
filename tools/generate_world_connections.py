@@ -40,6 +40,30 @@ LSB_PATTERN = re.compile(
     r"([^,]+),([^,]+),([^,]+),([^,]+),([^,]+),([^)]+)\);"
 )
 
+# Trustworthy attended threshold corrections for source coordinates that the
+# raw reverse zoneline places off the public navigation surface. Tuple order is
+# (x, vertical z, horizontal y, evidence).
+FROM_COORDINATE_OVERRIDES = {
+    812660346: (
+        124.043,
+        -7.704,
+        -39.992,
+        "paired East Sarutabaruta arrival threshold",
+    ),
+    909718394: (
+        442.781,
+        -1.641,
+        -40.144,
+        "paired Buburimu Peninsula arrival threshold",
+    ),
+    945894266: (
+        164.238,
+        0.464,
+        -175.149,
+        "CatsEyeXI Hieroglyphics interaction NPC",
+    ),
+}
+
 
 @dataclass(frozen=True)
 class CatsLine:
@@ -125,6 +149,7 @@ def build_catalog(
     connections: list[tuple[CatsLine, LsbLine]] = []
     unresolved: list[dict[str, object]] = []
     arrival_mismatches = 0
+    source_coordinate_overrides = 0
 
     for identifier in sorted(cats):
         cats_line = cats[identifier]
@@ -139,6 +164,20 @@ def build_catalog(
                 }
             )
             continue
+        override = FROM_COORDINATE_OVERRIDES.get(identifier)
+        if override is not None:
+            lsb_line = LsbLine(
+                identifier=lsb_line.identifier,
+                from_zone=lsb_line.from_zone,
+                from_x=override[0],
+                from_vertical=override[1],
+                from_horizontal=override[2],
+                to_zone=lsb_line.to_zone,
+                to_x=lsb_line.to_x,
+                to_vertical=lsb_line.to_vertical,
+                to_horizontal=lsb_line.to_horizontal,
+            )
+            source_coordinate_overrides += 1
         if (
             cats_line.from_zone != lsb_line.from_zone
             or cats_line.to_zone != lsb_line.to_zone
@@ -196,6 +235,7 @@ def build_catalog(
         "published_connections": len(connections),
         "unresolved_records": len(unresolved),
         "arrival_coordinate_mismatches_preserving_catseye": arrival_mismatches,
+        "source_coordinate_overrides": source_coordinate_overrides,
     }
     return connections, unresolved, counts
 
@@ -224,9 +264,15 @@ def render_lua(
         lines.append(f"        {key} = {value},")
     lines.extend(["    },", "    connections = {"])
     for cats_line, lsb_line in connections:
+        override_text = (
+            "source_coordinate_override = true, "
+            if cats_line.identifier in FROM_COORDINATE_OVERRIDES
+            else ""
+        )
         lines.append(
             "        { "
             f"id = {cats_line.identifier}, "
+            f"{override_text}"
             f"from_zone = {cats_line.from_zone}, "
             f"from_x = {lua_number(lsb_line.from_x)}, "
             f"from_y = {lua_number(lsb_line.from_horizontal)}, "
@@ -304,6 +350,16 @@ def main() -> None:
             },
         },
         "counts": counts,
+        "source_coordinate_overrides": [
+            {
+                "id": identifier,
+                "from_x": values[0],
+                "from_vertical": values[1],
+                "from_horizontal": values[2],
+                "evidence": values[3],
+            }
+            for identifier, values in sorted(FROM_COORDINATE_OVERRIDES.items())
+        ],
         "unresolved": unresolved,
     }
 

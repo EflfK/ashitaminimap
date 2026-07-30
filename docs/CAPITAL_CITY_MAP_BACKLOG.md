@@ -19,10 +19,10 @@ verification, and attended live-route tests:
 | Bastok | Bastok Markets (`235`) | Vanilla fallback only |
 | Bastok | Port Bastok (`236`) | Existing graph; routing and destination re-audit required |
 | Bastok | Metalworks (`237`) | Existing graph; routing and destination re-audit required |
-| Windurst | Windurst Waters (`238`) | Vanilla fallback only; active stock pages are `1` and `2` |
+| Windurst | Windurst Waters (`238`) | Routing-first graph and destination catalog complete across stock pages `0`, `1`, and `2` |
 | Windurst | Windurst Walls (`239`) | Routing-first graph and destination catalog complete; partial dormant structure evidence retained |
 | Windurst | Port Windurst (`240`) | Routing-first graph and destination catalog complete |
-| Windurst | Windurst Woods (`241`) | Existing graph; complete modern routing and destination re-audit required |
+| Windurst | Windurst Woods (`241`) | Routing-first graph and destination catalog complete; dormant structure provenance retained |
 | Windurst | Heaven's Tower (`242`) | Routing-first multi-floor graph and destination catalog complete |
 
 When this work resumes, read all map-authoring documents before changing

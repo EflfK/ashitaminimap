@@ -596,4 +596,98 @@ return {
         travel_references = travel_reference_set({}),
         treasure_spawns = {},
     },
+    [115] = {
+        name = 'West Sarutabaruta',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 28, x = -13.322, y = 315.696, z = -12.458 },
+        }),
+        treasure_spawns = {},
+    },
+    [116] = {
+        name = 'East Sarutabaruta',
+        stock_calibration = true,
+        travel_references = travel_reference_set({}),
+        treasure_spawns = {},
+    },
+    [117] = {
+        name = 'Tahrongi Canyon',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 32, x = -160.000, y = 648.000, z = 47.000 },
+        }),
+        treasure_spawns = {},
+    },
+    [118] = {
+        name = 'Buburimu Peninsula',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 33, x = -485.700, y = 46.000, z = -32.000 },
+        }),
+        treasure_spawns = {},
+    },
+    [145] = {
+        name = 'Giddeus',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 54, x = -132.000, y = -303.000, z = -3.000 },
+        }),
+        treasure_spawns = {
+            { kind = 'chest', x = -158.563, y = -226.058, z =  0.999 },
+            { kind = 'chest', x = -103.777, y = -254.271, z = -0.900 },
+            { kind = 'chest', x = -242.625, y = -185.404, z =  0.935 },
+            { kind = 'chest', x = -267.030, y = -263.207, z = -2.156 },
+            { kind = 'chest', x =  -23.626, y = -105.747, z =  0.982 },
+            { kind = 'chest', x =   63.712, y = -254.442, z = -0.900 },
+            { kind = 'chest', x =  125.386, y = -259.326, z = -3.168 },
+            { kind = 'chest', x =  100.137, y = -230.499, z =  1.387 },
+            { kind = 'chest', x =  113.058, y = -224.402, z =  1.000 },
+            { kind = 'chest', x =  182.259, y = -230.619, z =  0.915 },
+            { kind = 'chest', x =  213.192, y = -299.255, z = -2.309 },
+        },
+    },
+    [194] = {
+        name = 'Outer Horutoto Ruins',
+        stock_calibration = true,
+        travel_references = travel_reference_set({}),
+        treasure_spawns = {
+            { kind = 'chest', x = -423.066, y = 672.483, z = 0.000 },
+        },
+    },
+    [198] = {
+        name = 'Maze of Shakhrami',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 34, page_id = 15, x = -338.990, y = -179.000, z = -12.210 },
+        }),
+        treasure_spawns = {
+            { kind = 'chest', page_id = 16, x =  290.287, y = -138.060, z = 20.238 },
+            { kind = 'chest', page_id = 15, x =  -36.474, y =  -70.480, z =  0.063 },
+            { kind = 'chest', page_id = 15, x =  260.698, y =   54.472, z = -1.274 },
+            { kind = 'chest', page_id = 16, x =  125.956, y =   10.593, z = 19.805 },
+            { kind = 'chest', page_id = 16, x =  -54.923, y =  -19.130, z = 18.781 },
+            { kind = 'chest', page_id = 16, x =  -90.151, y = -103.097, z = 15.670 },
+            { kind = 'chest', page_id = 16, x = -130.046, y =  -43.970, z = 19.263 },
+            { kind = 'chest', page_id = 16, x =  -58.153, y =  -62.085, z = 20.000 },
+            { kind = 'chest', page_id = 16, x =  -25.615, y =  -52.841, z = 19.763 },
+            { kind = 'chest', page_id = 16, x =    0.785, y = -165.362, z = 20.000 },
+            { kind = 'chest', page_id = 15, x =  397.238, y =  -29.854, z = -0.351 },
+            { kind = 'chest', page_id = 16, x =  219.757, y =  -63.968, z = 18.799 },
+            { kind = 'chest', page_id = 16, x =  239.982, y =  -69.393, z = 20.322 },
+            { kind = 'chest', page_id = 16, x =  216.466, y = -144.039, z = 20.200 },
+            { kind = 'chest', page_id = 16, x =  231.585, y = -193.004, z = 20.000 },
+            { kind = 'chest', page_id = 16, x =  270.951, y = -247.144, z = 20.000 },
+        },
+    },
+    [238] = {
+        name = 'Windurst Waters',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 17, x = -32.022, y =  131.741, z = -5.000 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 18, x = 138.000, y =  -14.000, z =  0.001 },
+            { kind = 'home_point', name = 'Home Point #3', unlock_index = 103, x =   5.000, y = -175.000, z = -4.000 },
+            { kind = 'home_point', name = 'Home Point #4', unlock_index = 118, x = -92.000, y =   54.000, z = -2.000 },
+        }),
+        treasure_spawns = {},
+    },
 }

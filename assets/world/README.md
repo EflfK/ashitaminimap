@@ -7,3 +7,9 @@ source hash, catalog count, and unresolved zone-line ID.
 The files are navigation metadata for display only. Do not hand-edit them and
 do not use them for movement, menu automation, command execution, packet
 injection, or unattended behavior.
+
+The generator contains a small audited source-coordinate override table for
+reverse zonelines whose raw source point does not lie on the public navigation
+surface. Overrides must use a paired authoritative arrival threshold or an
+attended interaction NPC from the pinned CatsEyeXI source, remain identified
+in both generated outputs, and pass graph snap validation.

@@ -4,13 +4,37 @@
     "cats_records": 844,
     "land_sand_boat_records": 844,
     "published_connections": 820,
+    "source_coordinate_overrides": 3,
     "unresolved_records": 25
   },
   "schema": 1,
+  "source_coordinate_overrides": [
+    {
+      "evidence": "paired East Sarutabaruta arrival threshold",
+      "from_horizontal": -39.992,
+      "from_vertical": -7.704,
+      "from_x": 124.043,
+      "id": 812660346
+    },
+    {
+      "evidence": "paired Buburimu Peninsula arrival threshold",
+      "from_horizontal": -40.144,
+      "from_vertical": -1.641,
+      "from_x": 442.781,
+      "id": 909718394
+    },
+    {
+      "evidence": "CatsEyeXI Hieroglyphics interaction NPC",
+      "from_horizontal": -175.149,
+      "from_vertical": 0.464,
+      "from_x": 164.238,
+      "id": 945894266
+    }
+  ],
   "sources": {
     "catseye": {
       "commit": "314deaf03465f2b24b6a1e4e73a016ca036f1084",
-      "location": "https://raw.githubusercontent.com/CatsAndBoats/catseyexi/314deaf03465f2b24b6a1e4e73a016ca036f1084/sql/zonelines.sql",
+      "location": "C:\\Users\\ekamradt\\Code\\FinalFantasyXI\\.codex-tmp\\catseyexi-source\\sql\\zonelines.sql",
       "sha256": "E4F33C59ED32F7762C0CA52142F59181C7516439CBAAC5E77DA981F2E3BF0F2F"
     },
     "land_sand_boat": {

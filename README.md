@@ -20,9 +20,9 @@ The first prototype includes:
 - mouse-wheel zoom while the pointer is over the map;
 - calibrated vanilla-map rendering with dormant retained structure support;
 - deterministic world-coordinate-to-image calibration;
-- map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
-  Metalworks (zone 237), Windurst Woods (zone 241), and all four Jeuno city
-  zones (zones 243–246).
+- routing-first map definitions for the Windurst cities and surrounding
+  Sarutabaruta, Horutoto, Giddeus, Tahrongi, Buburimu, and Shakhrami corridor,
+  plus the authored Bastok, Jeuno, and dungeon maps documented below;
 - locally generated stock-map fallbacks for every map page found in the
   installed FFXI client.
 
