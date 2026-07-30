@@ -7,8 +7,7 @@ import math
 from collections import defaultdict, deque
 from pathlib import Path
 
-from detour_navmesh import read_detour_topology
-from generate_walkable_map import point_in_polygon
+from detour_navmesh import point_in_polygon, read_detour_topology
 from PIL import Image
 
 

@@ -19,7 +19,10 @@ original chat context.
 `generate_walkable_map.py` deliberately does not render every Detour polygon.
 Collision and navigation sources can contain roofs, inaccessible slabs,
 off-map tails, residential-area circles, and unrelated islands. A verified
-seed selects only its connected navmesh component.
+seed selects only its connected native-topology component. Structure generation
+uses the same native Detour reader and topology-exception syntax as path
+generation. The geometric `--adjacency-mode inferred` option is for comparison
+only and must not produce a completed map.
 
 That safe default also creates three omission risks:
 
@@ -34,6 +37,12 @@ That safe default also creates three omission risks:
 The absence of a polygon from a seeded output does not prove that it is
 inaccessible. Conversely, rendering every unselected polygon is not a safe
 solution.
+
+Every production run must supply `--component-report`. The JSON report records
+each native component's polygon count, world bounds, navigation elevation,
+live-Z equivalent, and whether it was selected, explicitly excluded, or left
+unresolved. Review it before inspecting the PNG. An unresolved component
+remains unresolved even when it is too small to notice at overview zoom.
 
 ## Completion gate: classify components before publishing
 
@@ -57,6 +66,18 @@ Record for each included or excluded component:
 - world-elevation range;
 - role or exclusion reason;
 - live verification coordinates when accessible.
+
+Use the same verified topology exceptions in both generators:
+
+- `--blocked-link` removes a source adjacency proven to cross a wall, railing,
+  floor boundary, or other impassable obstruction. It is applied before seed
+  traversal so an inaccessible island is not retained accidentally.
+- `--transition` joins navmesh fragments only after live entrance, middle, and
+  exit samples prove a real staircase, ramp, door, bridge, or landing.
+
+For separate floor textures, pass only transitions whose endpoints belong to
+that layer. Record cross-floor transitions in the path graph job and provenance
+without flattening the floors into one structure texture.
 
 Do not infer accessibility solely from component size. Ru'Lude's missing east
 staircase consisted of two isolated polygons, one of which contained the live

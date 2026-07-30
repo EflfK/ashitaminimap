@@ -43,6 +43,35 @@ future map. A shortest-path result is only accepted after its complete route
 has been checked for walls, railings, floor changes, stairs, ramps, doors, and
 other transitions.
 
+## Shared topology for structure and routing
+
+`generate_walkable_map.py` and `generate_path_graph.py` use the same native
+Detour reader. Structure generation uses polygon geometry for the visible mask
+and native adjacency for seeded component selection; path generation uses the
+same adjacency for A*. Both accept the same `--transition`, `--blocked-link`,
+`--transition-snap-radius`, `--maximum-step`, and `--adjacency-mode` syntax.
+
+For every new or regenerated structure layer:
+
+```text
+python tools/generate_walkable_map.py <zone.obj> <zone.nav> <structure.png> \
+  --origin-x <x> --origin-y <y> --pixels-per-yalm <scale> \
+  --seed=<verified-x>,<verified-y> \
+  --blocked-link=<verified-endpoints-if-any> \
+  --transition=<verified-endpoints-for-this-layer-if-any> \
+  --component-report=<component-report.json>
+```
+
+Native mode is the production default. Inferred mode exists only to compare the
+old geometric reconstruction. Review every component report and copy its
+classification evidence into zone provenance. The structure report prevents
+silent geometry omissions; the path audit prevents production graph drift.
+
+Cross-floor transitions remain in the page's path job, but they must not
+flatten separately styled floor layers. A structure-layer command includes
+only verified transitions whose two endpoints belong to that layer; provenance
+records the remaining cross-layer connection.
+
 ## Runtime behavior
 
 For a fresh destination, AshitaMinimap:

@@ -9,10 +9,20 @@ The output uses AshitaMinimap's existing world-to-image calibration.
 from __future__ import annotations
 
 import argparse
-import struct
-from collections import defaultdict, deque
+import json
+from collections import deque
 from pathlib import Path
 
+from detour_navmesh import read_detour_topology
+from generate_path_graph import (
+    apply_transitions,
+    filter_elevation,
+    filtered_native_adjacency,
+    parse_transition,
+    polygon_adjacency,
+    remove_blocked_links,
+    selected_indices,
+)
 from PIL import Image, ImageChops, ImageDraw, ImageFilter
 
 
@@ -84,7 +94,69 @@ def parse_args() -> argparse.Namespace:
         default=[],
         help="verified walkable world-x,world-y; repeat for disconnected regions",
     )
+    parser.add_argument(
+        "--exclude-seed",
+        action="append",
+        type=parse_seed,
+        default=[],
+        help=(
+            "world-x,world-y selecting one connected component to omit; "
+            "repeat for separately rendered overlapping components"
+        ),
+    )
     parser.add_argument("--maximum-step", type=float, default=0.65)
+    parser.add_argument(
+        "--adjacency-mode",
+        choices=("native", "inferred"),
+        default="native",
+        help=(
+            "native uses authored Detour neighbors and tile portals; inferred "
+            "reconstructs polygon adjacency geometrically for comparison only"
+        ),
+    )
+    parser.add_argument(
+        "--transition",
+        action="append",
+        type=parse_transition,
+        default=[],
+        help=(
+            "verified player connection expressed as "
+            "start-x,start-y,start-live-z:end-x,end-y,end-live-z; repeat as needed"
+        ),
+    )
+    parser.add_argument(
+        "--blocked-link",
+        action="append",
+        type=parse_transition,
+        default=[],
+        help=(
+            "verified impassable source edge expressed as "
+            "start-x,start-y,start-live-z:end-x,end-y,end-live-z; repeat as needed"
+        ),
+    )
+    parser.add_argument(
+        "--transition-snap-radius",
+        type=float,
+        default=2.0,
+        help="maximum 3D endpoint-to-polygon-centroid distance (default: 2)",
+    )
+    parser.add_argument(
+        "--seed-snap-radius",
+        type=float,
+        default=0.0,
+        help=(
+            "maximum 2D distance for a seed outside every polygon; zero keeps "
+            "the former strict containment behavior (default: 0)"
+        ),
+    )
+    parser.add_argument(
+        "--component-report",
+        type=Path,
+        help=(
+            "write a JSON inventory of selected, excluded, and unresolved "
+            "native-topology components"
+        ),
+    )
     parser.add_argument(
         "--minimum-elevation",
         type=float,
@@ -127,46 +199,6 @@ def read_obj_bounds(path: Path) -> tuple[tuple[float, ...], tuple[float, ...]]:
     return tuple(minimum), tuple(maximum)
 
 
-def read_navmesh(
-    path: Path,
-) -> tuple[tuple[float, ...], list[list[tuple[float, ...]]]]:
-    data = path.read_bytes()
-    magic, version, tile_count = struct.unpack_from("<iii", data, 0)
-    if magic != 0x4D534554 or version != 1:
-        raise ValueError(f"{path} is not a supported MSET v1 navmesh")
-
-    nav_origin = struct.unpack_from("<3f", data, 12)
-    offset = 40
-    polygons = []
-    for _ in range(tile_count):
-        _, data_size = struct.unpack_from("<Ii", data, offset)
-        offset += 8
-        tile_offset = offset
-        offset += data_size
-
-        header = struct.unpack_from("<15i3f3f3f3ff", data, tile_offset)
-        polygon_count, vertex_count = header[6], header[7]
-        vertex_offset = tile_offset + 100
-        vertices = [
-            struct.unpack_from("<3f", data, vertex_offset + index * 12)
-            for index in range(vertex_count)
-        ]
-        polygon_offset = vertex_offset + vertex_count * 12
-        for index in range(polygon_count):
-            polygon = struct.unpack_from(
-                "<I6H6HHBB", data, polygon_offset + index * 32
-            )
-            vertex_total = polygon[-2]
-            polygon_type = polygon[-1] & 0xC0
-            if vertex_total >= 3 and not polygon_type:
-                polygons.append(
-                    [vertices[item] for item in polygon[1 : 1 + vertex_total]]
-                )
-    if offset != len(data):
-        raise ValueError(f"{path} has unexpected trailing navmesh data")
-    return nav_origin, polygons
-
-
 def validate_sources(
     obj_bounds: tuple[tuple[float, ...], tuple[float, ...]],
     nav_origin: tuple[float, ...],
@@ -181,133 +213,6 @@ def validate_sources(
             raise ValueError(
                 f"OBJ/nav axis {axis} differs: {obj_value} versus {nav_value}"
             )
-
-
-def point_in_polygon(
-    polygon: list[tuple[float, ...]], x: float, y: float
-) -> bool:
-    winding = 0
-    for index, start in enumerate(polygon):
-        end = polygon[(index + 1) % len(polygon)]
-        cross = (end[0] - start[0]) * (y - start[2]) - (
-            end[2] - start[2]
-        ) * (x - start[0])
-        if abs(cross) <= 0.0001:
-            continue
-        direction = 1 if cross > 0 else -1
-        if winding and direction != winding:
-            return False
-        winding = direction
-    return True
-
-
-def connected_component(
-    polygons: list[list[tuple[float, ...]]],
-    seed_x: float,
-    seed_y: float,
-    maximum_step: float,
-) -> list[list[tuple[float, ...]]]:
-    """Return the Detour polygon component containing a known walkable point.
-
-    Exact shared edges connect polygons inside a tile. Across tile seams one
-    edge can be split into several collinear spans, so overlapping horizontal
-    or vertical spans are joined when their interpolated heights are within
-    the configured step height.
-    """
-
-    parent = list(range(len(polygons)))
-    component_size = [1] * len(polygons)
-
-    def find(item: int) -> int:
-        while parent[item] != item:
-            parent[item] = parent[parent[item]]
-            item = parent[item]
-        return item
-
-    def union(left: int, right: int) -> None:
-        left = find(left)
-        right = find(right)
-        if left == right:
-            return
-        if component_size[left] < component_size[right]:
-            left, right = right, left
-        parent[right] = left
-        component_size[left] += component_size[right]
-
-    def vertex_key(vertex: tuple[float, ...]) -> tuple[float, ...]:
-        return tuple(round(value, 3) for value in vertex)
-
-    exact_edges: dict[tuple[tuple[float, ...], ...], int] = {}
-    axis_edges = defaultdict(list)
-    for polygon_index, polygon in enumerate(polygons):
-        for edge_index, start in enumerate(polygon):
-            end = polygon[(edge_index + 1) % len(polygon)]
-            edge = tuple(sorted((vertex_key(start), vertex_key(end))))
-            if edge in exact_edges:
-                union(polygon_index, exact_edges[edge])
-            else:
-                exact_edges[edge] = polygon_index
-
-            if abs(start[0] - end[0]) < 0.01:
-                low, high = sorted((start[2], end[2]))
-                axis_edges[("x", round((start[0] + end[0]) / 2, 2))].append(
-                    (low, high, start, end, polygon_index)
-                )
-            elif abs(start[2] - end[2]) < 0.01:
-                low, high = sorted((start[0], end[0]))
-                axis_edges[("y", round((start[2] + end[2]) / 2, 2))].append(
-                    (low, high, start, end, polygon_index)
-                )
-
-    def height_at(
-        start: tuple[float, ...],
-        end: tuple[float, ...],
-        position: float,
-        orientation: str,
-    ) -> float:
-        start_axis = start[2] if orientation == "x" else start[0]
-        end_axis = end[2] if orientation == "x" else end[0]
-        if abs(end_axis - start_axis) < 0.000001:
-            return start[1]
-        ratio = (position - start_axis) / (end_axis - start_axis)
-        return start[1] + (end[1] - start[1]) * ratio
-
-    for (orientation, _), edges in axis_edges.items():
-        edges.sort(key=lambda edge: edge[0])
-        for index, edge in enumerate(edges):
-            for candidate in edges[index + 1 :]:
-                if candidate[0] >= edge[1] - 0.01:
-                    break
-                overlap_low = max(edge[0], candidate[0])
-                overlap_high = min(edge[1], candidate[1])
-                if overlap_high - overlap_low <= 0.01:
-                    continue
-                midpoint = (overlap_low + overlap_high) / 2
-                height_delta = abs(
-                    height_at(edge[2], edge[3], midpoint, orientation)
-                    - height_at(candidate[2], candidate[3], midpoint, orientation)
-                )
-                if height_delta <= maximum_step:
-                    union(edge[4], candidate[4])
-
-    seed_index = next(
-        (
-            index
-            for index, polygon in enumerate(polygons)
-            if point_in_polygon(polygon, seed_x, seed_y)
-        ),
-        None,
-    )
-    if seed_index is None:
-        raise ValueError(
-            f"walkable seed ({seed_x}, {seed_y}) is outside every nav polygon"
-        )
-    seed_root = find(seed_index)
-    return [
-        polygon
-        for index, polygon in enumerate(polygons)
-        if find(index) == seed_root
-    ]
 
 
 def fill_small_holes(mask: Image.Image, maximum_area: int) -> int:
@@ -348,6 +253,114 @@ def fill_small_holes(mask: Image.Image, maximum_area: int) -> int:
     return filled
 
 
+def topology_components(adjacency: list[set[int]]) -> list[list[int]]:
+    groups = []
+    visited = set()
+    for start in range(len(adjacency)):
+        if start in visited:
+            continue
+        group = []
+        pending = deque([start])
+        visited.add(start)
+        while pending:
+            current = pending.popleft()
+            group.append(current)
+            for neighbor in adjacency[current]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    pending.append(neighbor)
+        groups.append(sorted(group))
+    return groups
+
+
+def component_inventory(
+    polygons: list[list[tuple[float, ...]]]
+    | list[tuple[tuple[float, ...], ...]],
+    adjacency: list[set[int]],
+    selected: set[int],
+    excluded: set[int],
+) -> list[dict]:
+    inventory = []
+    for component_id, indices in enumerate(topology_components(adjacency), start=1):
+        vertices = [
+            vertex for index in indices for vertex in polygons[index]
+        ]
+        index_set = set(indices)
+        if index_set <= excluded:
+            classification = "excluded"
+        elif index_set <= selected:
+            classification = "selected"
+        else:
+            classification = "unresolved"
+        inventory.append(
+            {
+                "component": component_id,
+                "classification": classification,
+                "polygons": len(indices),
+                "world_bounds": {
+                    "minimum_x": round(min(vertex[0] for vertex in vertices), 3),
+                    "maximum_x": round(max(vertex[0] for vertex in vertices), 3),
+                    "minimum_y": round(-max(vertex[2] for vertex in vertices), 3),
+                    "maximum_y": round(-min(vertex[2] for vertex in vertices), 3),
+                },
+                "nav_elevation": {
+                    "minimum": round(min(vertex[1] for vertex in vertices), 3),
+                    "maximum": round(max(vertex[1] for vertex in vertices), 3),
+                },
+                "live_z_equivalent": {
+                    "minimum": round(-max(vertex[1] for vertex in vertices), 3),
+                    "maximum": round(-min(vertex[1] for vertex in vertices), 3),
+                },
+            }
+        )
+    return inventory
+
+
+def write_component_report(
+    path: Path,
+    nav: Path,
+    adjacency_mode: str,
+    polygons: list[list[tuple[float, ...]]]
+    | list[tuple[tuple[float, ...], ...]],
+    adjacency: list[set[int]],
+    selected: set[int],
+    excluded: set[int],
+    transitions: int,
+    blocked_links: int,
+) -> None:
+    components = component_inventory(
+        polygons,
+        adjacency,
+        selected,
+        excluded,
+    )
+    classifications = {
+        classification: sum(
+            component["classification"] == classification
+            for component in components
+        )
+        for classification in ("selected", "excluded", "unresolved")
+    }
+    report = {
+        "schema": 1,
+        "navmesh": nav.name,
+        "adjacency_mode": adjacency_mode,
+        "verified_transitions": transitions,
+        "verified_blocked_links": blocked_links,
+        "polygons": len(polygons),
+        "selected_polygons": len(selected),
+        "excluded_polygons": len(excluded),
+        "component_counts": classifications,
+        "components": components,
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(
+        json.dumps(report, indent=2, sort_keys=True) + "\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+
+
 def main() -> None:
     args = parse_args()
     if args.supersample < 1:
@@ -356,47 +369,76 @@ def main() -> None:
         raise ValueError("--seam-closure-radius cannot be negative")
 
     obj_bounds = read_obj_bounds(args.obj)
-    nav_origin, polygons = read_navmesh(args.nav)
-    validate_sources(obj_bounds, nav_origin)
-    total_polygons = len(polygons)
-    if (
-        args.minimum_elevation is not None
-        or args.maximum_elevation is not None
-    ):
-        minimum = (
-            args.minimum_elevation
-            if args.minimum_elevation is not None
-            else float("-inf")
+    topology = read_detour_topology(args.nav, args.maximum_step)
+    validate_sources(obj_bounds, topology.origin)
+    source_polygons = topology.polygons
+    total_polygons = len(source_polygons)
+    polygons = list(
+        filter_elevation(
+            list(source_polygons),
+            args.minimum_elevation,
+            args.maximum_elevation,
         )
-        maximum = (
-            args.maximum_elevation
-            if args.maximum_elevation is not None
-            else float("inf")
+    )
+    if not polygons:
+        raise ValueError("elevation filter excluded every nav polygon")
+    adjacency = (
+        filtered_native_adjacency(
+            source_polygons,
+            topology.adjacency,
+            polygons,
         )
-        if minimum > maximum:
-            raise ValueError("--minimum-elevation cannot exceed --maximum-elevation")
-        polygons = [
-            polygon
-            for polygon in polygons
-            if minimum
-            <= sum(vertex[1] for vertex in polygon) / len(polygon)
-            <= maximum
-        ]
-        if not polygons:
-            raise ValueError("elevation filter excluded every nav polygon")
-    if args.seed:
-        selected_ids = set()
-        for seed_x, seed_y in args.seed:
-            selected_ids.update(
-                id(polygon)
-                for polygon in connected_component(
-                    polygons,
-                    seed_x,
-                    -seed_y,
-                    args.maximum_step,
-                )
+        if args.adjacency_mode == "native"
+        else polygon_adjacency(polygons, args.maximum_step)
+    )
+    apply_transitions(
+        polygons,
+        adjacency,
+        args.transition,
+        args.transition_snap_radius,
+    )
+    remove_blocked_links(
+        polygons,
+        adjacency,
+        args.blocked_link,
+        args.transition_snap_radius,
+    )
+    selected = set(
+        selected_indices(
+            polygons,
+            adjacency,
+            args.seed,
+            args.seed_snap_radius,
+        )
+    )
+    excluded = (
+        set(
+            selected_indices(
+                polygons,
+                adjacency,
+                args.exclude_seed,
+                args.seed_snap_radius,
             )
-        polygons = [polygon for polygon in polygons if id(polygon) in selected_ids]
+        )
+        if args.exclude_seed
+        else set()
+    )
+    selected -= excluded
+    if not selected:
+        raise ValueError("component selection excluded every nav polygon")
+    if args.component_report:
+        write_component_report(
+            args.component_report,
+            args.nav,
+            args.adjacency_mode,
+            polygons,
+            adjacency,
+            selected,
+            excluded,
+            len(args.transition),
+            len(args.blocked_link),
+        )
+    polygons = [polygons[index] for index in sorted(selected)]
 
     scale = args.supersample
     mask = Image.new("L", (args.width * scale, args.height * scale), 0)

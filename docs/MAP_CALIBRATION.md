@@ -90,8 +90,14 @@ shift every displayed quadrant by a full row or column.
    every derived layer.
 4. Prefer collision OBJ geometry for a new walkable-area structure. Use the
    matching Detour navmesh to exclude flat but unreachable collision surfaces
-   such as roofs. Inventory and classify plausible components before selecting
-   the connected component from a verified walkable world-coordinate seed.
+   such as roofs. Use native `dtPoly.neis` neighbors and authored external tile
+   portals for production component selection; do not reconstruct connectivity
+   from geometrically similar polygon edges. Apply the same verified
+   `--blocked-link` records as the path graph before seed traversal, plus every
+   verified `--transition` whose endpoints belong to the generated layer.
+   Generate a JSON inventory with `--component-report`, then classify plausible
+   components before selecting the connected component from a verified
+   walkable world-coordinate seed.
    Add verified seeds for legitimate floors, seams, stairs, ramps, and
    landings; never render every disconnected polygon island. A seed is only
    X/Y, so inspect all containing polygons and their elevations before using it

@@ -24,7 +24,13 @@ the user to restate the workflow:
 2. Generate, inventory, and classify every plausible component as main path,
    alternate floor, connector, excluded with evidence, or unresolved. Preserve
    overlapping floors as separate cyan/violet layers with verified player-Z
-   bounds and transition treatments.
+   bounds and transition treatments. Generate structure component selection
+   from native `dtPoly.neis` topology and authored external tile portals, using
+   the same verified `--blocked-link` and relevant `--transition` records as
+   the page's path graph. Every structure-generation command must emit a
+   `--component-report`; review it and transfer every component's disposition
+   into zone provenance. The `--adjacency-mode inferred` compatibility mode is
+   audit-only and must not produce a completed structure layer.
 3. Conduct the required attended live route audit. Give the user concise
    destinations to visit, capture entrance/middle/exit positions for every
    floor transition, and continue when live evidence arrives. Never substitute
@@ -114,6 +120,14 @@ filled.
   unavailable, navigation geometry must come from the vanilla DAT or another
   deterministic, verified source. Never use AI-generated or visually traced
   artwork for navigation geometry.
+- Structure and path generation must share native Detour topology and verified
+  topology-exception evidence. Apply blocked links before seed traversal. A
+  transition may join split structure components only when its entrance,
+  middle, and exit have been live verified. For separately styled floors,
+  apply only transitions whose endpoints belong to that generated layer, and
+  record cross-layer transitions in the path job and provenance. Never join
+  structure components from proximity, inferred adjacency, or a shortest-route
+  result.
 - Production maps have only two static source categories: an optional vanilla
   reference and clean walkable structure. The structure category may contain
   multiple component textures when disconnected floors or connectors overlap

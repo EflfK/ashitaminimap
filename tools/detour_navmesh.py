@@ -250,3 +250,25 @@ def edge_length(
     left = centroid(polygons[edge[0]])
     right = centroid(polygons[edge[1]])
     return math.sqrt(sum((left[index] - right[index]) ** 2 for index in range(3)))
+
+
+def point_in_polygon(
+    polygon: tuple[tuple[float, ...], ...] | list[tuple[float, ...]],
+    x: float,
+    y: float,
+) -> bool:
+    """Return whether an X/Z point lies inside a convex Detour polygon."""
+
+    winding = 0
+    for index, start in enumerate(polygon):
+        end = polygon[(index + 1) % len(polygon)]
+        cross = (end[0] - start[0]) * (y - start[2]) - (
+            end[2] - start[2]
+        ) * (x - start[0])
+        if abs(cross) <= 0.0001:
+            continue
+        direction = 1 if cross > 0 else -1
+        if winding and direction != winding:
+            return False
+        winding = direction
+    return True
