@@ -17,45 +17,45 @@ gate.
 - [ ] West Ronfaure (`100`) — batch 1 partial
 - [ ] East Ronfaure (`101`) — batch 1 partial
 - [ ] North Gustaberg (`106`) — batch 1 partial
-- [ ] South Gustaberg (`107`) — re-audit
+- [ ] South Gustaberg (`107`) — batch 2 partial
 - [x] West Sarutabaruta (`115`)
 - [x] East Sarutabaruta (`116`)
 
 ## Level 10-20
 
-- [ ] La Theine Plateau (`102`)
-- [ ] Konschtat Highlands (`108`)
+- [ ] La Theine Plateau (`102`) — batch 2 partial
+- [ ] Konschtat Highlands (`108`) — batch 2 partial
 - [x] Tahrongi Canyon (`117`)
-- [ ] Valkurm Dunes (`103`)
+- [ ] Valkurm Dunes (`103`) — batch 3 partial
 - [x] Buburimu Peninsula (`118`)
-- [ ] King Ranperre's Tomb (`190`)
-- [ ] Dangruf Wadi (`191`)
-- [ ] Zeruhn Mines (`172`)
+- [ ] King Ranperre's Tomb (`190`) — batch 3 partial
+- [ ] Dangruf Wadi (`191`) — batch 3 partial
+- [ ] Zeruhn Mines (`172`) — batch 4 partial
 - [x] Inner Horutoto Ruins (`192`)
 - [x] Outer Horutoto Ruins (`194`)
 
 ## Level 20-30
 
-- [ ] Jugner Forest (`104`)
-- [ ] Pashhow Marshlands (`109`)
-- [ ] Meriphataud Mountains (`119`)
-- [ ] Ghelsba Outpost (`140`)
-- [ ] Fort Ghelsba (`141`)
-- [ ] Yughott Grotto (`142`)
-- [ ] Palborough Mines (`143`)
+- [ ] Jugner Forest (`104`) — batch 4 partial
+- [ ] Pashhow Marshlands (`109`) — batch 4 partial
+- [ ] Meriphataud Mountains (`119`) — batch 5 partial
+- [ ] Ghelsba Outpost (`140`) — batch 5 partial
+- [ ] Fort Ghelsba (`141`) — batch 5 partial
+- [ ] Yughott Grotto (`142`) — batch 6 partial
+- [ ] Palborough Mines (`143`) — batch 6 partial
 - [x] Giddeus (`145`)
 - [ ] Ordelle's Caves (`193`)
 - [x] Maze of Shakhrami (`198`)
 
 ## Level 30-40
 
-- [ ] Qufim Island (`126`)
+- [ ] Qufim Island (`126`) — batch 7 partial
 - [x] Lower Delkfutt's Tower (`184`)
 - [x] Middle Delkfutt's Tower (`157`)
 - [x] Upper Delkfutt's Tower (`158`)
-- [ ] Rolanberry Fields (`110`)
+- [ ] Rolanberry Fields (`110`) — batch 7 partial
 - [ ] Batallia Downs (`105`) — partial
-- [ ] Sauromugue Champaign (`120`)
+- [ ] Sauromugue Champaign (`120`) — batch 7 partial
 - [ ] Yuhtunga Jungle (`123`)
 - [ ] Yhoator Jungle (`124`)
 - [ ] Gusgen Mines (`196`)
