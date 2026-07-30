@@ -53,7 +53,8 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - independent vanilla and structure visibility and opacity;
 - adjustable structure line-strength boost;
 - an optional dark translucent backdrop for bright game environments;
-- coordinate grid and coordinate badge visibility;
+- coordinate grid and coordinate badge visibility, with optional live numeric
+  X/Y/Z values in the badge;
 - possible Treasure Chest or Coffer spawn references for authored zones;
 - static NM spawn-range references for authored zones that provide them;
 - player, NPC, and monster dot markers;

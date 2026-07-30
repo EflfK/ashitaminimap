@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.14.0';
+addon.version   = '1.14.1';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');
@@ -43,6 +43,7 @@ local DEFAULTS = {
     backdrop_opacity = 0.12,
     show_grid = true,
     show_coordinate = true,
+    show_numeric_coordinates = false,
     show_coffer_spawns = true,
     show_travel_references = true,
     show_nm_spawn_ranges = true,
@@ -304,6 +305,9 @@ local function config_text()
         '',
         string.format('    show_grid = %s,', bool_text(settings.show_grid)),
         string.format('    show_coordinate = %s,', bool_text(settings.show_coordinate)),
+        string.format(
+            '    show_numeric_coordinates = %s,',
+            bool_text(settings.show_numeric_coordinates)),
         string.format('    show_coffer_spawns = %s,', bool_text(settings.show_coffer_spawns)),
         string.format('    show_travel_references = %s,', bool_text(settings.show_travel_references)),
         string.format('    show_nm_spawn_ranges = %s,', bool_text(settings.show_nm_spawn_ranges)),
@@ -3250,18 +3254,55 @@ state.draw_guide_markers = function (
 end
 
 local function draw_badge(draw_list, left, top, player, map)
-    if (state.settings.show_coordinate ~= true) then
+    local show_grid_coordinate = state.settings.show_coordinate == true;
+    local show_numeric_coordinates =
+        state.settings.show_numeric_coordinates == true;
+    if (not show_grid_coordinate and not show_numeric_coordinates) then
         return;
     end
-    local coordinate = grid_coordinate(player.x, player.y, map);
-    local label = string.format('%s  %s', coordinate, map.name or ('Zone ' .. tostring(player.zone_id)));
-    local width = math.max(66, (#label * 7) + 16);
+    local name = map.name or ('Zone ' .. tostring(player.zone_id));
+    local label = name;
+    if (show_grid_coordinate) then
+        label = string.format(
+            '%s  %s',
+            grid_coordinate(player.x, player.y, map),
+            name);
+    end
+    local numeric_label = nil;
+    if (show_numeric_coordinates) then
+        numeric_label = string.format(
+            'X %.1f  Y %.1f  Z %.1f',
+            tonumber(player.x) or 0,
+            tonumber(player.y) or 0,
+            tonumber(player.z) or 0);
+    end
+    local width = math.max(
+        66,
+        (#label * 7) + 16,
+        numeric_label ~= nil and ((#numeric_label * 7) + 16) or 0);
+    local height = numeric_label ~= nil and 41 or 23;
     local badge_color = color('badge', { 0.025, 0.055, 0.070, 0.88 });
     local border = color('border', { 0.67, 0.47, 0.22, 0.90 });
     local text_color = color('grid_text', { 0.82, 0.71, 0.51, 0.88 });
-    draw_list:AddRectFilled({ left + 6, top + 6 }, { left + 6 + width, top + 29 }, badge_color, 3.0);
-    draw_list:AddRect({ left + 6, top + 6 }, { left + 6 + width, top + 29 }, border, 3.0, 0, 1.0);
+    draw_list:AddRectFilled(
+        { left + 6, top + 6 },
+        { left + 6 + width, top + 6 + height },
+        badge_color,
+        3.0);
+    draw_list:AddRect(
+        { left + 6, top + 6 },
+        { left + 6 + width, top + 6 + height },
+        border,
+        3.0,
+        0,
+        1.0);
     draw_list:AddText({ left + 14, top + 10 }, text_color, label);
+    if (numeric_label ~= nil) then
+        draw_list:AddText(
+            { left + 14, top + 28 },
+            text_color,
+            numeric_label);
+    end
 end
 
 local function draw_map_layer(
@@ -4046,6 +4087,9 @@ local function render_config_window()
         imgui.Separator();
         config_checkbox('Coordinate grid##ashitaminimap_grid', 'show_grid');
         config_checkbox('Coordinate badge##ashitaminimap_coordinate', 'show_coordinate');
+        config_checkbox(
+            'Numeric X/Y/Z in badge##ashitaminimap_numeric_coordinates',
+            'show_numeric_coordinates');
         config_checkbox(
             'Possible treasure spawns##ashitaminimap_coffer_spawns',
             'show_coffer_spawns');
