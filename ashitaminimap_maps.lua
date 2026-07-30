@@ -76,6 +76,211 @@ return {
         image_pixels_per_yalm = 0.48,
         travel_references = travel_reference_set({}),
     },
+    [147] = {
+        name = 'Beadeaux',
+        stock_calibration = true,
+        -- Beadeaux has three stock records with a common transform. Pages 1
+        -- and 15 have deterministic authored structure. Page 16 is the
+        -- client's Dummy Map and remains vanilla-only until live traversal
+        -- proves whether it owns reachable geometry.
+        structure_pages = {
+            [1] = structure_layer_set({
+                {
+                    image = 'assets/maps/147_01_lower_structure.png',
+                    minimum_player_z = -12.3,
+                    maximum_player_z = -5.3,
+                },
+                {
+                    image = 'assets/maps/147_01_main_structure.png',
+                    minimum_player_z = -4.7,
+                    maximum_player_z = 8.3,
+                },
+            }),
+            [15] = structure_layer_set({
+                {
+                    image = 'assets/maps/147_15_connector_structure.png',
+                    minimum_player_z = 7.5,
+                    maximum_player_z = 18.5,
+                },
+                {
+                    image = 'assets/maps/147_15_mid_structure.png',
+                    minimum_player_z = 18.5,
+                    maximum_player_z = 25.0,
+                },
+                {
+                    image = 'assets/maps/147_15_deep_structure.png',
+                    minimum_player_z = 25.0,
+                    maximum_player_z = 41.5,
+                },
+            }),
+        },
+        width = 512,
+        height = 512,
+        view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
+        -- Exact FFXiMain records for pages 1, 15, and 16 all use scale byte
+        -- 2 and offsets (-272,-256).
+        origin_x = 272.0,
+        origin_y = 256.0,
+        grid_origin_x = 256.0,
+        grid_origin_y = 256.0,
+        grid_yalms = 80,
+        image_pixels_per_yalm = 0.40,
+        travel_references = travel_reference_set({
+            {
+                kind = 'survival_guide',
+                name = 'Survival Guide',
+                unlock_bit = 26,
+                x = -264.000,
+                y = 107.000,
+                z = 1.550,
+                page_id = 1,
+            },
+        }),
+        -- Fixed CatsEyeXI chest and coffer possibilities. Source tuples are
+        -- (x, vertical, horizontal); minimap records are (x, horizontal,
+        -- vertical). These references never inspect the live treasure NPC.
+        treasure_spawns = {
+            { kind = 'chest',  page_id =  1, x =  81.814, y =   1.523, z = -3.250 },
+            { kind = 'chest',  page_id =  1, x = 122.451, y = 132.482, z = -2.468 },
+            { kind = 'chest',  page_id =  1, x = 159.081, y =  78.207, z = -3.275 },
+            { kind = 'chest',  page_id =  1, x = 150.931, y =  30.893, z = -2.969 },
+            { kind = 'chest',  page_id =  1, x = 252.520, y = -56.725, z = -3.000 },
+            { kind = 'chest',  page_id =  1, x = 161.465, y = -58.075, z = -3.000 },
+            { kind = 'chest',  page_id =  1, x = 274.491, y =  45.577, z = -3.249 },
+            { kind = 'chest',  page_id =  1, x = 272.330, y = 125.156, z = -3.338 },
+            { kind = 'chest',  page_id =  1, x = 170.554, y = 174.293, z = -3.000 },
+            { kind = 'chest',  page_id =  1, x = 107.592, y = 215.188, z = -3.000 },
+            { kind = 'chest',  page_id =  1, x =  82.216, y = 117.415, z = -3.196 },
+            { kind = 'chest',  page_id =  1, x =  22.898, y =  84.606, z = -2.981 },
+            { kind = 'coffer', page_id = 15, x = 216.974, y =  68.790, z = 39.702 },
+            { kind = 'coffer', page_id = 15, x = 369.956, y =  59.954, z = 24.075 },
+            { kind = 'coffer', page_id = 15, x = 414.430, y =  91.361, z = 23.859 },
+            { kind = 'coffer', page_id = 15, x = 380.187, y = 150.749, z = 24.019 },
+            { kind = 'coffer', page_id = 15, x = 330.943, y =  99.591, z = 24.244 },
+            { kind = 'coffer', page_id = 15, x = 256.112, y = 149.514, z = 39.805 },
+            { kind = 'coffer', page_id = 15, x = 187.398, y =  95.752, z = 39.999 },
+            { kind = 'coffer', page_id = 15, x = 170.601, y =  25.066, z = 39.831 },
+        },
+        -- Static initial-spawn and placeholder references from the pinned
+        -- CatsEyeXI mob scripts and SQL tables. They report no live status.
+        nm_spawn_ranges = {
+            {
+                name = 'Bi\'Gho Headtaker',
+                page_id = 1,
+                z = 1.000,
+                floor = 'MAP 1',
+                spawn_type = 'Lottery',
+                level = '25',
+                placeholder_count = 1,
+                points = {
+                    { x = -97.000, y = 78.000 },
+                    { x = -98.611, y = 71.212 },
+                },
+            },
+            {
+                name = 'Da\'Dha Hundredmask',
+                page_id = 1,
+                z = 1.000,
+                floor = 'MAP 1',
+                spawn_type = 'Lottery',
+                level = '30',
+                placeholder_count = 1,
+                points = {
+                    { x = -184.000, y = -136.000 },
+                    { x =  -71.480, y =  -62.882 },
+                },
+            },
+            {
+                name = 'Ge\'Dha Evileye',
+                page_id = 1,
+                z = 1.000,
+                floor = 'MAP 1',
+                spawn_type = 'Lottery',
+                level = '30',
+                placeholder_count = 1,
+                points = {
+                    { x = -238.000, y = -203.000 },
+                    { x = -242.709, y = -188.010 },
+                },
+            },
+            {
+                name = 'Zo\'Khu Blackcloud',
+                page_id = 1,
+                z = -3.000,
+                floor = 'MAP 1',
+                spawn_type = 'Lottery',
+                level = '36-38',
+                placeholder_count = 1,
+                points = {
+                    { x = -273.000, y = -253.000 },
+                    { x = -294.223, y = -206.657 },
+                },
+            },
+            {
+                name = 'Go\'Bhu Gascon',
+                page_id = 1,
+                z = -2.000,
+                floor = 'MAP 1',
+                spawn_type = 'Timed',
+                level = '41-42',
+                placeholder_count = 0,
+                points = {
+                    { x = -202.000, y = 110.000 },
+                },
+            },
+            {
+                name = 'De\'Vyu Headhunter',
+                page_id = 1,
+                z = -3.486,
+                floor = 'MAP 1',
+                spawn_type = 'Timed',
+                level = '45',
+                placeholder_count = 0,
+                points = {
+                    { x = 33.747, y = -130.112 },
+                },
+            },
+            {
+                name = 'Ga\'Bhu Unvanquished',
+                page_id = 1,
+                z = -3.199,
+                floor = 'MAP 1',
+                spawn_type = 'Lottery',
+                level = '47-48',
+                placeholder_count = 1,
+                points = {
+                    { x = 178.863, y = 192.895 },
+                    { x = 139.642, y = 161.557 },
+                },
+            },
+            {
+                name = 'Magnes Quadav',
+                page_id = 1,
+                z = -3.519,
+                floor = 'MAP 1',
+                spawn_type = 'Quest',
+                level = '43-45',
+                placeholder_count = 0,
+                points = {
+                    { x = -81.333, y = -125.682 },
+                    { x = -84.954, y = -120.894 },
+                },
+            },
+            {
+                name = 'Nickel Quadav',
+                page_id = 1,
+                z = -3.183,
+                floor = 'MAP 1',
+                spawn_type = 'Quest',
+                level = '43-45',
+                placeholder_count = 0,
+                points = {
+                    { x = -81.171, y = -129.277 },
+                    { x = -88.153, y = -118.159 },
+                },
+            },
+        },
+    },
     [236] = {
         name = 'Port Bastok',
         image = 'assets/maps/236.png',
@@ -294,6 +499,164 @@ return {
                 page_id = 1,
             },
         }),
+    },
+    [149] = {
+        name = 'Davoi',
+        stock_calibration = true,
+        -- The raised east platform is on this same stock page but has no
+        -- direct walkable connection from the surrounding ground. Preserve
+        -- its violet component boundary instead of flattening it into the
+        -- cyan ground network. Neither layer participates in global
+        -- player-Z selection because Davoi's ordinary terrain varies in Z.
+        structure_layers = structure_layer_set({
+            {
+                image = 'assets/maps/149_structure.png',
+                floor_selection = 'always',
+            },
+            {
+                image = 'assets/maps/149_elevated_structure.png',
+                floor_selection = 'always',
+            },
+        }),
+        width = 512,
+        height = 512,
+        view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
+        -- Exact FFXiMain page-0 record: scale byte 2 and offsets
+        -- (-240,-208). The imported vanilla page supplies the printed grid.
+        origin_x = 240.0,
+        origin_y = 208.0,
+        grid_origin_x = 256.0,
+        grid_origin_y = 256.0,
+        grid_yalms = 80,
+        image_pixels_per_yalm = 0.40,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 36, x = 223.000, y = -10.000, z = -0.699 },
+        }),
+        -- Fixed possible Treasure Chest locations from CatsEyeXI's public
+        -- scripts/globals/treasure.lua. Source tuples use
+        -- (x, vertical, horizontal); minimap positions use (x, horizontal).
+        -- These are reference markers only and never inspect the live chest.
+        treasure_spawns = {
+            { kind = 'chest', x =  235.907, y = -251.378, z =  3.629 },
+            { kind = 'chest', x =  290.556, y = -291.040, z =  2.731 },
+            { kind = 'chest', x =  297.370, y = -219.350, z =  3.250 },
+            { kind = 'chest', x =  327.747, y = -190.758, z =  3.500 },
+            { kind = 'chest', x =  165.449, y = -267.748, z = -0.632 },
+            { kind = 'chest', x =  115.242, y = -252.004, z = -0.546 },
+            { kind = 'chest', x =   65.686, y = -347.556, z =  0.628 },
+            { kind = 'chest', x =   63.105, y = -191.565, z = -2.659 },
+            { kind = 'chest', x = -109.608, y =   50.392, z =  2.693 },
+            { kind = 'chest', x =  -59.329, y =   10.691, z = -0.672 },
+            { kind = 'chest', x =  -59.163, y =   69.200, z = -0.459 },
+            { kind = 'chest', x =  -14.535, y =  -67.930, z =  0.583 },
+        },
+        -- Static initial-spawn and placeholder references from CatsEyeXI's
+        -- public Davoi mob scripts and SQL tables. They never inspect NM
+        -- status, select a current placeholder, or report a live location.
+        nm_spawn_ranges = {
+            {
+                name = 'Hawkeyed Dnatbat',
+                z = -0.582,
+                floor = 'SURFACE',
+                spawn_type = 'Lottery',
+                level = '26-28',
+                placeholder_count = 3,
+                points = {
+                    { x = 333.895, y = -144.558 },
+                    { x = 337.116, y = -110.483 },
+                    { x = 336.498, y = -138.502 },
+                    { x = 371.525, y = -176.188 },
+                },
+            },
+            {
+                name = 'Steelbiter Gudrud',
+                z = 4.000,
+                floor = 'SURFACE',
+                spawn_type = 'Lottery',
+                level = '33-34',
+                placeholder_count = 1,
+                points = {
+                    { x = 244.000, y = -240.000 },
+                    { x = 252.457, y = -248.655 },
+                },
+            },
+            {
+                name = 'Tigerbane Bakdak',
+                z = 2.068,
+                floor = 'SURFACE',
+                spawn_type = 'Lottery',
+                level = '31-32',
+                placeholder_count = 2,
+                points = {
+                    { x = 174.212, y = -20.285 },
+                    { x = 158.000, y = -18.000 },
+                    { x = 153.880, y = -18.092 },
+                },
+            },
+            {
+                name = 'Poisonhand Gnadgad',
+                z = -0.517,
+                floor = 'SURFACE',
+                spawn_type = 'Lottery',
+                level = '39-40',
+                placeholder_count = 8,
+                points = {
+                    { x = -61.045, y = 41.996 },
+                    { x = -53.910, y = 56.606 },
+                    { x = -62.647, y = 24.442 },
+                    { x = -64.578, y = 61.273 },
+                    { x = -59.013, y = 14.783 },
+                    { x = -50.158, y = 22.257 },
+                    { x = -56.626, y = 63.285 },
+                    { x = -54.694, y = 42.385 },
+                    { x = -60.057, y = 29.127 },
+                },
+            },
+            {
+                name = 'Blubbery Bulge',
+                z = 2.295,
+                floor = 'SURFACE',
+                spawn_type = 'Lottery',
+                level = '45-47',
+                placeholder_count = 1,
+                points = {
+                    { x = -225.237, y = -294.764 },
+                },
+            },
+            {
+                name = 'Dirtyhanded Gochakzuk',
+                z = -12.073,
+                floor = 'SURFACE',
+                spawn_type = 'Fixed',
+                level = '71',
+                placeholder_count = 0,
+                points = {
+                    { x = 56.259, y = -152.955 },
+                },
+            },
+            {
+                name = 'Purpleflash Brukdok',
+                z = -0.091,
+                floor = 'SURFACE',
+                spawn_type = 'Fixed',
+                level = '45',
+                placeholder_count = 0,
+                points = {
+                    { x = -135.469, y = -184.703 },
+                },
+            },
+            {
+                name = 'Hematic Cyst',
+                z = 3.676,
+                floor = 'SURFACE',
+                spawn_type = 'Quest',
+                level = '40',
+                placeholder_count = 0,
+                points = {
+                    { x = 177.000, y = -372.524 },
+                },
+            },
+        },
     },
     [174] = {
         name = 'Kuftal Tunnel',

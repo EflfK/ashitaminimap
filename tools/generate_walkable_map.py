@@ -88,6 +88,15 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--minimum-hole-area", type=float, default=18.0)
     parser.add_argument(
+        "--minimum-island-area",
+        type=float,
+        default=0.0,
+        help=(
+            "remove disconnected raster islands smaller than this many "
+            "output pixels; useful for isolated navmesh specks"
+        ),
+    )
+    parser.add_argument(
         "--seed",
         action="append",
         type=parse_seed,
@@ -253,6 +262,51 @@ def fill_small_holes(mask: Image.Image, maximum_area: int) -> int:
     return filled
 
 
+def remove_small_islands(mask: Image.Image, minimum_area: int) -> int:
+    """Remove foreground components smaller than the configured raster area."""
+
+    if minimum_area <= 0:
+        return 0
+    pixels = mask.load()
+    width, height = mask.size
+    visited = bytearray(width * height)
+    removed = 0
+    for start_y in range(height):
+        for start_x in range(width):
+            start_index = start_y * width + start_x
+            if visited[start_index] or pixels[start_x, start_y] == 0:
+                continue
+            component = []
+            queue = deque([(start_x, start_y)])
+            visited[start_index] = 1
+            while queue:
+                x, y = queue.popleft()
+                component.append((x, y))
+                for next_x, next_y in (
+                    (x - 1, y),
+                    (x + 1, y),
+                    (x, y - 1),
+                    (x, y + 1),
+                ):
+                    if (
+                        next_x < 0
+                        or next_x >= width
+                        or next_y < 0
+                        or next_y >= height
+                    ):
+                        continue
+                    item = next_y * width + next_x
+                    if visited[item] or pixels[next_x, next_y] == 0:
+                        continue
+                    visited[item] = 1
+                    queue.append((next_x, next_y))
+            if len(component) < minimum_area:
+                for x, y in component:
+                    pixels[x, y] = 0
+                removed += 1
+    return removed
+
+
 def topology_components(adjacency: list[set[int]]) -> list[list[int]]:
     groups = []
     visited = set()
@@ -367,6 +421,8 @@ def main() -> None:
         raise ValueError("--supersample must be at least 1")
     if args.seam_closure_radius < 0:
         raise ValueError("--seam-closure-radius cannot be negative")
+    if args.minimum_island_area < 0:
+        raise ValueError("--minimum-island-area cannot be negative")
 
     obj_bounds = read_obj_bounds(args.obj)
     topology = read_detour_topology(args.nav, args.maximum_step)
@@ -476,6 +532,8 @@ def main() -> None:
         )
     maximum_hole_area = round(args.minimum_hole_area * scale * scale)
     holes_filled = fill_small_holes(mask, maximum_hole_area)
+    minimum_island_area = round(args.minimum_island_area * scale * scale)
+    islands_removed = remove_small_islands(mask, minimum_island_area)
 
     edge_width = max(3, scale * 2 - 1)
     edge = ImageChops.subtract(mask, mask.filter(ImageFilter.MinFilter(edge_width)))
@@ -488,7 +546,8 @@ def main() -> None:
     print(
         f"wrote {args.output}: {len(polygons)}/{total_polygons} connected "
         "walkable polygons, "
-        f"{holes_filled} small holes removed"
+        f"{holes_filled} small holes removed, "
+        f"{islands_removed} small islands removed"
     )
 
 

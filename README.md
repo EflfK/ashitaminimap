@@ -134,6 +134,13 @@ points for manual searching. The addon does not inspect the live coffer,
 identify which point is occupied, or mark its current location. A possible
 spawn is always a fixed reference; it does not claim live presence.
 
+Davoi provides display-only wooden chest references for its 12 possible
+Treasure Chest locations. Treasure Coffers use a separate rounded gold symbol
+on authored maps such as Kuftal Tunnel. Davoi also provides static spawn-area
+references for the zone's verified notorious monsters. These references come
+from CatsEyeXI's public treasure, mob-script, and SQL data; they never report
+whether a chest or NM is currently present.
+
 Kuftal Tunnel also provides an optional filled Amemet spawn-range veil on page
 2. It is derived from the 50 authored initial-spawn positions and deliberately
 draws no singular NM marker. Hover the veil for its compact static-reference
@@ -258,6 +265,9 @@ collision and navigation geometry to render only the accessible-area fill and
 its boundaries. Ru'Lude Gardens, Upper Jeuno, and Lower Jeuno also include
 committed reference layers. Port Jeuno obtains its optional vanilla layer from
 the local universal fallback import.
+Davoi uses its exact stock page-0 calibration with deterministic collision and
+Detour navigation geometry. Its static reference overlays include all 12
+CatsEyeXI Treasure Chest possibilities and verified NM spawn areas.
 Garlaige Citadel uses page-aware structure selection. Pages 1 and 16 have
 authored layers generated from bounded Detour elevation bands; their
 calibration is registered, but the zone remains partial pending complete

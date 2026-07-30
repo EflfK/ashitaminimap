@@ -6,6 +6,10 @@ return {
     [116] = 'assets/paths/116.lua',
     [117] = 'assets/paths/117.lua',
     [118] = 'assets/paths/118.lua',
+    [147] = {
+        [1] = 'assets/paths/147_01.lua',
+        [15] = 'assets/paths/147_15.lua',
+    },
     [149] = 'assets/paths/149.lua',
     [145] = 'assets/paths/145.lua',
     [151] = 'assets/paths/151.lua',
