@@ -79,6 +79,17 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--blocked-link",
+        action="append",
+        type=parse_transition,
+        default=[],
+        help=(
+            "remove a false source-navmesh adjacency, expressed as "
+            "start-x,start-y,start-live-z:end-x,end-y,end-live-z; "
+            "repeat for multiple blocked links"
+        ),
+    )
+    parser.add_argument(
         "--transition-snap-radius",
         type=float,
         default=2.0,
@@ -325,6 +336,31 @@ def centroid(polygon: list[tuple[float, ...]]) -> tuple[float, float, float]:
     )
 
 
+def nearest_centroid(
+    centroids: list[tuple[float, float, float]],
+    endpoint: tuple[float, float, float],
+    snap_radius: float,
+    label: str,
+) -> int:
+    distance, index = min(
+        (
+            math.sqrt(
+                (point[0] - endpoint[0]) ** 2
+                + (point[1] - endpoint[1]) ** 2
+                + (-point[2] - endpoint[2]) ** 2
+            ),
+            index,
+        )
+        for index, point in enumerate(centroids)
+    )
+    if distance > snap_radius:
+        raise ValueError(
+            f"{label} endpoint {endpoint} is {distance:.3f} yalms "
+            f"from the nearest polygon centroid, exceeding {snap_radius:g}"
+        )
+    return index
+
+
 def apply_transitions(
     polygons: list[list[tuple[float, ...]]],
     adjacency: list[set[int]],
@@ -337,35 +373,44 @@ def apply_transitions(
         raise ValueError("--transition-snap-radius must be positive")
     centroids = [centroid(polygon) for polygon in polygons]
 
-    def nearest(endpoint: tuple[float, float, float]) -> int:
-        distance, index = min(
-            (
-                math.sqrt(
-                    (point[0] - endpoint[0]) ** 2
-                    + (point[1] - endpoint[1]) ** 2
-                    + (-point[2] - endpoint[2]) ** 2
-                ),
-                index,
-            )
-            for index, point in enumerate(centroids)
-        )
-        if distance > snap_radius:
-            raise ValueError(
-                f"transition endpoint {endpoint} is {distance:.3f} yalms "
-                f"from the nearest polygon centroid, exceeding "
-                f"{snap_radius:g}"
-            )
-        return index
-
     for start, end in transitions:
-        start_index = nearest(start)
-        end_index = nearest(end)
+        start_index = nearest_centroid(
+            centroids, start, snap_radius, "transition"
+        )
+        end_index = nearest_centroid(
+            centroids, end, snap_radius, "transition"
+        )
         if start_index == end_index:
             raise ValueError(
                 f"transition endpoints {start} and {end} resolve to one polygon"
             )
         adjacency[start_index].add(end_index)
         adjacency[end_index].add(start_index)
+
+
+def remove_blocked_links(
+    polygons: list[list[tuple[float, ...]]],
+    adjacency: list[set[int]],
+    blocked_links: list[
+        tuple[tuple[float, float, float], tuple[float, float, float]]
+    ],
+    snap_radius: float,
+) -> None:
+    centroids = [centroid(polygon) for polygon in polygons]
+    for start, end in blocked_links:
+        start_index = nearest_centroid(
+            centroids, start, snap_radius, "blocked link"
+        )
+        end_index = nearest_centroid(
+            centroids, end, snap_radius, "blocked link"
+        )
+        if end_index not in adjacency[start_index]:
+            raise ValueError(
+                f"blocked link {start} to {end} is not present in the "
+                "source graph"
+            )
+        adjacency[start_index].remove(end_index)
+        adjacency[end_index].remove(start_index)
 
 
 def lua_number(value: float) -> str:
@@ -436,6 +481,12 @@ def main() -> None:
         args.transition_snap_radius,
     )
     indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
+    remove_blocked_links(
+        polygons,
+        adjacency,
+        args.blocked_link,
+        args.transition_snap_radius,
+    )
     selected = set(indices)
     write_graph(
         args.output,

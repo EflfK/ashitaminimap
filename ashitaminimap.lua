@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.13.10';
+addon.version   = '1.13.11';
 addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
 
 require('common');

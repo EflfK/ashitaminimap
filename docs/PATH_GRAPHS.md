@@ -64,6 +64,16 @@ Every transition is bidirectional and must be backed by a verified physical
 connection; it must never bridge unrelated surfaces that merely overlap on the
 flattened map.
 
+When live verification proves that a source-navmesh adjacency crosses a wall,
+door, railing, or other impassable boundary, remove only that edge with:
+
+```text
+--blocked-link=<start-x>,<start-y>,<start-live-z>:<end-x>,<end-y>,<end-live-z>
+```
+
+Blocked links use the same two-yalm centroid snap as authored transitions and
+generation fails if the source edge does not exist.
+
 Repeat `--seed` to retain multiple verified components without inventing edges
 between them. Use repeated `--mask` arguments with the map's exact
 `--origin-x`, `--origin-y`, and `--pixels-per-yalm` to constrain graph nodes to
