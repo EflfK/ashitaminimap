@@ -1,0 +1,8 @@
+{
+  "asset": "174_01_transition_structure.png",
+  "asset_sha256": "5DA8D6EA38468A2324EBDC4FC4C5D6EA9CD8D6DFF0F02696F1F08892078A7916",
+  "certified": true,
+  "reason": "This clipped stripe layer visualizes a live-verified floor transition and is not a seeded navmesh component.",
+  "schema": 1,
+  "status": "verified-derived-transition"
+}

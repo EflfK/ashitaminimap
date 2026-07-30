@@ -1,0 +1,20 @@
+{
+  "asset": "237_structure.png",
+  "asset_sha256": "96C6B5EF0875942D5DF3E2B800A08EEF637EB24757D5B7A104E597ED5A83DC07",
+  "certified": false,
+  "reason": "The committed Metalworks asset is a linework prototype, not a seeded navmesh-generated production structure.",
+  "schema": 1,
+  "sources": {
+    "navmesh": {
+      "commit": "d5de48de84868bde744e4864768a611e5aad82b0",
+      "file": "Metalworks.nav",
+      "sha256": "D35BE8EEEE9F311D3D8C6C303F92272CEFCDEB4AFED32586BF04EEF792DCDAE5"
+    },
+    "obj": {
+      "commit": "694970ce54a4fb53b69db52b8375c605686bc350",
+      "file": "Metalworks.obj",
+      "sha256": "271CE83F4B343F7596308C0CB36F8A1CA97AD3510C570F606274B7B98A80C291"
+    }
+  },
+  "status": "legacy-rebuild-required"
+}

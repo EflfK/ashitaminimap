@@ -173,3 +173,15 @@ For any future Kuftal edit:
 8. keep disconnected elevations in separate layer textures;
 9. deploy without overwriting `ashitaminimap_config.lua`, reload the addon, and
    confirm the expected version and active page in the chat log.
+
+The native selector inventory for every Kuftal structure layer is stored under
+`assets/maps/component-reports/`. Regenerate it with the catalog audit:
+
+```text
+python tools/audit_structure_catalog.py <xiNavmeshOBJs>/obj <xiNavmeshes> \
+  --markdown-report assets/maps/STRUCTURE_TOPOLOGY_AUDIT.md
+```
+
+Kuftal rows use selector-only comparison because final stock-page clipping is
+recorded separately from topology selection. Native and inferred selectors
+must still produce identical pre-clip masks.

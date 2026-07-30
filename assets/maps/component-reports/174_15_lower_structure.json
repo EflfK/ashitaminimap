@@ -1,0 +1,4977 @@
+{
+  "adjacency_mode": "native",
+  "component_counts": {
+    "excluded": 0,
+    "selected": 1,
+    "unresolved": 259
+  },
+  "components": [
+    {
+      "classification": "unresolved",
+      "component": 1,
+      "live_z_equivalent": {
+        "maximum": -23.5,
+        "minimum": -24.7
+      },
+      "nav_elevation": {
+        "maximum": 24.7,
+        "minimum": 23.5
+      },
+      "polygons": 9,
+      "world_bounds": {
+        "maximum_x": 26.445,
+        "maximum_y": 297.0,
+        "minimum_x": 19.945,
+        "minimum_y": 288.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 2,
+      "live_z_equivalent": {
+        "maximum": -40.3,
+        "minimum": -40.7
+      },
+      "nav_elevation": {
+        "maximum": 40.7,
+        "minimum": 40.3
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 62.945,
+        "maximum_y": 319.0,
+        "minimum_x": 55.445,
+        "minimum_y": 316.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 3,
+      "live_z_equivalent": {
+        "maximum": -39.5,
+        "minimum": -40.3
+      },
+      "nav_elevation": {
+        "maximum": 40.3,
+        "minimum": 39.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 57.445,
+        "maximum_y": 316.0,
+        "minimum_x": 55.445,
+        "minimum_y": 314.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 4,
+      "live_z_equivalent": {
+        "maximum": -35.1,
+        "minimum": -39.5
+      },
+      "nav_elevation": {
+        "maximum": 39.5,
+        "minimum": 35.1
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 63.445,
+        "maximum_y": 316.0,
+        "minimum_x": 54.945,
+        "minimum_y": 307.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 5,
+      "live_z_equivalent": {
+        "maximum": -33.5,
+        "minimum": -34.7
+      },
+      "nav_elevation": {
+        "maximum": 34.7,
+        "minimum": 33.5
+      },
+      "polygons": 7,
+      "world_bounds": {
+        "maximum_x": 57.445,
+        "maximum_y": 306.0,
+        "minimum_x": 47.945,
+        "minimum_y": 299.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 6,
+      "live_z_equivalent": {
+        "maximum": -25.1,
+        "minimum": -32.3
+      },
+      "nav_elevation": {
+        "maximum": 32.3,
+        "minimum": 25.1
+      },
+      "polygons": 12,
+      "world_bounds": {
+        "maximum_x": 45.445,
+        "maximum_y": 304.5,
+        "minimum_x": 27.445,
+        "minimum_y": 294.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 7,
+      "live_z_equivalent": {
+        "maximum": -15.1,
+        "minimum": -22.3
+      },
+      "nav_elevation": {
+        "maximum": 22.3,
+        "minimum": 15.1
+      },
+      "polygons": 14,
+      "world_bounds": {
+        "maximum_x": 24.445,
+        "maximum_y": 285.0,
+        "minimum_x": 16.445,
+        "minimum_y": 267.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 8,
+      "live_z_equivalent": {
+        "maximum": -13.5,
+        "minimum": -15.1
+      },
+      "nav_elevation": {
+        "maximum": 15.1,
+        "minimum": 13.5
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 32.445,
+        "maximum_y": 266.5,
+        "minimum_x": 22.945,
+        "minimum_y": 260.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 9,
+      "live_z_equivalent": {
+        "maximum": -3.9,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 3.9
+      },
+      "polygons": 375,
+      "world_bounds": {
+        "maximum_x": 144.945,
+        "maximum_y": 264.5,
+        "minimum_x": 34.945,
+        "minimum_y": 64.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 10,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 46.945,
+        "maximum_y": 228.5,
+        "minimum_x": 42.445,
+        "minimum_y": 224.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 11,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -11.9
+      },
+      "nav_elevation": {
+        "maximum": 11.9,
+        "minimum": 11.1
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 64.945,
+        "maximum_y": 254.5,
+        "minimum_x": 62.445,
+        "minimum_y": 245.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 12,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -11.9
+      },
+      "nav_elevation": {
+        "maximum": 11.9,
+        "minimum": 11.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 53.445,
+        "maximum_y": 224.0,
+        "minimum_x": 52.445,
+        "minimum_y": 223.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 13,
+      "live_z_equivalent": {
+        "maximum": -12.7,
+        "minimum": -13.1
+      },
+      "nav_elevation": {
+        "maximum": 13.1,
+        "minimum": 12.7
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 45.945,
+        "maximum_y": 213.0,
+        "minimum_x": 43.945,
+        "minimum_y": 209.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 14,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 70.445,
+        "maximum_y": 201.0,
+        "minimum_x": 68.945,
+        "minimum_y": 196.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 15,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 67.945,
+        "maximum_y": 196.0,
+        "minimum_x": 67.445,
+        "minimum_y": 192.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 16,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -11.9
+      },
+      "nav_elevation": {
+        "maximum": 11.9,
+        "minimum": 11.1
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 104.945,
+        "maximum_y": 214.5,
+        "minimum_x": 102.445,
+        "minimum_y": 205.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 17,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -7.1
+      },
+      "nav_elevation": {
+        "maximum": 7.1,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 52.945,
+        "maximum_y": 187.5,
+        "minimum_x": 49.945,
+        "minimum_y": 185.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 18,
+      "live_z_equivalent": {
+        "maximum": 4.9,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": -4.9
+      },
+      "polygons": 332,
+      "world_bounds": {
+        "maximum_x": 64.445,
+        "maximum_y": 184.5,
+        "minimum_x": -94.055,
+        "minimum_y": -104.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 19,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -4.3
+      },
+      "nav_elevation": {
+        "maximum": 4.3,
+        "minimum": 3.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 47.445,
+        "maximum_y": 179.0,
+        "minimum_x": 44.945,
+        "minimum_y": 176.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 20,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -9.5
+      },
+      "nav_elevation": {
+        "maximum": 9.5,
+        "minimum": 7.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 67.445,
+        "maximum_y": 192.0,
+        "minimum_x": 64.445,
+        "minimum_y": 184.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 21,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.5
+      },
+      "nav_elevation": {
+        "maximum": 5.5,
+        "minimum": 2.7
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 62.945,
+        "maximum_y": 177.5,
+        "minimum_x": 56.445,
+        "minimum_y": 165.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 22,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.1
+      },
+      "polygons": 9,
+      "world_bounds": {
+        "maximum_x": 122.945,
+        "maximum_y": 171.0,
+        "minimum_x": 108.445,
+        "minimum_y": 158.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 23,
+      "live_z_equivalent": {
+        "maximum": 23.3,
+        "minimum": 17.3
+      },
+      "nav_elevation": {
+        "maximum": -17.3,
+        "minimum": -23.3
+      },
+      "polygons": 477,
+      "world_bounds": {
+        "maximum_x": 142.945,
+        "maximum_y": 150.5,
+        "minimum_x": -45.055,
+        "minimum_y": -9.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 24,
+      "live_z_equivalent": {
+        "maximum": -1.1,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.1
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 34.445,
+        "maximum_y": 149.0,
+        "minimum_x": 30.945,
+        "minimum_y": 142.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 25,
+      "live_z_equivalent": {
+        "maximum": 20.1,
+        "minimum": 19.3
+      },
+      "nav_elevation": {
+        "maximum": -19.3,
+        "minimum": -20.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 48.945,
+        "maximum_y": 148.0,
+        "minimum_x": 43.945,
+        "minimum_y": 147.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 26,
+      "live_z_equivalent": {
+        "maximum": 22.1,
+        "minimum": 20.5
+      },
+      "nav_elevation": {
+        "maximum": -20.5,
+        "minimum": -22.1
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 55.445,
+        "maximum_y": 147.5,
+        "minimum_x": 47.445,
+        "minimum_y": 144.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 27,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 2.7
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 55.945,
+        "maximum_y": 143.5,
+        "minimum_x": 45.445,
+        "minimum_y": 138.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 28,
+      "live_z_equivalent": {
+        "maximum": 26.1,
+        "minimum": 23.7
+      },
+      "nav_elevation": {
+        "maximum": -23.7,
+        "minimum": -26.1
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 57.445,
+        "maximum_y": 142.5,
+        "minimum_x": 49.445,
+        "minimum_y": 135.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 29,
+      "live_z_equivalent": {
+        "maximum": -1.9,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 28.445,
+        "maximum_y": 137.0,
+        "minimum_x": 24.445,
+        "minimum_y": 131.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 30,
+      "live_z_equivalent": {
+        "maximum": 30.9,
+        "minimum": 24.9
+      },
+      "nav_elevation": {
+        "maximum": -24.9,
+        "minimum": -30.9
+      },
+      "polygons": 56,
+      "world_bounds": {
+        "maximum_x": 104.445,
+        "maximum_y": 145.0,
+        "minimum_x": 55.445,
+        "minimum_y": 96.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 31,
+      "live_z_equivalent": {
+        "maximum": 23.7,
+        "minimum": 22.9
+      },
+      "nav_elevation": {
+        "maximum": -22.9,
+        "minimum": -23.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 56.445,
+        "maximum_y": 133.0,
+        "minimum_x": 52.445,
+        "minimum_y": 128.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 32,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -19.7
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 47.445,
+        "maximum_y": 132.5,
+        "minimum_x": 36.945,
+        "minimum_y": 129.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 33,
+      "live_z_equivalent": {
+        "maximum": -3.9,
+        "minimum": -3.9
+      },
+      "nav_elevation": {
+        "maximum": 3.9,
+        "minimum": 3.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 58.945,
+        "maximum_y": 155.0,
+        "minimum_x": 56.445,
+        "minimum_y": 152.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 34,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 64.945,
+        "maximum_y": 152.5,
+        "minimum_x": 62.945,
+        "minimum_y": 150.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 35,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 67.445,
+        "maximum_y": 149.0,
+        "minimum_x": 65.445,
+        "minimum_y": 147.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 36,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 80.945,
+        "maximum_y": 131.0,
+        "minimum_x": 76.945,
+        "minimum_y": 129.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 37,
+      "live_z_equivalent": {
+        "maximum": -4.3,
+        "minimum": -7.9
+      },
+      "nav_elevation": {
+        "maximum": 7.9,
+        "minimum": 4.3
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 73.445,
+        "maximum_y": 145.5,
+        "minimum_x": 62.445,
+        "minimum_y": 137.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 38,
+      "live_z_equivalent": {
+        "maximum": 27.3,
+        "minimum": 24.9
+      },
+      "nav_elevation": {
+        "maximum": -24.9,
+        "minimum": -27.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 74.945,
+        "maximum_y": 142.0,
+        "minimum_x": 63.945,
+        "minimum_y": 136.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 39,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -11.1
+      },
+      "nav_elevation": {
+        "maximum": 11.1,
+        "minimum": 11.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 85.945,
+        "maximum_y": 131.5,
+        "minimum_x": 81.945,
+        "minimum_y": 130.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 40,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -9.1
+      },
+      "nav_elevation": {
+        "maximum": 9.1,
+        "minimum": 7.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 72.445,
+        "maximum_y": 135.5,
+        "minimum_x": 64.445,
+        "minimum_y": 133.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 41,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 75.945,
+        "maximum_y": 133.0,
+        "minimum_x": 71.445,
+        "minimum_y": 132.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 42,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -11.5
+      },
+      "nav_elevation": {
+        "maximum": 11.5,
+        "minimum": 11.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 109.445,
+        "maximum_y": 158.5,
+        "minimum_x": 108.445,
+        "minimum_y": 155.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 43,
+      "live_z_equivalent": {
+        "maximum": 33.7,
+        "minimum": 32.9
+      },
+      "nav_elevation": {
+        "maximum": -32.9,
+        "minimum": -33.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 93.945,
+        "maximum_y": 140.5,
+        "minimum_x": 91.945,
+        "minimum_y": 136.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 44,
+      "live_z_equivalent": {
+        "maximum": 38.9,
+        "minimum": 38.1
+      },
+      "nav_elevation": {
+        "maximum": -38.1,
+        "minimum": -38.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 99.945,
+        "maximum_y": 138.0,
+        "minimum_x": 96.445,
+        "minimum_y": 136.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 45,
+      "live_z_equivalent": {
+        "maximum": 33.3,
+        "minimum": 32.9
+      },
+      "nav_elevation": {
+        "maximum": -32.9,
+        "minimum": -33.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 98.445,
+        "maximum_y": 133.5,
+        "minimum_x": 95.445,
+        "minimum_y": 132.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 46,
+      "live_z_equivalent": {
+        "maximum": 32.5,
+        "minimum": 31.7
+      },
+      "nav_elevation": {
+        "maximum": -31.7,
+        "minimum": -32.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 98.945,
+        "maximum_y": 131.5,
+        "minimum_x": 94.445,
+        "minimum_y": 129.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 47,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 3.5
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 152.445,
+        "maximum_y": 146.5,
+        "minimum_x": 142.945,
+        "minimum_y": 140.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 48,
+      "live_z_equivalent": {
+        "maximum": -0.3,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 0.3
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 163.445,
+        "maximum_y": 144.5,
+        "minimum_x": 154.945,
+        "minimum_y": 135.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 49,
+      "live_z_equivalent": {
+        "maximum": 2.9,
+        "minimum": -0.3
+      },
+      "nav_elevation": {
+        "maximum": 0.3,
+        "minimum": -2.9
+      },
+      "polygons": 7,
+      "world_bounds": {
+        "maximum_x": 169.945,
+        "maximum_y": 143.5,
+        "minimum_x": 163.445,
+        "minimum_y": 135.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 50,
+      "live_z_equivalent": {
+        "maximum": 4.9,
+        "minimum": 3.3
+      },
+      "nav_elevation": {
+        "maximum": -3.3,
+        "minimum": -4.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 172.945,
+        "maximum_y": 140.0,
+        "minimum_x": 169.445,
+        "minimum_y": 135.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 51,
+      "live_z_equivalent": {
+        "maximum": 6.5,
+        "minimum": 5.3
+      },
+      "nav_elevation": {
+        "maximum": -5.3,
+        "minimum": -6.5
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 180.445,
+        "maximum_y": 137.5,
+        "minimum_x": 173.945,
+        "minimum_y": 128.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 52,
+      "live_z_equivalent": {
+        "maximum": 6.5,
+        "minimum": 5.3
+      },
+      "nav_elevation": {
+        "maximum": -5.3,
+        "minimum": -6.5
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": -54.055,
+        "maximum_y": 97.0,
+        "minimum_x": -60.055,
+        "minimum_y": 87.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 53,
+      "live_z_equivalent": {
+        "maximum": -1.1,
+        "minimum": -1.9
+      },
+      "nav_elevation": {
+        "maximum": 1.9,
+        "minimum": 1.1
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -33.055,
+        "maximum_y": 97.5,
+        "minimum_x": -37.055,
+        "minimum_y": 96.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 54,
+      "live_z_equivalent": {
+        "maximum": -2.3,
+        "minimum": -3.5
+      },
+      "nav_elevation": {
+        "maximum": 3.5,
+        "minimum": 2.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 15.445,
+        "maximum_y": 96.5,
+        "minimum_x": 13.445,
+        "minimum_y": 94.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 55,
+      "live_z_equivalent": {
+        "maximum": -0.3,
+        "minimum": -0.3
+      },
+      "nav_elevation": {
+        "maximum": 0.3,
+        "minimum": 0.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -2.055,
+        "maximum_y": 123.0,
+        "minimum_x": -3.555,
+        "minimum_y": 120.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 56,
+      "live_z_equivalent": {
+        "maximum": -1.1,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.1
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 15.945,
+        "maximum_y": 117.0,
+        "minimum_x": 11.945,
+        "minimum_y": 110.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 57,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 18.5
+      },
+      "nav_elevation": {
+        "maximum": -18.5,
+        "minimum": -18.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 17.445,
+        "maximum_y": 117.0,
+        "minimum_x": 15.945,
+        "minimum_y": 114.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 58,
+      "live_z_equivalent": {
+        "maximum": 23.3,
+        "minimum": 23.3
+      },
+      "nav_elevation": {
+        "maximum": -23.3,
+        "minimum": -23.3
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 72.445,
+        "maximum_y": 97.0,
+        "minimum_x": 70.445,
+        "minimum_y": 95.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 59,
+      "live_z_equivalent": {
+        "maximum": 26.5,
+        "minimum": 25.7
+      },
+      "nav_elevation": {
+        "maximum": -25.7,
+        "minimum": -26.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 63.945,
+        "maximum_y": 127.5,
+        "minimum_x": 60.945,
+        "minimum_y": 125.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 60,
+      "live_z_equivalent": {
+        "maximum": 27.3,
+        "minimum": 24.9
+      },
+      "nav_elevation": {
+        "maximum": -24.9,
+        "minimum": -27.3
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 63.445,
+        "maximum_y": 114.5,
+        "minimum_x": 57.945,
+        "minimum_y": 103.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 61,
+      "live_z_equivalent": {
+        "maximum": 25.7,
+        "minimum": 22.9
+      },
+      "nav_elevation": {
+        "maximum": -22.9,
+        "minimum": -25.7
+      },
+      "polygons": 7,
+      "world_bounds": {
+        "maximum_x": 65.445,
+        "maximum_y": 97.5,
+        "minimum_x": 57.445,
+        "minimum_y": 89.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 62,
+      "live_z_equivalent": {
+        "maximum": 26.5,
+        "minimum": 26.1
+      },
+      "nav_elevation": {
+        "maximum": -26.1,
+        "minimum": -26.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 74.945,
+        "maximum_y": 104.0,
+        "minimum_x": 71.945,
+        "minimum_y": 99.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 63,
+      "live_z_equivalent": {
+        "maximum": 27.3,
+        "minimum": 24.9
+      },
+      "nav_elevation": {
+        "maximum": -24.9,
+        "minimum": -27.3
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 95.945,
+        "maximum_y": 103.5,
+        "minimum_x": 85.445,
+        "minimum_y": 98.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 64,
+      "live_z_equivalent": {
+        "maximum": 26.5,
+        "minimum": 26.1
+      },
+      "nav_elevation": {
+        "maximum": -26.1,
+        "minimum": -26.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 98.945,
+        "maximum_y": 115.0,
+        "minimum_x": 95.945,
+        "minimum_y": 112.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 65,
+      "live_z_equivalent": {
+        "maximum": 23.7,
+        "minimum": 23.3
+      },
+      "nav_elevation": {
+        "maximum": -23.3,
+        "minimum": -23.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 104.945,
+        "maximum_y": 112.5,
+        "minimum_x": 102.945,
+        "minimum_y": 110.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 66,
+      "live_z_equivalent": {
+        "maximum": 23.7,
+        "minimum": 23.3
+      },
+      "nav_elevation": {
+        "maximum": -23.3,
+        "minimum": -23.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 107.445,
+        "maximum_y": 109.0,
+        "minimum_x": 105.445,
+        "minimum_y": 107.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 67,
+      "live_z_equivalent": {
+        "maximum": 25.7,
+        "minimum": 22.1
+      },
+      "nav_elevation": {
+        "maximum": -22.1,
+        "minimum": -25.7
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 113.445,
+        "maximum_y": 105.5,
+        "minimum_x": 102.445,
+        "minimum_y": 97.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 68,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -11.9
+      },
+      "nav_elevation": {
+        "maximum": 11.9,
+        "minimum": 11.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 134.445,
+        "maximum_y": 97.5,
+        "minimum_x": 125.445,
+        "minimum_y": 95.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 69,
+      "live_z_equivalent": {
+        "maximum": 14.9,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -14.9
+      },
+      "polygons": 268,
+      "world_bounds": {
+        "maximum_x": 272.945,
+        "maximum_y": 125.0,
+        "minimum_x": 136.445,
+        "minimum_y": 15.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 70,
+      "live_z_equivalent": {
+        "maximum": 14.9,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -14.9
+      },
+      "polygons": 13,
+      "world_bounds": {
+        "maximum_x": -55.055,
+        "maximum_y": 85.0,
+        "minimum_x": -63.555,
+        "minimum_y": 67.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 71,
+      "live_z_equivalent": {
+        "maximum": 16.5,
+        "minimum": 14.9
+      },
+      "nav_elevation": {
+        "maximum": -14.9,
+        "minimum": -16.5
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": -47.555,
+        "maximum_y": 66.5,
+        "minimum_x": -57.055,
+        "minimum_y": 60.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 72,
+      "live_z_equivalent": {
+        "maximum": -1.1,
+        "minimum": -1.5
+      },
+      "nav_elevation": {
+        "maximum": 1.5,
+        "minimum": 1.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -12.555,
+        "maximum_y": 89.0,
+        "minimum_x": -14.555,
+        "minimum_y": 85.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 73,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 18.9
+      },
+      "nav_elevation": {
+        "maximum": -18.9,
+        "minimum": -19.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -16.555,
+        "maximum_y": 88.5,
+        "minimum_x": -20.555,
+        "minimum_y": 86.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 74,
+      "live_z_equivalent": {
+        "maximum": 20.1,
+        "minimum": 19.7
+      },
+      "nav_elevation": {
+        "maximum": -19.7,
+        "minimum": -20.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -21.555,
+        "maximum_y": 87.5,
+        "minimum_x": -25.055,
+        "minimum_y": 84.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 75,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -4.555,
+        "maximum_y": 68.5,
+        "minimum_x": -6.055,
+        "minimum_y": 65.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 76,
+      "live_z_equivalent": {
+        "maximum": -1.5,
+        "minimum": -1.9
+      },
+      "nav_elevation": {
+        "maximum": 1.9,
+        "minimum": 1.5
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": -5.555,
+        "maximum_y": 69.0,
+        "minimum_x": -7.555,
+        "minimum_y": 64.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 77,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.5
+      },
+      "nav_elevation": {
+        "maximum": 5.5,
+        "minimum": 2.7
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 22.945,
+        "maximum_y": 75.0,
+        "minimum_x": 16.445,
+        "minimum_y": 62.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 78,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -4.055,
+        "maximum_y": 71.0,
+        "minimum_x": -6.055,
+        "minimum_y": 69.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 79,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.9
+      },
+      "polygons": 8,
+      "world_bounds": {
+        "maximum_x": 43.445,
+        "maximum_y": 88.5,
+        "minimum_x": 26.945,
+        "minimum_y": 69.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 80,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 19.3
+      },
+      "nav_elevation": {
+        "maximum": -19.3,
+        "minimum": -19.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 52.945,
+        "maximum_y": 88.0,
+        "minimum_x": 51.945,
+        "minimum_y": 83.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 81,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 52.945,
+        "maximum_y": 83.5,
+        "minimum_x": 46.445,
+        "minimum_y": 67.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 82,
+      "live_z_equivalent": {
+        "maximum": 23.7,
+        "minimum": 23.3
+      },
+      "nav_elevation": {
+        "maximum": -23.3,
+        "minimum": -23.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 68.945,
+        "maximum_y": 94.0,
+        "minimum_x": 66.945,
+        "minimum_y": 92.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 83,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -19.7
+      },
+      "polygons": 7,
+      "world_bounds": {
+        "maximum_x": 70.945,
+        "maximum_y": 87.5,
+        "minimum_x": 67.945,
+        "minimum_y": 69.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 84,
+      "live_z_equivalent": {
+        "maximum": 19.3,
+        "minimum": 18.9
+      },
+      "nav_elevation": {
+        "maximum": -18.9,
+        "minimum": -19.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 84.945,
+        "maximum_y": 65.0,
+        "minimum_x": 82.945,
+        "minimum_y": 62.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 85,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 81.945,
+        "maximum_y": 70.5,
+        "minimum_x": 77.945,
+        "minimum_y": 69.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 86,
+      "live_z_equivalent": {
+        "maximum": 22.1,
+        "minimum": 20.9
+      },
+      "nav_elevation": {
+        "maximum": -20.9,
+        "minimum": -22.1
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 112.445,
+        "maximum_y": 95.5,
+        "minimum_x": 104.445,
+        "minimum_y": 93.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 87,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 19.3
+      },
+      "nav_elevation": {
+        "maximum": -19.3,
+        "minimum": -19.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 115.945,
+        "maximum_y": 93.0,
+        "minimum_x": 111.445,
+        "minimum_y": 92.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 88,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 122.945,
+        "maximum_y": 91.0,
+        "minimum_x": 116.945,
+        "minimum_y": 89.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 89,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 92.945,
+        "maximum_y": 76.5,
+        "minimum_x": 91.945,
+        "minimum_y": 72.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 90,
+      "live_z_equivalent": {
+        "maximum": -4.3,
+        "minimum": -7.1
+      },
+      "nav_elevation": {
+        "maximum": 7.1,
+        "minimum": 4.3
+      },
+      "polygons": 7,
+      "world_bounds": {
+        "maximum_x": 105.445,
+        "maximum_y": 71.0,
+        "minimum_x": 97.445,
+        "minimum_y": 62.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 91,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 96.945,
+        "maximum_y": 70.5,
+        "minimum_x": 93.945,
+        "minimum_y": 68.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 92,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 122.945,
+        "maximum_y": 70.5,
+        "minimum_x": 115.445,
+        "minimum_y": 68.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 93,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 108.945,
+        "maximum_y": 67.5,
+        "minimum_x": 106.945,
+        "minimum_y": 65.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 94,
+      "live_z_equivalent": {
+        "maximum": 17.7,
+        "minimum": 17.3
+      },
+      "nav_elevation": {
+        "maximum": -17.3,
+        "minimum": -17.7
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 110.945,
+        "maximum_y": 65.5,
+        "minimum_x": 107.445,
+        "minimum_y": 63.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 95,
+      "live_z_equivalent": {
+        "maximum": -6.7,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.7
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 112.445,
+        "maximum_y": 65.0,
+        "minimum_x": 110.445,
+        "minimum_y": 63.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 96,
+      "live_z_equivalent": {
+        "maximum": 8.9,
+        "minimum": 7.3
+      },
+      "nav_elevation": {
+        "maximum": -7.3,
+        "minimum": -8.9
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 175.945,
+        "maximum_y": 89.5,
+        "minimum_x": 169.445,
+        "minimum_y": 77.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 97,
+      "live_z_equivalent": {
+        "maximum": 9.7,
+        "minimum": 8.9
+      },
+      "nav_elevation": {
+        "maximum": -8.9,
+        "minimum": -9.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 183.445,
+        "maximum_y": 88.5,
+        "minimum_x": 179.445,
+        "minimum_y": 86.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 98,
+      "live_z_equivalent": {
+        "maximum": 10.1,
+        "minimum": 9.7
+      },
+      "nav_elevation": {
+        "maximum": -9.7,
+        "minimum": -10.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 178.445,
+        "maximum_y": 87.0,
+        "minimum_x": 174.945,
+        "minimum_y": 84.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 99,
+      "live_z_equivalent": {
+        "maximum": 9.7,
+        "minimum": 8.9
+      },
+      "nav_elevation": {
+        "maximum": -8.9,
+        "minimum": -9.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 178.945,
+        "maximum_y": 72.5,
+        "minimum_x": 177.445,
+        "minimum_y": 69.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 100,
+      "live_z_equivalent": {
+        "maximum": 7.7,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -7.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 176.945,
+        "maximum_y": 71.0,
+        "minimum_x": 174.945,
+        "minimum_y": 67.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 101,
+      "live_z_equivalent": {
+        "maximum": 8.5,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -8.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 190.445,
+        "maximum_y": 84.0,
+        "minimum_x": 187.945,
+        "minimum_y": 76.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 102,
+      "live_z_equivalent": {
+        "maximum": 8.9,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -8.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 200.945,
+        "maximum_y": 73.0,
+        "minimum_x": 187.445,
+        "minimum_y": 67.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 103,
+      "live_z_equivalent": {
+        "maximum": -1.9,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -7.555,
+        "maximum_y": 64.0,
+        "minimum_x": -9.055,
+        "minimum_y": 62.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 104,
+      "live_z_equivalent": {
+        "maximum": -1.9,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -11.555,
+        "maximum_y": 57.0,
+        "minimum_x": -16.055,
+        "minimum_y": 51.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 105,
+      "live_z_equivalent": {
+        "maximum": -1.1,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.1
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -24.055,
+        "maximum_y": 37.0,
+        "minimum_x": -28.055,
+        "minimum_y": 30.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 106,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -4.3
+      },
+      "nav_elevation": {
+        "maximum": 4.3,
+        "minimum": 3.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 7.445,
+        "maximum_y": 64.0,
+        "minimum_x": 4.945,
+        "minimum_y": 61.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 107,
+      "live_z_equivalent": {
+        "maximum": -4.3,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 4.3
+      },
+      "polygons": 70,
+      "world_bounds": {
+        "maximum_x": 50.445,
+        "maximum_y": 57.5,
+        "minimum_x": 12.945,
+        "minimum_y": -12.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 108,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -2.555,
+        "maximum_y": 55.5,
+        "minimum_x": -6.055,
+        "minimum_y": 51.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 109,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -7.1
+      },
+      "nav_elevation": {
+        "maximum": 7.1,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 12.945,
+        "maximum_y": 55.0,
+        "minimum_x": 9.945,
+        "minimum_y": 52.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 110,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 10.3
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 12.945,
+        "maximum_y": 47.5,
+        "minimum_x": 8.945,
+        "minimum_y": 32.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 111,
+      "live_z_equivalent": {
+        "maximum": 19.3,
+        "minimum": 18.9
+      },
+      "nav_elevation": {
+        "maximum": -18.9,
+        "minimum": -19.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 50.445,
+        "maximum_y": 59.0,
+        "minimum_x": 47.945,
+        "minimum_y": 57.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 112,
+      "live_z_equivalent": {
+        "maximum": 17.7,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -17.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 52.445,
+        "maximum_y": 56.5,
+        "minimum_x": 48.945,
+        "minimum_y": 54.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 113,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -9.5
+      },
+      "nav_elevation": {
+        "maximum": 9.5,
+        "minimum": 7.9
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 27.445,
+        "maximum_y": 55.5,
+        "minimum_x": 24.445,
+        "minimum_y": 47.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 114,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 42.945,
+        "maximum_y": 51.5,
+        "minimum_x": 36.945,
+        "minimum_y": 49.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 115,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 27.945,
+        "maximum_y": 48.5,
+        "minimum_x": 26.945,
+        "minimum_y": 44.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 116,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.1
+      },
+      "polygons": 9,
+      "world_bounds": {
+        "maximum_x": 43.445,
+        "maximum_y": 43.5,
+        "minimum_x": 28.445,
+        "minimum_y": 29.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 117,
+      "live_z_equivalent": {
+        "maximum": 19.3,
+        "minimum": 18.9
+      },
+      "nav_elevation": {
+        "maximum": -18.9,
+        "minimum": -19.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 76.945,
+        "maximum_y": 58.0,
+        "minimum_x": 74.945,
+        "minimum_y": 55.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 118,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 65.945,
+        "maximum_y": 51.5,
+        "minimum_x": 62.945,
+        "minimum_y": 49.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 119,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 82.945,
+        "maximum_y": 51.5,
+        "minimum_x": 77.445,
+        "minimum_y": 49.5
+      }
+    },
+    {
+      "classification": "selected",
+      "component": 120,
+      "live_z_equivalent": {
+        "maximum": 0.5,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": -0.5
+      },
+      "polygons": 165,
+      "world_bounds": {
+        "maximum_x": 144.445,
+        "maximum_y": 64.0,
+        "minimum_x": 55.445,
+        "minimum_y": -65.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 121,
+      "live_z_equivalent": {
+        "maximum": 19.3,
+        "minimum": 18.9
+      },
+      "nav_elevation": {
+        "maximum": -18.9,
+        "minimum": -19.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 112.445,
+        "maximum_y": 62.5,
+        "minimum_x": 109.445,
+        "minimum_y": 61.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 122,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -3.9
+      },
+      "nav_elevation": {
+        "maximum": 3.9,
+        "minimum": 3.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 114.945,
+        "maximum_y": 60.5,
+        "minimum_x": 111.945,
+        "minimum_y": 56.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 123,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 2.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 103.445,
+        "maximum_y": 56.5,
+        "minimum_x": 97.945,
+        "minimum_y": 45.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 124,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.9
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 113.445,
+        "maximum_y": 53.0,
+        "minimum_x": 107.445,
+        "minimum_y": 36.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 125,
+      "live_z_equivalent": {
+        "maximum": 8.9,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -8.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 171.445,
+        "maximum_y": 57.0,
+        "minimum_x": 169.445,
+        "minimum_y": 52.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 126,
+      "live_z_equivalent": {
+        "maximum": 9.3,
+        "minimum": 8.9
+      },
+      "nav_elevation": {
+        "maximum": -8.9,
+        "minimum": -9.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 178.445,
+        "maximum_y": 45.0,
+        "minimum_x": 174.945,
+        "minimum_y": 43.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 127,
+      "live_z_equivalent": {
+        "maximum": 8.5,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -8.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 171.445,
+        "maximum_y": 41.5,
+        "minimum_x": 169.445,
+        "minimum_y": 37.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 128,
+      "live_z_equivalent": {
+        "maximum": 7.3,
+        "minimum": 6.9
+      },
+      "nav_elevation": {
+        "maximum": -6.9,
+        "minimum": -7.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 211.445,
+        "maximum_y": 45.5,
+        "minimum_x": 208.945,
+        "minimum_y": 44.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 129,
+      "live_z_equivalent": {
+        "maximum": 7.3,
+        "minimum": 6.9
+      },
+      "nav_elevation": {
+        "maximum": -6.9,
+        "minimum": -7.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 214.945,
+        "maximum_y": 46.0,
+        "minimum_x": 211.445,
+        "minimum_y": 44.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 130,
+      "live_z_equivalent": {
+        "maximum": 8.5,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -8.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 228.445,
+        "maximum_y": 46.0,
+        "minimum_x": 223.945,
+        "minimum_y": 42.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 131,
+      "live_z_equivalent": {
+        "maximum": 8.9,
+        "minimum": 7.7
+      },
+      "nav_elevation": {
+        "maximum": -7.7,
+        "minimum": -8.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 252.945,
+        "maximum_y": 51.0,
+        "minimum_x": 248.445,
+        "minimum_y": 47.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 132,
+      "live_z_equivalent": {
+        "maximum": 0.9,
+        "minimum": 0.5
+      },
+      "nav_elevation": {
+        "maximum": -0.5,
+        "minimum": -0.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -66.555,
+        "maximum_y": 7.0,
+        "minimum_x": -68.555,
+        "minimum_y": 3.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 133,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": -27.055,
+        "maximum_y": 7.5,
+        "minimum_x": -30.555,
+        "minimum_y": -4.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 134,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -3.5
+      },
+      "nav_elevation": {
+        "maximum": 3.5,
+        "minimum": 2.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -24.055,
+        "maximum_y": 16.5,
+        "minimum_x": -26.555,
+        "minimum_y": 14.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 135,
+      "live_z_equivalent": {
+        "maximum": -10.7,
+        "minimum": -11.5
+      },
+      "nav_elevation": {
+        "maximum": 11.5,
+        "minimum": 10.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 18.945,
+        "maximum_y": 20.5,
+        "minimum_x": 13.445,
+        "minimum_y": 15.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 136,
+      "live_z_equivalent": {
+        "maximum": -15.1,
+        "minimum": -15.5
+      },
+      "nav_elevation": {
+        "maximum": 15.5,
+        "minimum": 15.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 16.945,
+        "maximum_y": 19.0,
+        "minimum_x": 14.945,
+        "minimum_y": 17.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 137,
+      "live_z_equivalent": {
+        "maximum": -9.9,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 9.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 48.945,
+        "maximum_y": 28.0,
+        "minimum_x": 43.945,
+        "minimum_y": 27.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 138,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -9.5
+      },
+      "nav_elevation": {
+        "maximum": 9.5,
+        "minimum": 7.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 55.445,
+        "maximum_y": 27.5,
+        "minimum_x": 47.445,
+        "minimum_y": 24.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 139,
+      "live_z_equivalent": {
+        "maximum": -3.9,
+        "minimum": -6.3
+      },
+      "nav_elevation": {
+        "maximum": 6.3,
+        "minimum": 3.9
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 57.445,
+        "maximum_y": 22.5,
+        "minimum_x": 49.445,
+        "minimum_y": 15.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 140,
+      "live_z_equivalent": {
+        "maximum": -13.1,
+        "minimum": -13.5
+      },
+      "nav_elevation": {
+        "maximum": 13.5,
+        "minimum": 13.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 26.945,
+        "maximum_y": 13.0,
+        "minimum_x": 24.945,
+        "minimum_y": 11.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 141,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -7.1
+      },
+      "nav_elevation": {
+        "maximum": 7.1,
+        "minimum": 6.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 56.945,
+        "maximum_y": 13.0,
+        "minimum_x": 52.445,
+        "minimum_y": 7.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 142,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 10.3
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 47.445,
+        "maximum_y": 12.5,
+        "minimum_x": 36.945,
+        "minimum_y": 9.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 143,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 2.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 74.945,
+        "maximum_y": 22.0,
+        "minimum_x": 63.945,
+        "minimum_y": 16.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 144,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -4.3
+      },
+      "nav_elevation": {
+        "maximum": 4.3,
+        "minimum": 3.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 63.945,
+        "maximum_y": 7.5,
+        "minimum_x": 60.945,
+        "minimum_y": 5.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 145,
+      "live_z_equivalent": {
+        "maximum": 0.9,
+        "minimum": 0.5
+      },
+      "nav_elevation": {
+        "maximum": -0.5,
+        "minimum": -0.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 89.945,
+        "maximum_y": 7.0,
+        "minimum_x": 86.945,
+        "minimum_y": 4.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 146,
+      "live_z_equivalent": {
+        "maximum": -0.3,
+        "minimum": -0.3
+      },
+      "nav_elevation": {
+        "maximum": 0.3,
+        "minimum": 0.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 81.945,
+        "maximum_y": 2.0,
+        "minimum_x": 78.445,
+        "minimum_y": -3.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 147,
+      "live_z_equivalent": {
+        "maximum": 12.5,
+        "minimum": 11.3
+      },
+      "nav_elevation": {
+        "maximum": -11.3,
+        "minimum": -12.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 147.945,
+        "maximum_y": 17.0,
+        "minimum_x": 145.445,
+        "minimum_y": 16.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 148,
+      "live_z_equivalent": {
+        "maximum": 12.9,
+        "minimum": 12.1
+      },
+      "nav_elevation": {
+        "maximum": -12.1,
+        "minimum": -12.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 144.445,
+        "maximum_y": 18.5,
+        "minimum_x": 138.945,
+        "minimum_y": 17.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 149,
+      "live_z_equivalent": {
+        "maximum": 16.5,
+        "minimum": 15.3
+      },
+      "nav_elevation": {
+        "maximum": -15.3,
+        "minimum": -16.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 135.945,
+        "maximum_y": 25.5,
+        "minimum_x": 131.445,
+        "minimum_y": 20.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 150,
+      "live_z_equivalent": {
+        "maximum": 14.9,
+        "minimum": 13.7
+      },
+      "nav_elevation": {
+        "maximum": -13.7,
+        "minimum": -14.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 137.445,
+        "maximum_y": 19.0,
+        "minimum_x": 133.445,
+        "minimum_y": 16.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 151,
+      "live_z_equivalent": {
+        "maximum": 0.1,
+        "minimum": -0.3
+      },
+      "nav_elevation": {
+        "maximum": 0.3,
+        "minimum": -0.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -74.555,
+        "maximum_y": -0.5,
+        "minimum_x": -76.555,
+        "minimum_y": -4.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 152,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 19.7
+      },
+      "nav_elevation": {
+        "maximum": -19.7,
+        "minimum": -19.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -14.555,
+        "maximum_y": -4.0,
+        "minimum_x": -18.055,
+        "minimum_y": -7.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 153,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 18.5
+      },
+      "nav_elevation": {
+        "maximum": -18.5,
+        "minimum": -19.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -19.555,
+        "maximum_y": -6.0,
+        "minimum_x": -23.555,
+        "minimum_y": -8.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 154,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 3.5
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 32.445,
+        "maximum_y": -13.5,
+        "minimum_x": 22.945,
+        "minimum_y": -20.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 155,
+      "live_z_equivalent": {
+        "maximum": 6.9,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": -6.9
+      },
+      "polygons": 17,
+      "world_bounds": {
+        "maximum_x": 68.445,
+        "maximum_y": -15.5,
+        "minimum_x": 34.945,
+        "minimum_y": -28.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 156,
+      "live_z_equivalent": {
+        "maximum": 2.1,
+        "minimum": 1.7
+      },
+      "nav_elevation": {
+        "maximum": -1.7,
+        "minimum": -2.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 54.945,
+        "maximum_y": -16.0,
+        "minimum_x": 52.445,
+        "minimum_y": -17.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 157,
+      "live_z_equivalent": {
+        "maximum": -4.3,
+        "minimum": -4.3
+      },
+      "nav_elevation": {
+        "maximum": 4.3,
+        "minimum": 4.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 81.445,
+        "maximum_y": -0.0,
+        "minimum_x": 79.945,
+        "minimum_y": -2.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 158,
+      "live_z_equivalent": {
+        "maximum": 9.7,
+        "minimum": 7.3
+      },
+      "nav_elevation": {
+        "maximum": -7.3,
+        "minimum": -9.7
+      },
+      "polygons": 10,
+      "world_bounds": {
+        "maximum_x": 83.445,
+        "maximum_y": -15.5,
+        "minimum_x": 69.945,
+        "minimum_y": -24.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 159,
+      "live_z_equivalent": {
+        "maximum": 5.3,
+        "minimum": 4.1
+      },
+      "nav_elevation": {
+        "maximum": -4.1,
+        "minimum": -5.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 66.945,
+        "maximum_y": -16.5,
+        "minimum_x": 63.445,
+        "minimum_y": -19.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 160,
+      "live_z_equivalent": {
+        "maximum": 12.9,
+        "minimum": 9.7
+      },
+      "nav_elevation": {
+        "maximum": -9.7,
+        "minimum": -12.9
+      },
+      "polygons": 11,
+      "world_bounds": {
+        "maximum_x": 89.945,
+        "maximum_y": -16.5,
+        "minimum_x": 83.945,
+        "minimum_y": -24.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 161,
+      "live_z_equivalent": {
+        "maximum": 2.9,
+        "minimum": 2.1
+      },
+      "nav_elevation": {
+        "maximum": -2.1,
+        "minimum": -2.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 61.445,
+        "maximum_y": -17.0,
+        "minimum_x": 56.445,
+        "minimum_y": -18.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 162,
+      "live_z_equivalent": {
+        "maximum": 14.9,
+        "minimum": 13.3
+      },
+      "nav_elevation": {
+        "maximum": -13.3,
+        "minimum": -14.9
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 92.945,
+        "maximum_y": -20.0,
+        "minimum_x": 89.445,
+        "minimum_y": -25.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 163,
+      "live_z_equivalent": {
+        "maximum": 16.5,
+        "minimum": 15.3
+      },
+      "nav_elevation": {
+        "maximum": -15.3,
+        "minimum": -16.5
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 100.445,
+        "maximum_y": -22.5,
+        "minimum_x": 93.945,
+        "minimum_y": -32.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 164,
+      "live_z_equivalent": {
+        "maximum": -1.1,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.1
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 135.945,
+        "maximum_y": -3.0,
+        "minimum_x": 131.945,
+        "minimum_y": -9.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 165,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -3.5
+      },
+      "nav_elevation": {
+        "maximum": 3.5,
+        "minimum": 2.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 135.945,
+        "maximum_y": -23.5,
+        "minimum_x": 133.445,
+        "minimum_y": -26.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 166,
+      "live_z_equivalent": {
+        "maximum": 26.1,
+        "minimum": 17.3
+      },
+      "nav_elevation": {
+        "maximum": -17.3,
+        "minimum": -26.1
+      },
+      "polygons": 396,
+      "world_bounds": {
+        "maximum_x": 192.945,
+        "maximum_y": -24.0,
+        "minimum_x": 50.945,
+        "minimum_y": -177.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 167,
+      "live_z_equivalent": {
+        "maximum": -1.1,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.1
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": -22.555,
+        "maximum_y": -45.5,
+        "minimum_x": -29.055,
+        "minimum_y": -49.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 168,
+      "live_z_equivalent": {
+        "maximum": -1.9,
+        "minimum": -2.3
+      },
+      "nav_elevation": {
+        "maximum": 2.3,
+        "minimum": 1.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -11.555,
+        "maximum_y": -51.5,
+        "minimum_x": -17.055,
+        "minimum_y": -57.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 169,
+      "live_z_equivalent": {
+        "maximum": -1.5,
+        "minimum": -1.9
+      },
+      "nav_elevation": {
+        "maximum": 1.9,
+        "minimum": 1.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -32.555,
+        "maximum_y": -52.5,
+        "minimum_x": -35.055,
+        "minimum_y": -54.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 170,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -3.5
+      },
+      "nav_elevation": {
+        "maximum": 3.5,
+        "minimum": 2.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -27.055,
+        "maximum_y": -61.5,
+        "minimum_x": -28.555,
+        "minimum_y": -63.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 171,
+      "live_z_equivalent": {
+        "maximum": -6.7,
+        "minimum": -12.7
+      },
+      "nav_elevation": {
+        "maximum": 12.7,
+        "minimum": 6.7
+      },
+      "polygons": 269,
+      "world_bounds": {
+        "maximum_x": 90.445,
+        "maximum_y": -52.0,
+        "minimum_x": -29.555,
+        "minimum_y": -205.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 172,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 10.3
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 87.445,
+        "maximum_y": -49.5,
+        "minimum_x": 73.945,
+        "minimum_y": -52.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 173,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -4.3
+      },
+      "nav_elevation": {
+        "maximum": 4.3,
+        "minimum": 3.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 103.945,
+        "maximum_y": -45.0,
+        "minimum_x": 100.945,
+        "minimum_y": -47.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 174,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -7.1
+      },
+      "nav_elevation": {
+        "maximum": 7.1,
+        "minimum": 6.3
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 96.945,
+        "maximum_y": -47.5,
+        "minimum_x": 92.445,
+        "minimum_y": -53.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 175,
+      "live_z_equivalent": {
+        "maximum": -3.9,
+        "minimum": -6.3
+      },
+      "nav_elevation": {
+        "maximum": 6.3,
+        "minimum": 3.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 97.445,
+        "maximum_y": -55.0,
+        "minimum_x": 89.445,
+        "minimum_y": -62.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 176,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.5
+      },
+      "nav_elevation": {
+        "maximum": 5.5,
+        "minimum": 2.7
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 114.945,
+        "maximum_y": -56.5,
+        "minimum_x": 102.445,
+        "minimum_y": -63.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 177,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 2.7
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 135.945,
+        "maximum_y": -56.5,
+        "minimum_x": 125.445,
+        "minimum_y": -62.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 178,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 148.445,
+        "maximum_y": -42.5,
+        "minimum_x": 143.945,
+        "minimum_y": -46.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 179,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 131.445,
+        "maximum_y": -44.0,
+        "minimum_x": 128.945,
+        "minimum_y": -46.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 180,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 134.945,
+        "maximum_y": -44.5,
+        "minimum_x": 131.445,
+        "minimum_y": -45.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 181,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -3.9
+      },
+      "nav_elevation": {
+        "maximum": 3.9,
+        "minimum": 3.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 138.945,
+        "maximum_y": -45.0,
+        "minimum_x": 135.945,
+        "minimum_y": -47.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 182,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 144.945,
+        "maximum_y": -47.5,
+        "minimum_x": 142.945,
+        "minimum_y": -49.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 183,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 147.445,
+        "maximum_y": -51.0,
+        "minimum_x": 145.445,
+        "minimum_y": -53.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 184,
+      "live_z_equivalent": {
+        "maximum": -4.3,
+        "minimum": -7.5
+      },
+      "nav_elevation": {
+        "maximum": 7.5,
+        "minimum": 4.3
+      },
+      "polygons": 8,
+      "world_bounds": {
+        "maximum_x": 153.445,
+        "maximum_y": -54.5,
+        "minimum_x": 142.445,
+        "minimum_y": -63.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 185,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 172.945,
+        "maximum_y": -47.0,
+        "minimum_x": 167.945,
+        "minimum_y": -50.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 186,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -12.7
+      },
+      "nav_elevation": {
+        "maximum": 12.7,
+        "minimum": 10.3
+      },
+      "polygons": 6,
+      "world_bounds": {
+        "maximum_x": 169.945,
+        "maximum_y": -49.5,
+        "minimum_x": 152.445,
+        "minimum_y": -56.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 187,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -10.3
+      },
+      "nav_elevation": {
+        "maximum": 10.3,
+        "minimum": 7.9
+      },
+      "polygons": 15,
+      "world_bounds": {
+        "maximum_x": 168.445,
+        "maximum_y": -53.0,
+        "minimum_x": 152.445,
+        "minimum_y": -67.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 188,
+      "live_z_equivalent": {
+        "maximum": -9.9,
+        "minimum": -10.3
+      },
+      "nav_elevation": {
+        "maximum": 10.3,
+        "minimum": 9.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 166.945,
+        "maximum_y": -54.5,
+        "minimum_x": 163.945,
+        "minimum_y": -58.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 189,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -11.5
+      },
+      "nav_elevation": {
+        "maximum": 11.5,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 168.445,
+        "maximum_y": -60.0,
+        "minimum_x": 165.945,
+        "minimum_y": -63.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 190,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 2.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -16.555,
+        "maximum_y": -85.5,
+        "minimum_x": -22.055,
+        "minimum_y": -96.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 191,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -3.9
+      },
+      "nav_elevation": {
+        "maximum": 3.9,
+        "minimum": 3.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 18.945,
+        "maximum_y": -85.0,
+        "minimum_x": 15.945,
+        "minimum_y": -87.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 192,
+      "live_z_equivalent": {
+        "maximum": -6.7,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 24.445,
+        "maximum_y": -87.5,
+        "minimum_x": 22.945,
+        "minimum_y": -89.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 193,
+      "live_z_equivalent": {
+        "maximum": -4.3,
+        "minimum": -7.9
+      },
+      "nav_elevation": {
+        "maximum": 7.9,
+        "minimum": 4.3
+      },
+      "polygons": 10,
+      "world_bounds": {
+        "maximum_x": 33.445,
+        "maximum_y": -94.5,
+        "minimum_x": 22.445,
+        "minimum_y": -103.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 194,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 27.445,
+        "maximum_y": -91.0,
+        "minimum_x": 25.445,
+        "minimum_y": -93.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 195,
+      "live_z_equivalent": {
+        "maximum": -9.1,
+        "minimum": -9.1
+      },
+      "nav_elevation": {
+        "maximum": 9.1,
+        "minimum": 9.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 59.945,
+        "maximum_y": -64.5,
+        "minimum_x": 58.945,
+        "minimum_y": -67.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 196,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -9.5
+      },
+      "nav_elevation": {
+        "maximum": 9.5,
+        "minimum": 7.9
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 95.445,
+        "maximum_y": -64.5,
+        "minimum_x": 87.445,
+        "minimum_y": -67.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 197,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 88.445,
+        "maximum_y": -67.0,
+        "minimum_x": 83.945,
+        "minimum_y": -68.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 198,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.5
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 70.445,
+        "maximum_y": -78.5,
+        "minimum_x": 66.945,
+        "minimum_y": -87.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 199,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 108.445,
+        "maximum_y": -82.5,
+        "minimum_x": 103.945,
+        "minimum_y": -86.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 200,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 91.445,
+        "maximum_y": -84.0,
+        "minimum_x": 88.945,
+        "minimum_y": -86.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 201,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 94.945,
+        "maximum_y": -84.5,
+        "minimum_x": 91.445,
+        "minimum_y": -85.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 202,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -9.1
+      },
+      "nav_elevation": {
+        "maximum": 9.1,
+        "minimum": 7.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 152.445,
+        "maximum_y": -64.5,
+        "minimum_x": 144.445,
+        "minimum_y": -67.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 203,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 155.945,
+        "maximum_y": -67.0,
+        "minimum_x": 151.445,
+        "minimum_y": -68.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 204,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 163.945,
+        "maximum_y": -68.5,
+        "minimum_x": 156.945,
+        "minimum_y": -70.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 205,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 157.445,
+        "maximum_y": -91.5,
+        "minimum_x": 153.945,
+        "minimum_y": -95.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 206,
+      "live_z_equivalent": {
+        "maximum": -3.5,
+        "minimum": -3.9
+      },
+      "nav_elevation": {
+        "maximum": 3.9,
+        "minimum": 3.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -5.055,
+        "maximum_y": -96.0,
+        "minimum_x": -8.055,
+        "minimum_y": -100.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 207,
+      "live_z_equivalent": {
+        "maximum": -4.3,
+        "minimum": -7.1
+      },
+      "nav_elevation": {
+        "maximum": 7.1,
+        "minimum": 4.3
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": -14.555,
+        "maximum_y": -102.5,
+        "minimum_x": -22.555,
+        "minimum_y": -111.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 208,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -7.555,
+        "maximum_y": -103.0,
+        "minimum_x": -9.555,
+        "minimum_y": -105.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 209,
+      "live_z_equivalent": {
+        "maximum": -6.7,
+        "minimum": -12.7
+      },
+      "nav_elevation": {
+        "maximum": 12.7,
+        "minimum": 6.7
+      },
+      "polygons": 46,
+      "world_bounds": {
+        "maximum_x": -8.555,
+        "maximum_y": -104.5,
+        "minimum_x": -30.555,
+        "minimum_y": -141.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 210,
+      "live_z_equivalent": {
+        "maximum": -6.3,
+        "minimum": -6.7
+      },
+      "nav_elevation": {
+        "maximum": 6.7,
+        "minimum": 6.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -11.055,
+        "maximum_y": -106.0,
+        "minimum_x": -13.055,
+        "minimum_y": -107.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 211,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -27.055,
+        "maximum_y": -112.0,
+        "minimum_x": -28.055,
+        "minimum_y": -116.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 212,
+      "live_z_equivalent": {
+        "maximum": -2.7,
+        "minimum": -5.1
+      },
+      "nav_elevation": {
+        "maximum": 5.1,
+        "minimum": 2.7
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": 15.945,
+        "maximum_y": -96.5,
+        "minimum_x": 5.445,
+        "minimum_y": -102.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 213,
+      "live_z_equivalent": {
+        "maximum": -7.9,
+        "minimum": -9.1
+      },
+      "nav_elevation": {
+        "maximum": 9.1,
+        "minimum": 7.9
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 32.445,
+        "maximum_y": -104.5,
+        "minimum_x": 24.445,
+        "minimum_y": -107.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 214,
+      "live_z_equivalent": {
+        "maximum": -10.3,
+        "minimum": -10.7
+      },
+      "nav_elevation": {
+        "maximum": 10.7,
+        "minimum": 10.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 35.945,
+        "maximum_y": -107.0,
+        "minimum_x": 31.445,
+        "minimum_y": -108.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 215,
+      "live_z_equivalent": {
+        "maximum": -13.1,
+        "minimum": -13.5
+      },
+      "nav_elevation": {
+        "maximum": 13.5,
+        "minimum": 13.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 54.945,
+        "maximum_y": -107.0,
+        "minimum_x": 53.445,
+        "minimum_y": -109.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 216,
+      "live_z_equivalent": {
+        "maximum": 19.3,
+        "minimum": 18.5
+      },
+      "nav_elevation": {
+        "maximum": -18.5,
+        "minimum": -19.3
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 73.945,
+        "maximum_y": -97.0,
+        "minimum_x": 71.445,
+        "minimum_y": -100.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 217,
+      "live_z_equivalent": {
+        "maximum": 18.9,
+        "minimum": 17.3
+      },
+      "nav_elevation": {
+        "maximum": -17.3,
+        "minimum": -18.9
+      },
+      "polygons": 7,
+      "world_bounds": {
+        "maximum_x": 82.445,
+        "maximum_y": -104.0,
+        "minimum_x": 70.445,
+        "minimum_y": -110.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 218,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 155.445,
+        "maximum_y": -105.0,
+        "minimum_x": 153.945,
+        "minimum_y": -108.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 219,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 155.945,
+        "maximum_y": -109.0,
+        "minimum_x": 153.945,
+        "minimum_y": -111.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 220,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -28.555,
+        "maximum_y": -155.0,
+        "minimum_x": -30.555,
+        "minimum_y": -162.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 221,
+      "live_z_equivalent": {
+        "maximum": -12.3,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 12.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -21.055,
+        "maximum_y": -132.0,
+        "minimum_x": -24.055,
+        "minimum_y": -137.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 222,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -11.5
+      },
+      "nav_elevation": {
+        "maximum": 11.5,
+        "minimum": 11.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -24.555,
+        "maximum_y": -136.5,
+        "minimum_x": -29.055,
+        "minimum_y": -139.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 223,
+      "live_z_equivalent": {
+        "maximum": -10.7,
+        "minimum": -11.1
+      },
+      "nav_elevation": {
+        "maximum": 11.1,
+        "minimum": 10.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -16.055,
+        "maximum_y": -138.0,
+        "minimum_x": -20.555,
+        "minimum_y": -141.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 224,
+      "live_z_equivalent": {
+        "maximum": -11.9,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -8.555,
+        "maximum_y": -142.5,
+        "minimum_x": -9.555,
+        "minimum_y": -144.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 225,
+      "live_z_equivalent": {
+        "maximum": -10.7,
+        "minimum": -11.1
+      },
+      "nav_elevation": {
+        "maximum": 11.1,
+        "minimum": 10.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -11.555,
+        "maximum_y": -143.5,
+        "minimum_x": -15.555,
+        "minimum_y": -146.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 226,
+      "live_z_equivalent": {
+        "maximum": -12.7,
+        "minimum": -12.7
+      },
+      "nav_elevation": {
+        "maximum": 12.7,
+        "minimum": 12.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -24.555,
+        "maximum_y": -147.0,
+        "minimum_x": -26.055,
+        "minimum_y": -149.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 227,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.1
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": -9.055,
+        "maximum_y": -152.0,
+        "minimum_x": -13.055,
+        "minimum_y": -164.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 228,
+      "live_z_equivalent": {
+        "maximum": -11.1,
+        "minimum": -11.9
+      },
+      "nav_elevation": {
+        "maximum": 11.9,
+        "minimum": 11.1
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 54.445,
+        "maximum_y": -142.5,
+        "minimum_x": 45.445,
+        "minimum_y": -145.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 229,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -19.7
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 51.945,
+        "maximum_y": -155.5,
+        "minimum_x": 48.945,
+        "minimum_y": -167.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 230,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 80.945,
+        "maximum_y": -129.5,
+        "minimum_x": 73.945,
+        "minimum_y": -131.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 231,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 70.445,
+        "maximum_y": -158.5,
+        "minimum_x": 68.945,
+        "minimum_y": -163.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 232,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 108.445,
+        "maximum_y": -154.0,
+        "minimum_x": 103.945,
+        "minimum_y": -157.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 233,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 94.945,
+        "maximum_y": -154.0,
+        "minimum_x": 91.445,
+        "minimum_y": -155.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 234,
+      "live_z_equivalent": {
+        "maximum": 17.3,
+        "minimum": 16.9
+      },
+      "nav_elevation": {
+        "maximum": -16.9,
+        "minimum": -17.3
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 91.445,
+        "maximum_y": -154.5,
+        "minimum_x": 88.945,
+        "minimum_y": -156.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 235,
+      "live_z_equivalent": {
+        "maximum": 16.9,
+        "minimum": 16.5
+      },
+      "nav_elevation": {
+        "maximum": -16.5,
+        "minimum": -16.9
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 132.945,
+        "maximum_y": -133.5,
+        "minimum_x": 130.945,
+        "minimum_y": -135.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 236,
+      "live_z_equivalent": {
+        "maximum": 20.1,
+        "minimum": 19.7
+      },
+      "nav_elevation": {
+        "maximum": -19.7,
+        "minimum": -20.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 166.945,
+        "maximum_y": -134.5,
+        "minimum_x": 163.945,
+        "minimum_y": -138.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 237,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 18.5
+      },
+      "nav_elevation": {
+        "maximum": -18.5,
+        "minimum": -19.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 168.445,
+        "maximum_y": -140.0,
+        "minimum_x": 165.945,
+        "minimum_y": -143.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 238,
+      "live_z_equivalent": {
+        "maximum": 18.5,
+        "minimum": 17.7
+      },
+      "nav_elevation": {
+        "maximum": -17.7,
+        "minimum": -18.5
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 163.945,
+        "maximum_y": -147.0,
+        "minimum_x": 152.445,
+        "minimum_y": -150.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 239,
+      "live_z_equivalent": {
+        "maximum": -19.1,
+        "minimum": -22.7
+      },
+      "nav_elevation": {
+        "maximum": 22.7,
+        "minimum": 19.1
+      },
+      "polygons": 69,
+      "world_bounds": {
+        "maximum_x": 3.445,
+        "maximum_y": -181.0,
+        "minimum_x": -34.055,
+        "minimum_y": -251.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 240,
+      "live_z_equivalent": {
+        "maximum": -10.7,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 10.7
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": -27.055,
+        "maximum_y": -171.0,
+        "minimum_x": -30.555,
+        "minimum_y": -180.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 241,
+      "live_z_equivalent": {
+        "maximum": 30.5,
+        "minimum": 26.1
+      },
+      "nav_elevation": {
+        "maximum": -26.1,
+        "minimum": -30.5
+      },
+      "polygons": 31,
+      "world_bounds": {
+        "maximum_x": 63.945,
+        "maximum_y": -175.5,
+        "minimum_x": 25.945,
+        "minimum_y": -214.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 242,
+      "live_z_equivalent": {
+        "maximum": -12.7,
+        "minimum": -13.1
+      },
+      "nav_elevation": {
+        "maximum": 13.1,
+        "minimum": 12.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 35.945,
+        "maximum_y": -169.0,
+        "minimum_x": 33.945,
+        "minimum_y": -171.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 243,
+      "live_z_equivalent": {
+        "maximum": -12.7,
+        "minimum": -13.1
+      },
+      "nav_elevation": {
+        "maximum": 13.1,
+        "minimum": 12.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 35.445,
+        "maximum_y": -171.5,
+        "minimum_x": 33.945,
+        "minimum_y": -175.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 244,
+      "live_z_equivalent": {
+        "maximum": 23.7,
+        "minimum": 22.9
+      },
+      "nav_elevation": {
+        "maximum": -22.9,
+        "minimum": -23.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 52.945,
+        "maximum_y": -172.5,
+        "minimum_x": 49.945,
+        "minimum_y": -175.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 245,
+      "live_z_equivalent": {
+        "maximum": 26.5,
+        "minimum": 25.7
+      },
+      "nav_elevation": {
+        "maximum": -25.7,
+        "minimum": -26.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 47.445,
+        "maximum_y": -181.0,
+        "minimum_x": 44.945,
+        "minimum_y": -184.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 246,
+      "live_z_equivalent": {
+        "maximum": -11.5,
+        "minimum": -12.3
+      },
+      "nav_elevation": {
+        "maximum": 12.3,
+        "minimum": 11.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 37.445,
+        "maximum_y": -184.5,
+        "minimum_x": 33.945,
+        "minimum_y": -188.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 247,
+      "live_z_equivalent": {
+        "maximum": 27.3,
+        "minimum": 24.5
+      },
+      "nav_elevation": {
+        "maximum": -24.5,
+        "minimum": -27.3
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 62.945,
+        "maximum_y": -182.5,
+        "minimum_x": 56.445,
+        "minimum_y": -195.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 248,
+      "live_z_equivalent": {
+        "maximum": 19.7,
+        "minimum": 19.3
+      },
+      "nav_elevation": {
+        "maximum": -19.3,
+        "minimum": -19.7
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": 67.945,
+        "maximum_y": -164.0,
+        "minimum_x": 66.945,
+        "minimum_y": -168.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 249,
+      "live_z_equivalent": {
+        "maximum": 22.1,
+        "minimum": 20.5
+      },
+      "nav_elevation": {
+        "maximum": -20.5,
+        "minimum": -22.1
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": 67.445,
+        "maximum_y": -167.5,
+        "minimum_x": 64.445,
+        "minimum_y": -175.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 250,
+      "live_z_equivalent": {
+        "maximum": -21.5,
+        "minimum": -21.9
+      },
+      "nav_elevation": {
+        "maximum": 21.9,
+        "minimum": 21.5
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -26.555,
+        "maximum_y": -223.5,
+        "minimum_x": -27.555,
+        "minimum_y": -224.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 251,
+      "live_z_equivalent": {
+        "maximum": -22.7,
+        "minimum": -23.1
+      },
+      "nav_elevation": {
+        "maximum": 23.1,
+        "minimum": 22.7
+      },
+      "polygons": 3,
+      "world_bounds": {
+        "maximum_x": -34.055,
+        "maximum_y": -209.0,
+        "minimum_x": -36.055,
+        "minimum_y": -213.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 252,
+      "live_z_equivalent": {
+        "maximum": -13.5,
+        "minimum": -14.7
+      },
+      "nav_elevation": {
+        "maximum": 14.7,
+        "minimum": 13.5
+      },
+      "polygons": 5,
+      "world_bounds": {
+        "maximum_x": 20.445,
+        "maximum_y": -207.5,
+        "minimum_x": 13.945,
+        "minimum_y": -217.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 253,
+      "live_z_equivalent": {
+        "maximum": -15.5,
+        "minimum": -16.7
+      },
+      "nav_elevation": {
+        "maximum": 16.7,
+        "minimum": 15.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": 12.945,
+        "maximum_y": -215.0,
+        "minimum_x": 9.445,
+        "minimum_y": -220.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 254,
+      "live_z_equivalent": {
+        "maximum": -17.1,
+        "minimum": -20.3
+      },
+      "nav_elevation": {
+        "maximum": 20.3,
+        "minimum": 17.1
+      },
+      "polygons": 7,
+      "world_bounds": {
+        "maximum_x": 9.945,
+        "maximum_y": -215.5,
+        "minimum_x": 3.445,
+        "minimum_y": -223.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 255,
+      "live_z_equivalent": {
+        "maximum": -21.5,
+        "minimum": -22.3
+      },
+      "nav_elevation": {
+        "maximum": 22.3,
+        "minimum": 21.5
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -33.055,
+        "maximum_y": -224.0,
+        "minimum_x": -37.555,
+        "minimum_y": -228.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 256,
+      "live_z_equivalent": {
+        "maximum": -23.5,
+        "minimum": -32.3
+      },
+      "nav_elevation": {
+        "maximum": 32.3,
+        "minimum": 23.5
+      },
+      "polygons": 22,
+      "world_bounds": {
+        "maximum_x": -15.555,
+        "maximum_y": -251.5,
+        "minimum_x": -28.055,
+        "minimum_y": -285.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 257,
+      "live_z_equivalent": {
+        "maximum": -24.7,
+        "minimum": -26.3
+      },
+      "nav_elevation": {
+        "maximum": 26.3,
+        "minimum": 24.7
+      },
+      "polygons": 2,
+      "world_bounds": {
+        "maximum_x": -16.555,
+        "maximum_y": -253.5,
+        "minimum_x": -19.055,
+        "minimum_y": -257.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 258,
+      "live_z_equivalent": {
+        "maximum": -27.1,
+        "minimum": -27.9
+      },
+      "nav_elevation": {
+        "maximum": 27.9,
+        "minimum": 27.1
+      },
+      "polygons": 1,
+      "world_bounds": {
+        "maximum_x": -17.055,
+        "maximum_y": -259.0,
+        "minimum_x": -18.055,
+        "minimum_y": -264.5
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 259,
+      "live_z_equivalent": {
+        "maximum": -33.5,
+        "minimum": -34.7
+      },
+      "nav_elevation": {
+        "maximum": 34.7,
+        "minimum": 33.5
+      },
+      "polygons": 4,
+      "world_bounds": {
+        "maximum_x": -14.055,
+        "maximum_y": -288.0,
+        "minimum_x": -20.055,
+        "minimum_y": -297.0
+      }
+    },
+    {
+      "classification": "unresolved",
+      "component": 260,
+      "live_z_equivalent": {
+        "maximum": -35.1,
+        "minimum": -40.3
+      },
+      "nav_elevation": {
+        "maximum": 40.3,
+        "minimum": 35.1
+      },
+      "polygons": 10,
+      "world_bounds": {
+        "maximum_x": -0.555,
+        "maximum_y": -294.5,
+        "minimum_x": -12.555,
+        "minimum_y": -303.0
+      }
+    }
+  ],
+  "excluded_polygons": 0,
+  "generation_arguments": [
+    "--origin-x=176",
+    "--origin-y=160",
+    "--pixels-per-yalm=0.8",
+    "--seed=64.112,14.083",
+    "--fill-rgb=42,30,66",
+    "--edge-rgb=181,132,255"
+  ],
+  "navmesh": "Kuftal_Tunnel.nav",
+  "polygons": 3259,
+  "schema": 1,
+  "selected_polygons": 165,
+  "sources": {
+    "navmesh": {
+      "commit": "d5de48de84868bde744e4864768a611e5aad82b0",
+      "file": "Kuftal_Tunnel.nav",
+      "sha256": "85CF205DD6388F60D56F1C7262BAD87E8F96B0360E4EF8D84D224A17164BBD2B"
+    },
+    "obj": {
+      "commit": "694970ce54a4fb53b69db52b8375c605686bc350",
+      "file": "Kuftal_Tunnel.obj",
+      "sha256": "09ACA0964DE2AE9FC2BD048EEBDA8826EA44938360D81004360418D0DA4CE1FE"
+    }
+  },
+  "verified_blocked_links": 0,
+  "verified_transitions": 0
+}

@@ -67,6 +67,16 @@ old geometric reconstruction. Review every component report and copy its
 classification evidence into zone provenance. The structure report prevents
 silent geometry omissions; the path audit prevents production graph drift.
 
+Regenerate and audit every existing production structure selector with:
+
+```text
+python tools/audit_structure_catalog.py <xiNavmeshOBJs>/obj <xiNavmeshes> \
+  --markdown-report assets/maps/STRUCTURE_TOPOLOGY_AUDIT.md
+```
+
+The command fails when native and inferred selector output differs or when an
+exactly reproducible committed PNG drifts from native output.
+
 Cross-floor transitions remain in the page's path job, but they must not
 flatten separately styled floor layers. A structure-layer command includes
 only verified transitions whose two endpoints belong to that layer; provenance

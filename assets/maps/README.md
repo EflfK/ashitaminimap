@@ -31,3 +31,11 @@ world scale.
 Production structure maps are transparent everywhere outside their walkable
 polygon unions.
 Small collision details are intentionally suppressed; larger holes and
+component boundaries remain visible.
+
+`component-reports/` contains deterministic native-topology inventories for
+every navmesh-authored production structure layer. Regenerate the full catalog
+and its summary with `tools/audit_structure_catalog.py`. Metalworks is
+explicitly excluded from certification because its current layer remains the
+legacy linework prototype. Kuftal's transition-stripe texture is verified route
+decoration rather than a seeded navmesh component.
