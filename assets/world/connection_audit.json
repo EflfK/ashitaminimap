@@ -1,0 +1,220 @@
+{
+  "counts": {
+    "arrival_coordinate_mismatches_preserving_catseye": 86,
+    "cats_records": 844,
+    "land_sand_boat_records": 844,
+    "published_connections": 820,
+    "unresolved_records": 25
+  },
+  "schema": 1,
+  "sources": {
+    "catseye": {
+      "commit": "314deaf03465f2b24b6a1e4e73a016ca036f1084",
+      "location": "https://raw.githubusercontent.com/CatsAndBoats/catseyexi/314deaf03465f2b24b6a1e4e73a016ca036f1084/sql/zonelines.sql",
+      "sha256": "E4F33C59ED32F7762C0CA52142F59181C7516439CBAAC5E77DA981F2E3BF0F2F"
+    },
+    "land_sand_boat": {
+      "commit": "bf838f7c4d52903d99bbb4baff9726ff2c66d797",
+      "location": "https://raw.githubusercontent.com/LandSandBoat/server/bf838f7c4d52903d99bbb4baff9726ff2c66d797/sql/zonelines.sql",
+      "sha256": "4AC7B2B39160CE6842E9D8919737B033FE4A0F94BA986D06D571BABFCD6063AD"
+    }
+  },
+  "unresolved": [
+    {
+      "cats_from_zone": 230,
+      "cats_to_zone": 0,
+      "id": 812805498,
+      "lsb_from_zone": 230,
+      "lsb_to_zone": 230,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 80,
+      "cats_to_zone": 0,
+      "id": 812871034,
+      "lsb_from_zone": 80,
+      "lsb_to_zone": 80,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 231,
+      "cats_to_zone": 0,
+      "id": 846359930,
+      "lsb_from_zone": 231,
+      "lsb_to_zone": 231,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 87,
+      "cats_to_zone": 0,
+      "id": 846425466,
+      "lsb_from_zone": 87,
+      "lsb_to_zone": 87,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 232,
+      "cats_to_zone": 0,
+      "id": 879914362,
+      "lsb_from_zone": 232,
+      "lsb_to_zone": 232,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 87,
+      "cats_to_zone": 0,
+      "id": 879979898,
+      "lsb_from_zone": 87,
+      "lsb_to_zone": 87,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 238,
+      "cats_to_zone": 0,
+      "id": 913468794,
+      "lsb_from_zone": 238,
+      "lsb_to_zone": 238,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 94,
+      "cats_to_zone": 0,
+      "id": 913534330,
+      "lsb_from_zone": 94,
+      "lsb_to_zone": 94,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 239,
+      "cats_to_zone": 0,
+      "id": 947023226,
+      "lsb_from_zone": 239,
+      "lsb_to_zone": 239,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 256,
+      "cats_to_zone": 0,
+      "id": 947088762,
+      "lsb_from_zone": 256,
+      "lsb_to_zone": 256,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 235,
+      "cats_to_zone": 0,
+      "id": 1634889082,
+      "lsb_from_zone": 235,
+      "lsb_to_zone": 235,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 257,
+      "cats_to_zone": 0,
+      "id": 1634954618,
+      "lsb_from_zone": 257,
+      "lsb_to_zone": 257,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 235,
+      "cats_to_zone": 0,
+      "id": 1668443514,
+      "lsb_from_zone": 235,
+      "lsb_to_zone": 235,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 240,
+      "cats_to_zone": 0,
+      "id": 1701997946,
+      "lsb_from_zone": 240,
+      "lsb_to_zone": 240,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 234,
+      "cats_to_zone": 0,
+      "id": 1735552378,
+      "lsb_from_zone": 234,
+      "lsb_to_zone": 234,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 236,
+      "cats_to_zone": 0,
+      "id": 1769106810,
+      "lsb_from_zone": 236,
+      "lsb_to_zone": 236,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 241,
+      "cats_to_zone": 0,
+      "id": 1802661242,
+      "lsb_from_zone": 241,
+      "lsb_to_zone": 241,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 243,
+      "cats_to_zone": 0,
+      "id": 1836215674,
+      "lsb_from_zone": 243,
+      "lsb_to_zone": 243,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 244,
+      "cats_to_zone": 0,
+      "id": 1869770106,
+      "lsb_from_zone": 244,
+      "lsb_to_zone": 244,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "from_zone": 0,
+      "id": 1903324538,
+      "reason": "missing_land_sand_boat_source",
+      "to_zone": 0
+    },
+    {
+      "cats_from_zone": 246,
+      "cats_to_zone": 0,
+      "id": 1936878970,
+      "lsb_from_zone": 246,
+      "lsb_to_zone": 246,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 245,
+      "cats_to_zone": 0,
+      "id": 1970433402,
+      "lsb_from_zone": 245,
+      "lsb_to_zone": 245,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 48,
+      "cats_to_zone": 0,
+      "id": 2003987834,
+      "lsb_from_zone": 48,
+      "lsb_to_zone": 48,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "cats_from_zone": 50,
+      "cats_to_zone": 0,
+      "id": 2037542266,
+      "lsb_from_zone": 50,
+      "lsb_to_zone": 50,
+      "reason": "zone_pair_mismatch"
+    },
+    {
+      "from_zone": 258,
+      "id": 943077242,
+      "reason": "not_present_on_catseye",
+      "to_zone": 257
+    }
+  ]
+}

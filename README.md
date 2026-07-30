@@ -81,6 +81,15 @@ edge, approximate destinations use a diamond, and handoffs older than three
 seconds are discarded so a crashed or unloaded guide cannot leave stale
 markers behind.
 
+Version 2 of the handoff retains a destination in another zone. AshitaMiniMap
+combines verified map-owned walking graphs with the generated physical
+zone-line catalog and the player's read-only Home Point and Survival Guide
+registration masks. It selects a shortest fully authored cross-zone route,
+draws only the current-zone walking leg, names the next transition in the
+status strip, and recalculates from the observed arrival position after zoning.
+Warp is eligible only when its exact authored landing anchor is unambiguous.
+See [Cross-zone world routes](docs/WORLD_ROUTES.md).
+
 The handoff contains no commands, routes, or player actions. AshitaGuide
 remains the source of guide state and supplies only destination coordinates.
 AshitaMinimap owns the reusable zone navigation graph, snaps the player and
