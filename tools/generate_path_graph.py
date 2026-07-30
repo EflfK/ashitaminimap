@@ -7,7 +7,8 @@ import math
 from collections import defaultdict, deque
 from pathlib import Path
 
-from generate_walkable_map import point_in_polygon, read_navmesh
+from detour_navmesh import read_detour_topology
+from generate_walkable_map import point_in_polygon
 from PIL import Image
 
 
@@ -60,6 +61,16 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=0.65,
         help="maximum vertical seam step in yalms (default: 0.65)",
+    )
+    parser.add_argument(
+        "--adjacency-mode",
+        choices=("native", "inferred"),
+        default="native",
+        help=(
+            "native reads dtPoly neighbors and resolves only authored tile "
+            "portals; inferred reconstructs every polygon edge geometrically "
+            "(default: native)"
+        ),
     )
     parser.add_argument(
         "--snap-radius",
@@ -207,6 +218,27 @@ def polygon_adjacency(
                 if height_delta <= maximum_step:
                     connect(edge[4], candidate[4])
     return adjacency
+
+
+def filtered_native_adjacency(
+    source_polygons: list[list[tuple[float, ...]]]
+    | tuple[tuple[tuple[float, ...], ...], ...],
+    source_adjacency: list[set[int]] | tuple[frozenset[int], ...],
+    polygons: list[list[tuple[float, ...]]],
+) -> list[set[int]]:
+    source_index = {id(polygon): index for index, polygon in enumerate(source_polygons)}
+    retained_sources = [source_index[id(polygon)] for polygon in polygons]
+    remap = {
+        source: target for target, source in enumerate(retained_sources)
+    }
+    return [
+        {
+            remap[neighbor]
+            for neighbor in source_adjacency[source]
+            if neighbor in remap
+        }
+        for source in retained_sources
+    ]
 
 
 def selected_indices(
@@ -458,7 +490,9 @@ def write_graph(
 
 def main() -> None:
     args = parse_args()
-    _, polygons = read_navmesh(args.nav)
+    topology = read_detour_topology(args.nav, args.maximum_step)
+    source_polygons = topology.polygons
+    polygons = list(source_polygons)
     polygons = filter_elevation(
         polygons,
         args.minimum_elevation,
@@ -473,20 +507,28 @@ def main() -> None:
     )
     if not polygons:
         raise ValueError("graph filters excluded every navigation polygon")
-    adjacency = polygon_adjacency(polygons, args.maximum_step)
+    adjacency = (
+        filtered_native_adjacency(
+            source_polygons,
+            topology.adjacency,
+            polygons,
+        )
+        if args.adjacency_mode == "native"
+        else polygon_adjacency(polygons, args.maximum_step)
+    )
     apply_transitions(
         polygons,
         adjacency,
         args.transition,
         args.transition_snap_radius,
     )
-    indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
     remove_blocked_links(
         polygons,
         adjacency,
         args.blocked_link,
         args.transition_snap_radius,
     )
+    indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
     selected = set(indices)
     write_graph(
         args.output,

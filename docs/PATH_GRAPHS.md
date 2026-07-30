@@ -81,10 +81,19 @@ the union of already-authored structure layers. Page/floor maps may also use
 the same verified `--minimum-elevation` and `--maximum-elevation` bounds as
 their structure generation.
 
-The generator recognizes exact shared polygon edges and split axis-aligned tile
-seams whose interpolated vertical difference is no greater than
-`--maximum-step` (default `0.65` yalms). It converts Detour's horizontal Z axis
-to the negated FFXI world-Y convention used by the addon.
+The generator reads Detour's authored `dtPoly.neis` topology for neighbors
+inside a tile and joins geometry only across edges Detour explicitly marks as
+external tile portals. This avoids inventing same-floor or cross-floor links
+between polygons that merely have similar edges. Portal height differences
+must be no greater than `--maximum-step` (default `0.65` yalms). The
+`--adjacency-mode inferred` compatibility option reconstructs all adjacency
+geometrically and exists only for audits; completed maps use native topology.
+The generator converts Detour's horizontal Z axis to the negated FFXI world-Y
+convention used by the addon.
+
+Blocked links are applied before seed-based component selection. As a result,
+an inaccessible island is discarded unless another verified seed explicitly
+retains it.
 
 Register a single-page generated file directly in `ashitaminimap_paths.lua`.
 For a multi-page zone, register a table keyed by active stock page. Generated
@@ -95,17 +104,26 @@ Regenerate the complete current catalog with:
 ```text
 python tools/generate_all_path_graphs.py <xiNavmeshes>
 python tools/validate_path_graphs.py assets/paths/*.lua
+python tools/audit_path_graphs.py <xiNavmeshes>
 ```
 
 The catalog generation script records every source selector in one reviewable
 place. `assets/paths/README.md` records the pinned source revision, hashes,
-node/edge counts, and deterministic output hashes.
+node/edge counts, and deterministic output hashes. The audit regenerates each
+graph twice: once from native Detour topology and once with inferred adjacency.
+It reports production drift, topology deltas, component health, stacked-floor
+overlaps, and one closest review lead per pair of substantial disconnected
+components. A suggested component pair is never proof of a staircase, door, or
+other transition.
 
 ## Validation checklist
 
 - Record the source repository commit and SHA-256 in the zone provenance file.
 - Use a verified live seed; never infer it from a map-grid label.
 - Confirm graph node and edge counts are identical across two generations.
+- Run the catalog audit and require production/native parity. Investigate every
+  native/inferred delta and every nearby-component advisory against the rendered
+  structure and a live traversal; never add an edge from proximity alone.
 - Confirm every linked node index exists and every edge is bidirectional.
 - Test endpoint snapping near the intended entrances, exits, and destination.
 - Test overlapping X/Y points on different elevations and confirm each snaps
@@ -113,6 +131,9 @@ node/edge counts, and deterministic output hashes.
 - Test at least one connected route and one deliberately disconnected target.
 - Compare the displayed route with close-zoom walkable structure.
 - Traverse every relevant connector before describing the graph as complete.
+- Record discovered blocked edges and verified transitions in the catalog job
+  so the correction survives deterministic regeneration and benefits every
+  guide using that map.
 - Keep unresolved components marker-only rather than joining them by visual
   guesswork.
 
