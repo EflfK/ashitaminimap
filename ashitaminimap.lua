@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.16.0';
+addon.version   = '1.16.1';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -125,6 +125,7 @@ local state = {
         last_attempt = 0,
         last_error = nil,
     },
+    world_topology = nil,
     -- Retail Home Point destination counts for currently authored zones.
     -- Warp is withheld unless both the complete zone count and the authored
     -- anchor count prove one unambiguous landing point.
@@ -543,6 +544,7 @@ local function load_configuration()
     state.world_path.route = nil;
     state.world_path.last_attempt = 0;
     state.world_path.last_error = nil;
+    state.world_topology = nil;
     if (world_catalog_error ~= nil) then
         log('World connection catalog unavailable: '
             .. tostring(world_catalog_error));
@@ -1172,6 +1174,146 @@ state.world_mask_bit = function (kind, index)
     return bit.band(value, bit.lshift(1, index % 8)) ~= 0;
 end
 
+state.world_static_topology = function ()
+    if (state.world_topology ~= nil) then
+        return state.world_topology;
+    end
+
+    -- Keep world endpoints lightweight until a search reaches their zone.
+    -- Snapping every endpoint and precomputing every same-zone pair inside
+    -- d3d_present made off-route recalculation stall the render thread.
+    local topology = {
+        nodes = {},
+        adjacency = {},
+        by_zone = {},
+        travel_nodes = {
+            home_point = {},
+            survival_guide = {},
+        },
+        walk_cache = {},
+    };
+    local function add_node(value)
+        local index = #topology.nodes + 1;
+        topology.nodes[index] = value;
+        topology.adjacency[index] = {};
+        topology.by_zone[value.zone_id] =
+            topology.by_zone[value.zone_id] or {};
+        topology.by_zone[value.zone_id][
+            #topology.by_zone[value.zone_id] + 1] = index;
+        return index;
+    end
+    local function add_edge(from_index, to_index, edge)
+        edge.to = to_index;
+        topology.adjacency[from_index][
+            #topology.adjacency[from_index] + 1] = edge;
+    end
+
+    for _, connection in ipairs(
+            type(state.world_catalog.connections) == 'table'
+                and state.world_catalog.connections
+                or {}) do
+        if (state.path_catalog[connection.from_zone] ~= nil
+                and state.path_catalog[connection.to_zone] ~= nil) then
+            local from_index = add_node({
+                zone_id = connection.from_zone,
+                x = connection.from_x,
+                y = connection.from_y,
+                z = connection.from_z,
+                kind = 'zone_line',
+                metadata = connection,
+            });
+            local to_index = add_node({
+                zone_id = connection.to_zone,
+                x = connection.to_x,
+                y = connection.to_y,
+                z = connection.to_z,
+                kind = 'zone_arrival',
+                metadata = connection,
+            });
+            add_edge(from_index, to_index, {
+                kind = 'zone_line',
+                cost = 40,
+                connection = connection,
+            });
+        end
+    end
+
+    for zone_id, map_definition in pairs(state.maps) do
+        if (state.path_catalog[zone_id] ~= nil
+                and type(map_definition.travel_references) == 'table') then
+            for _, marker in ipairs(map_definition.travel_references) do
+                if (topology.travel_nodes[marker.kind] ~= nil) then
+                    local index = add_node({
+                        zone_id = zone_id,
+                        x = marker.x,
+                        y = marker.y,
+                        z = marker.z,
+                        requested_page_id = marker.page_id,
+                        kind = marker.kind,
+                        metadata = marker,
+                    });
+                    topology.travel_nodes[marker.kind][
+                        #topology.travel_nodes[marker.kind] + 1] = index;
+                end
+            end
+        end
+    end
+
+    state.world_topology = topology;
+    return topology;
+end
+
+state.world_prepare_node = function (node)
+    if (node.snap_attempted == true) then
+        return node.graph ~= nil;
+    end
+    node.snap_attempted = true;
+    local snap = state.world_snap(
+        node.zone_id,
+        node.x,
+        node.y,
+        node.z,
+        node.requested_page_id);
+    if (snap == nil) then
+        return false;
+    end
+    node.graph = snap.graph;
+    node.page_id = snap.page_id;
+    node.graph_index = snap.index;
+    return true;
+end
+
+state.world_route_local_leg = function (
+        topology,
+        route_walk_cache,
+        nodes,
+        static_node_count,
+        left_index,
+        right_index)
+    -- Static endpoint pairs survive player-position recalculations. Legs that
+    -- touch the moving start or target stay scoped to the current search.
+    local cache = left_index <= static_node_count
+        and right_index <= static_node_count
+        and topology.walk_cache
+        or route_walk_cache;
+    cache[left_index] = cache[left_index] or {};
+    local cached = cache[left_index][right_index];
+    if (cached ~= nil) then
+        return cached ~= false and cached or nil;
+    end
+
+    local left = nodes[left_index];
+    local right = nodes[right_index];
+    local leg = nil;
+    if (state.world_prepare_node(left)
+            and state.world_prepare_node(right)
+            and left.graph == right.graph) then
+        leg = state.world_local_leg(left, right);
+    end
+    cache[left_index][right_index] = leg or false;
+    return leg;
+end
+
 state.ensure_world_path = function (player, destination)
     local now = os.clock();
     local cached = state.world_path.route;
@@ -1223,36 +1365,14 @@ state.ensure_world_path = function (player, destination)
         return nil;
     end
 
+    local topology = state.world_static_topology();
+    local static_node_count = #topology.nodes;
     local nodes = {};
-    local adjacency = {};
-    local function add_node(value)
-        nodes[#nodes + 1] = value;
-        adjacency[#nodes] = {};
-        return #nodes;
+    for index, node in ipairs(topology.nodes) do
+        nodes[index] = node;
     end
-    local function add_edge(from_index, to_index, edge)
-        edge.to = to_index;
-        adjacency[from_index][#adjacency[from_index] + 1] = edge;
-    end
-    local function snapped_node(zone_id, x, y, z, page_id, kind, metadata)
-        local snap = state.world_snap(zone_id, x, y, z, page_id);
-        if (snap == nil) then
-            return nil;
-        end
-        return add_node({
-            zone_id = zone_id,
-            x = x,
-            y = y,
-            z = z,
-            graph = snap.graph,
-            page_id = snap.page_id,
-            graph_index = snap.index,
-            kind = kind,
-            metadata = metadata,
-        });
-    end
-
-    local start_index = add_node({
+    local start_index = static_node_count + 1;
+    nodes[start_index] = {
         zone_id = player.zone_id,
         x = player.x,
         y = player.y,
@@ -1261,8 +1381,10 @@ state.ensure_world_path = function (player, destination)
         page_id = start_snap.page_id,
         graph_index = start_snap.index,
         kind = 'start',
-    });
-    local target_index = add_node({
+        snap_attempted = true,
+    };
+    local target_index = start_index + 1;
+    nodes[target_index] = {
         zone_id = destination.zone_id,
         x = destination.x,
         y = destination.y,
@@ -1271,112 +1393,38 @@ state.ensure_world_path = function (player, destination)
         page_id = target_snap.page_id,
         graph_index = target_snap.index,
         kind = 'target',
-    });
-
-    local transition_pairs = {};
-    for _, connection in ipairs(
-            type(state.world_catalog.connections) == 'table'
-                and state.world_catalog.connections
-                or {}) do
-        if (state.path_catalog[connection.from_zone] ~= nil
-                and state.path_catalog[connection.to_zone] ~= nil) then
-            local from_index = snapped_node(
-                connection.from_zone,
-                connection.from_x,
-                connection.from_y,
-                connection.from_z,
-                nil,
-                'zone_line',
-                connection);
-            local to_index = snapped_node(
-                connection.to_zone,
-                connection.to_x,
-                connection.to_y,
-                connection.to_z,
-                nil,
-                'zone_arrival',
-                connection);
-            if (from_index ~= nil and to_index ~= nil) then
-                transition_pairs[#transition_pairs + 1] = {
-                    from_index = from_index,
-                    to_index = to_index,
-                    connection = connection,
-                };
-            end
-        end
-    end
-
-    local travel_nodes = {
-        home_point = {},
-        survival_guide = {},
+        snap_attempted = true,
     };
-    for zone_id, map_definition in pairs(state.maps) do
-        if (state.path_catalog[zone_id] ~= nil
-                and type(map_definition.travel_references) == 'table') then
-            for _, marker in ipairs(map_definition.travel_references) do
-                local index = snapped_node(
-                    zone_id,
-                    marker.x,
-                    marker.y,
-                    marker.z,
-                    marker.page_id,
-                    marker.kind,
-                    marker);
-                if (index ~= nil and travel_nodes[marker.kind] ~= nil) then
-                    travel_nodes[marker.kind][#travel_nodes[marker.kind] + 1] =
-                        index;
-                end
-            end
+
+    local route_walk_cache = {};
+    local unlocked = {};
+    local function is_unlocked(kind, index)
+        local key = string.format('%s:%s', kind, tostring(index));
+        if (unlocked[key] == nil) then
+            unlocked[key] = state.world_mask_bit(kind, index) == true;
         end
+        return unlocked[key];
     end
-
-    for left_index = 1, #nodes do
-        local left = nodes[left_index];
-        for right_index = left_index + 1, #nodes do
-            local right = nodes[right_index];
-            if (left.zone_id == right.zone_id
-                    and left.graph == right.graph) then
-                local leg = state.world_local_leg(left, right);
-                if (leg ~= nil) then
-                    add_edge(left_index, right_index, leg);
-                    local reverse = state.world_local_leg(right, left);
-                    if (reverse ~= nil) then
-                        add_edge(right_index, left_index, reverse);
-                    end
-                end
-            end
+    local route_zone_indexes = {};
+    local function zone_indexes(zone_id)
+        if (route_zone_indexes[zone_id] ~= nil) then
+            return route_zone_indexes[zone_id];
         end
-    end
-
-    for _, pair in ipairs(transition_pairs) do
-        add_edge(pair.from_index, pair.to_index, {
-            kind = 'zone_line',
-            cost = 40,
-            connection = pair.connection,
-        });
-    end
-
-    for kind, indexes in pairs(travel_nodes) do
-        for _, from_index in ipairs(indexes) do
-            for _, to_index in ipairs(indexes) do
-                if (from_index ~= to_index) then
-                    local marker = nodes[to_index].metadata;
-                    local unlock_index = kind == 'home_point'
-                        and marker.unlock_index
-                        or marker.unlock_bit;
-                    if (state.world_mask_bit(kind, unlock_index) == true) then
-                        add_edge(from_index, to_index, {
-                            kind = kind,
-                            cost = 55,
-                            destination_zone = nodes[to_index].zone_id,
-                            destination_name = marker.name,
-                        });
-                    end
-                end
-            end
+        local result = {};
+        for _, index in ipairs(topology.by_zone[zone_id] or {}) do
+            result[#result + 1] = index;
         end
+        if nodes[start_index].zone_id == zone_id then
+            result[#result + 1] = start_index;
+        end
+        if nodes[target_index].zone_id == zone_id then
+            result[#result + 1] = target_index;
+        end
+        route_zone_indexes[zone_id] = result;
+        return result;
     end
 
+    local respawn_target = nil;
     local memory = safe_read(function ()
         return AshitaCore:GetMemoryManager();
     end, nil);
@@ -1388,18 +1436,14 @@ state.ensure_world_path = function (player, destination)
     end, nil)) or nil;
     if (respawn_zone ~= nil) then
         local respawn_candidates = {};
-        for _, index in ipairs(travel_nodes.home_point) do
+        for _, index in ipairs(topology.travel_nodes.home_point) do
             if (nodes[index].zone_id == respawn_zone) then
                 respawn_candidates[#respawn_candidates + 1] = index;
             end
         end
         if (state.world_home_point_zone_counts[respawn_zone] == 1
                 and #respawn_candidates == 1) then
-            add_edge(start_index, respawn_candidates[1], {
-                kind = 'warp',
-                cost = 70,
-                destination_zone = respawn_zone,
-            });
+            respawn_target = respawn_candidates[1];
         end
     end
 
@@ -1407,6 +1451,18 @@ state.ensure_world_path = function (player, destination)
     local previous = {};
     local previous_edge = {};
     local visited = {};
+    local function relax(current, current_cost, edge)
+        local target = nodes[edge.to];
+        if (target == nil or not state.world_prepare_node(target)) then
+            return;
+        end
+        local candidate = current_cost + edge.cost;
+        if (costs[edge.to] == nil or candidate < costs[edge.to]) then
+            costs[edge.to] = candidate;
+            previous[edge.to] = current;
+            previous_edge[edge.to] = edge;
+        end
+    end
     while true do
         local current = nil;
         local current_cost = math.huge;
@@ -1420,12 +1476,62 @@ state.ensure_world_path = function (player, destination)
             break;
         end
         visited[current] = true;
-        for _, edge in ipairs(adjacency[current]) do
-            local candidate = current_cost + edge.cost;
-            if (costs[edge.to] == nil or candidate < costs[edge.to]) then
-                costs[edge.to] = candidate;
-                previous[edge.to] = current;
-                previous_edge[edge.to] = edge;
+        local current_node = nodes[current];
+        if (state.world_prepare_node(current_node)) then
+            for _, edge in ipairs(topology.adjacency[current] or {}) do
+                relax(current, current_cost, edge);
+            end
+            for _, right_index in ipairs(zone_indexes(current_node.zone_id)) do
+                if (right_index ~= current) then
+                    local leg = state.world_route_local_leg(
+                        topology,
+                        route_walk_cache,
+                        nodes,
+                        static_node_count,
+                        current,
+                        right_index);
+                    if (leg ~= nil) then
+                        relax(current, current_cost, {
+                            to = right_index,
+                            kind = leg.kind,
+                            cost = leg.cost,
+                            distance = leg.distance,
+                            points = leg.points,
+                        });
+                    end
+                end
+            end
+            local travel_indexes =
+                topology.travel_nodes[current_node.kind];
+            if (travel_indexes ~= nil) then
+                for _, right_index in ipairs(travel_indexes) do
+                    if (right_index ~= current) then
+                        local marker = nodes[right_index].metadata;
+                        local unlock_index = current_node.kind == 'home_point'
+                            and marker.unlock_index
+                            or marker.unlock_bit;
+                        if (is_unlocked(
+                                current_node.kind,
+                                unlock_index)) then
+                            relax(current, current_cost, {
+                                to = right_index,
+                                kind = current_node.kind,
+                                cost = 55,
+                                destination_zone =
+                                    nodes[right_index].zone_id,
+                                destination_name = marker.name,
+                            });
+                        end
+                    end
+                end
+            end
+            if (current == start_index and respawn_target ~= nil) then
+                relax(current, current_cost, {
+                    to = respawn_target,
+                    kind = 'warp',
+                    cost = 70,
+                    destination_zone = respawn_zone,
+                });
             end
         end
     end
@@ -1445,9 +1551,13 @@ state.ensure_world_path = function (player, destination)
             state.world_path.last_error = 'invalid world route reconstruction';
             return nil;
         end
-        edge.from_node = nodes[parent];
-        edge.to_node = nodes[cursor];
-        table.insert(steps, 1, edge);
+        local step = {};
+        for key, value in pairs(edge) do
+            step[key] = value;
+        end
+        step.from_node = nodes[parent];
+        step.to_node = nodes[cursor];
+        table.insert(steps, 1, step);
         cursor = parent;
     end
     local first = steps[1];
@@ -4455,6 +4565,7 @@ ashita.events.register('unload', 'unload_cb', function ()
     state.world_path.route = nil;
     state.path_graphs = {};
     state.world_catalog = {};
+    state.world_topology = nil;
     state.custom_waypoint = nil;
     state.device = nil;
     state.config_visible[1] = false;
