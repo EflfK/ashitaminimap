@@ -51,6 +51,18 @@ python tools/generate_path_graph.py <zone.nav> assets/paths/<zone-id>.lua \
   --seed=<verified-world-x>,<verified-world-y>
 ```
 
+When a verified walkable staircase or ramp is split by source-navmesh gaps,
+repeat `--transition` to join only the aligned polygons:
+
+```text
+--transition=<start-x>,<start-y>,<start-live-z>:<end-x>,<end-y>,<end-live-z>
+```
+
+Transition endpoints snap to polygon centroids within two yalms by default.
+Every transition is bidirectional and must be backed by a verified physical
+connection; it must never bridge unrelated surfaces that merely overlap on the
+flattened map.
+
 Repeat `--seed` to retain multiple verified components without inventing edges
 between them. Use repeated `--mask` arguments with the map's exact
 `--origin-x`, `--origin-y`, and `--pixels-per-yalm` to constrain graph nodes to

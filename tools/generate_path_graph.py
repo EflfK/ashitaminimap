@@ -19,6 +19,26 @@ def parse_seed(value: str) -> tuple[float, float]:
         raise argparse.ArgumentTypeError("seed must be world-x,world-y") from exception
 
 
+def parse_transition(
+    value: str,
+) -> tuple[tuple[float, float, float], tuple[float, float, float]]:
+    try:
+        start_text, end_text = value.split(":", 1)
+        start = tuple(float(part) for part in start_text.split(","))
+        end = tuple(float(part) for part in end_text.split(","))
+    except ValueError as exception:
+        raise argparse.ArgumentTypeError(
+            "transition must be start-x,start-y,start-live-z:"
+            "end-x,end-y,end-live-z"
+        ) from exception
+    if len(start) != 3 or len(end) != 3:
+        raise argparse.ArgumentTypeError(
+            "transition must be start-x,start-y,start-live-z:"
+            "end-x,end-y,end-live-z"
+        )
+    return start, end
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("nav", type=Path, help="compiled Detour .nav file")
@@ -46,6 +66,26 @@ def parse_args() -> argparse.Namespace:
         type=float,
         default=24.0,
         help="maximum runtime endpoint snap distance in yalms (default: 24)",
+    )
+    parser.add_argument(
+        "--transition",
+        action="append",
+        type=parse_transition,
+        default=[],
+        help=(
+            "authored bidirectional link between disconnected navigation "
+            "polygons, expressed as start-x,start-y,start-live-z:"
+            "end-x,end-y,end-live-z; repeat for multiple links"
+        ),
+    )
+    parser.add_argument(
+        "--transition-snap-radius",
+        type=float,
+        default=2.0,
+        help=(
+            "maximum 3D distance from an authored transition endpoint to a "
+            "polygon centroid (default: 2)"
+        ),
     )
     parser.add_argument(
         "--minimum-elevation",
@@ -285,6 +325,49 @@ def centroid(polygon: list[tuple[float, ...]]) -> tuple[float, float, float]:
     )
 
 
+def apply_transitions(
+    polygons: list[list[tuple[float, ...]]],
+    adjacency: list[set[int]],
+    transitions: list[
+        tuple[tuple[float, float, float], tuple[float, float, float]]
+    ],
+    snap_radius: float,
+) -> None:
+    if snap_radius <= 0:
+        raise ValueError("--transition-snap-radius must be positive")
+    centroids = [centroid(polygon) for polygon in polygons]
+
+    def nearest(endpoint: tuple[float, float, float]) -> int:
+        distance, index = min(
+            (
+                math.sqrt(
+                    (point[0] - endpoint[0]) ** 2
+                    + (point[1] - endpoint[1]) ** 2
+                    + (-point[2] - endpoint[2]) ** 2
+                ),
+                index,
+            )
+            for index, point in enumerate(centroids)
+        )
+        if distance > snap_radius:
+            raise ValueError(
+                f"transition endpoint {endpoint} is {distance:.3f} yalms "
+                f"from the nearest polygon centroid, exceeding "
+                f"{snap_radius:g}"
+            )
+        return index
+
+    for start, end in transitions:
+        start_index = nearest(start)
+        end_index = nearest(end)
+        if start_index == end_index:
+            raise ValueError(
+                f"transition endpoints {start} and {end} resolve to one polygon"
+            )
+        adjacency[start_index].add(end_index)
+        adjacency[end_index].add(start_index)
+
+
 def lua_number(value: float) -> str:
     if not math.isfinite(value):
         raise ValueError("graph contains a non-finite coordinate")
@@ -346,6 +429,12 @@ def main() -> None:
     if not polygons:
         raise ValueError("graph filters excluded every navigation polygon")
     adjacency = polygon_adjacency(polygons, args.maximum_step)
+    apply_transitions(
+        polygons,
+        adjacency,
+        args.transition,
+        args.transition_snap_radius,
+    )
     indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
     selected = set(indices)
     write_graph(
