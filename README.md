@@ -1,9 +1,11 @@
 # AshitaMinimap
 
-AshitaMinimap is a read-only Ashita v4 Lua addon that renders its own transparent
-minimap. Rendering does not require the stock `Minimap.dll`; when available,
-the addon reads its active page and calibration state to improve automatic
-page selection.
+AshitaMinimap is a read-only Ashita v4 Lua addon focused on high-quality,
+display-only directional pathing for AshitaGuide and attended custom
+destinations. It renders a transparent calibrated vanilla minimap, supported
+markers, and computed routes. Rendering does not require the stock
+`Minimap.dll`; when available, the addon reads its active page and calibration
+state to improve automatic page selection.
 
 The first prototype includes:
 
@@ -13,9 +15,10 @@ The first prototype includes:
 - a north-up, zone-calibrated coordinate grid with edge labels;
 - a live `H-8`-style coordinate badge;
 - an in-game configuration window with persistent settings;
+- a Developer tab with an optional full navigation-graph web;
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
-- independently composited vanilla and walkable-structure layers;
+- calibrated vanilla-map rendering with dormant retained structure support;
 - deterministic world-coordinate-to-image calibration;
 - map definitions for South Gustaberg (zone 107), Port Bastok (zone 236),
   Metalworks (zone 237), Windurst Woods (zone 241), and all four Jeuno city
@@ -50,8 +53,7 @@ The first prototype includes:
 Run `/aminimap config` to open the in-game configuration window. It controls:
 
 - map visibility, position lock, size, and zoom;
-- independent vanilla and structure visibility and opacity;
-- adjustable structure line-strength boost;
+- vanilla-map visibility and opacity;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility, with optional live numeric
   X/Y/Z values in the badge;
@@ -65,6 +67,19 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
+
+The **Developer** tab is display-only and disabled by default. Enable
+**Developer mode**, then **Show all pathing**, to draw every node and connection
+from the active page's navigation graph. Connections on the player's current
+floor are bright cyan; other floors are dim so overlapping elevations remain
+distinguishable. The graph web is intended for fast visual review: publish the
+best deterministic graph, inspect it in game, and report concrete defects for
+targeted correction instead of requiring a manual checkpoint for every
+possible seam.
+
+Structure-rendering implementation, settings, assets, and provenance remain
+preserved in the repository, but normal operation neither loads nor renders
+structure textures and exposes no structure controls.
 
 Dynamic entities are intentionally anonymous. AshitaMinimap does not render
 entity-name labels and must not recover names solely for minimap display. That
@@ -106,27 +121,24 @@ destination. Right-click the custom waypoint again to remove it; when a guide
 is active, its destination marker and path immediately regain priority. The
 custom waypoint is session-only and remains display-only.
 
-Navigation graphs are deterministic build artifacts generated from the same
-verified Detour source used for authored walkable structure. They are
+Navigation graphs are deterministic build artifacts generated directly from
+verified Detour topology plus live-verified transition and blocked-link
+exceptions. They do not require a visible structure image. They are
 display-only and never move, target, interact, queue commands, or automate
-gameplay. Every zone with a committed non-vanilla map component now has a
-registered graph; multi-page Kuftal Tunnel and Garlaige Citadel select a
-separate graph for the active authored page. See
+gameplay. Multi-page zones select the graph for the active authored page. See
 [Path graph authoring](docs/PATH_GRAPHS.md).
 
 Kuftal Tunnel can optionally draw filled gold coffer icons at all authored
 possible Treasure Coffer locations. These are fixed, page-filtered reference
 points for manual searching. The addon does not inspect the live coffer,
 identify which point is occupied, or mark its current location. A possible
-spawn on the player's authored floor remains fully visible; a spawn on another
-floor uses the **Other floors opacity** setting.
+spawn is always a fixed reference; it does not claim live presence.
 
 Kuftal Tunnel also provides an optional filled Amemet spawn-range veil on page
 2. It is derived from the 50 authored initial-spawn positions and deliberately
 draws no singular NM marker. Hover the veil for its compact static-reference
 card. The overlay does not inspect Amemet, report its status, or draw its patrol
-route. Like coffer references, a range on another authored floor uses the
-**Other floors opacity** setting.
+route.
 
 Unlock the map in the configuration window or with `/aminimap unlock`, then
 left-drag anywhere on the map to move it. Use `/aminimap lock` when finished.
@@ -159,11 +171,8 @@ Existing per-zone and per-page `origin_adjustments` remain active and are still
 loaded and saved. The retained controls can be restored for development by
 setting `SHOW_MAP_CALIBRATION` to `true` in `ashitaminimap.lua`.
 
-If the transparent map linework is difficult to see, raise **Structure
-visibility**. This composites its alpha layer more strongly than an ordinary
-opacity control can. **Dark backdrop** adds
-contrast behind the entire viewport and can be set back to `0%` whenever a
-completely clear background is preferred.
+**Dark backdrop** adds contrast behind the viewport and can be set back to
+`0%` whenever a completely clear background is preferred.
 
 ## Layer model
 
@@ -171,30 +180,20 @@ The renderer draws map content in this order:
 
 1. optional dark backdrop;
 2. optional calibrated vanilla map;
-3. calibrated map structure layers, preserving separate outlines for
-   disconnected overlapping floors;
-4. static NM spawn-range veils, when enabled for an authored zone;
-5. coordinate grid;
-6. fixed possible Treasure Chest (wood) or Treasure Coffer (gold) references,
+3. static NM spawn-range veils, when enabled for an authored zone;
+4. coordinate grid;
+5. fixed possible Treasure Chest (wood) or Treasure Coffer (gold) references,
    when enabled;
-7. live entities;
-8. current AshitaGuide destinations;
-9. player arrow;
-10. coordinate badge and unlocked-state hint.
+6. live entities;
+7. current AshitaGuide destinations and computed display path;
+8. player arrow;
+9. coordinate badge and unlocked-state hint.
 
-Windurst Woods and the four Jeuno city zones use production dark-tactical
-maps. Their structure layers are filled walkable-area masks generated from
-collision geometry plus Detour traversability data; the background is truly
-transparent. Optional vanilla parchment layers have independently adjustable
-opacity. Disconnected floors may use multiple structure textures so a bridge
-crossing another level does not become a false walkable junction when flattened
-to two dimensions. These alternate-floor components use violet structure
-linework while the main connected network remains cyan. Authored layers share
-the same calibrated origin and scale. Port
-Jeuno pairs its structure with the locally imported stock page; Metalworks
-keeps its authored structure-focused presentation.
-South Gustaberg and Port Bastok still use flattened prototype assets, so their
-embedded labels remain part of those legacy images.
+Structure-rendering code, metadata, generated assets, and provenance are
+retained but dormant. Normal operation does not load or draw structure
+textures, and the configuration window does not expose structure controls.
+This can be restored later without losing prior work, but new routing work must
+not generate or expand structure images unless explicitly requested.
 
 Map calibration lives in `ashitaminimap_maps.lua`. The image and world coordinate
 systems are related by:
@@ -246,10 +245,10 @@ playbook](docs/MAP_AUTHORING_PITFALLS.md) before adding another zone. It records
 the DAT-wrap, grid-origin, overview-boundary, navmesh, deployment, and mismatch
 diagnostics learned while completing Windurst Woods.
 
-For every authored structure map, follow the [required navmesh component and
-transition audit](docs/MAP_COMPONENT_AUDIT.md). It requires classification of
-all plausible components, live coverage checks for every floor and connector,
-and separate rendering for disconnected paths that overlap in two dimensions.
+For every authored graph, follow [Path graph authoring](docs/PATH_GRAPHS.md)
+and the routing-first scope in [navmesh component and transition
+analysis](docs/MAP_COMPONENT_AUDIT.md). Resolve every component and ambiguous
+transition that can affect supported destinations or normal guide routes.
 
 ## Map asset status
 

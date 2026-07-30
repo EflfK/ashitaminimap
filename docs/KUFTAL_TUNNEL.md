@@ -83,11 +83,9 @@ length `7`, half width `4.5`, stripe period `5`, end feather `1.5`, direction
 `(-0.6,0.8)`, and alpha `190`. Its `floor_transition` runtime role uses one
 visibility pass and fades from overview to close-zoom opacity.
 
-Every Kuftal floor layer declares player-Z bounds. The matching floor uses
-`structure_opacity`; all other floors use the independent
-`inactive_floor_opacity` setting (default `0.14`). Page 1 switches at player Z
-`-15`. Pages 2, 15, and 16 use the verified bands recorded in
-`ashitaminimap_maps.lua`.
+Every retained Kuftal floor layer declares player-Z bounds. These values and
+textures are dormant during normal operation and are preserved for possible
+future structure restoration. Routing uses graph elevation directly.
 
 ## Possible coffer spawn references
 
@@ -100,13 +98,9 @@ AshitaMinimap's `(x, y, z)` convention.
 
 Twelve locations belong to stock page 2. The deeper location at
 `(-27.946, -183.709, -21.825)` belongs to page 1. Markers are filtered by the
-active stock page and compared with the same authored elevation bands used by
-the page's structure layers. A marker on the player's floor uses its configured
-color opacity. A marker proven to be on another authored floor uses the
-user-level `inactive_floor_opacity` setting, keeping it visible without
-competing with current-floor possibilities. If either elevation cannot be
-classified into an authored band, the marker remains fully visible rather than
-implying an unverified floor relationship.
+active stock page and remain fully visible. Their Z values are retained for
+routing and future floor-aware presentation without depending on a visible
+structure layer.
 
 This overlay is static reference data. It does not inspect entities, locate the
 currently spawned coffer, distinguish an occupied spawn point, or imply that a
@@ -124,17 +118,15 @@ the placeholder count shown in the hover card. The declared level is 66.
 Each verified starting point contributes one small translucent disc. Their
 overlap reads as a continuous area rather than 50 individual markers, while
 remaining faithful to the non-convex distribution of the source positions.
-The veil renders immediately above the vanilla and authored pathing layers.
-The grid, coffers, live markers, player arrow, and hover card all remain above
-it. The card stays fully readable even when the range itself uses other-floor
-opacity. No singular Amemet marker is drawn.
+The veil renders immediately above the vanilla map. The grid, coffers, live
+markers, player arrow, and hover card all remain above it. No singular Amemet
+marker is drawn.
 
 This is intentionally static reference data. It neither checks whether Amemet
 is alive nor selects a current placeholder or location. The separate patrol
 paths in the source script are not included because they describe movement
-after a spawn, not possible initial-spawn positions. The range is assigned to
-page 2's `MAIN` floor and uses `inactive_floor_opacity` whenever the player is
-on a different authored floor.
+after a spawn, not possible initial-spawn positions. The range remains assigned
+to page 2.
 
 The west spur on page 15 is partly controlled by Kuftal's moving boulder. The
 stock artwork remains visible there, while only navmesh-backed portions receive
@@ -165,9 +157,8 @@ For any future Kuftal edit:
 5. check that page 1 renders as one connected cyan base and one connected
    violet route, and that its transition stripes remain centered on the
    live-verified connector at `(290,252)`;
-6. cross every recorded Z boundary and confirm the player's floor uses
-   **Current floor opacity** while every other floor uses **Other floors
-   opacity**;
+6. cross every recorded Z boundary and confirm graph snapping and routes remain
+   on the correct elevation;
 7. check the deep page-1 descent, page-15 boulder connector, page-16 west/east
    lower connectors, and every visible stair or ramp;
 8. keep disconnected elevations in separate layer textures;

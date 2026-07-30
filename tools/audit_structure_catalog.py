@@ -1,4 +1,8 @@
-"""Regenerate and audit every navmesh-authored structure selector."""
+"""Optional diagnostic audit for the dormant structure-rendering subsystem.
+
+This script is retained for explicitly requested structure work. It is not a
+routing-first map completion gate.
+"""
 
 from __future__ import annotations
 
@@ -286,7 +290,12 @@ JOBS = (
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=(
+            "Optionally audit retained structure assets. Routing completion "
+            "uses validate_path_graphs.py and audit_path_graphs.py instead."
+        )
+    )
     parser.add_argument("obj_root", type=Path)
     parser.add_argument("navmesh_root", type=Path)
     parser.add_argument(
@@ -479,7 +488,9 @@ def main() -> None:
             print(f"{job_value.output}: {results[-1]['status']}")
 
     lines = [
-        "# Structure topology audit",
+        "# Dormant structure topology audit",
+        "",
+        "This optional report is not part of routing-first map completion.",
         "",
         "Native and inferred selectors are compared for every navmesh-authored "
         "structure layer. `exact` rows also reproduce and hash-check the "

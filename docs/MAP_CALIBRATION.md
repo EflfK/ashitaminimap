@@ -5,10 +5,10 @@ AshitaMinimap. Metalworks established the rendering transform; new maps should
 reuse that transform with map-specific metadata rather than being manually
 nudged until they look close.
 
-Read `MAP_AUTHORING_PITFALLS.md` and `MAP_COMPONENT_AUDIT.md` as well. They
-contain source-reconstruction, coverage, topology, diagnostic, and
-live-deployment failures that are easy to repeat even when the calibration
-formulas are correct.
+Read `MAP_AUTHORING_PITFALLS.md`, `MAP_COMPONENT_AUDIT.md`, and
+`PATH_GRAPHS.md` as well. Structure assets are dormant during normal operation;
+calibration work now exists primarily to align the vanilla reference, markers,
+and display-only routes.
 
 ## What is universal
 
@@ -23,7 +23,7 @@ image_y = origin_y - world_y * image_pixels_per_yalm
 The same transform must be used for:
 
 - the optional vanilla layer;
-- the structure layer;
+- the dormant structure layer, when explicitly enabled for development;
 - the player marker;
 - entity and target markers;
 - the Lua-rendered coordinate grid, using its own recorded grid anchor when the
@@ -53,7 +53,6 @@ Required fields are:
 [zone_id] = {
     name = 'Zone Name',
     vanilla_image = 'assets/maps/<zone>_vanilla.png',
-    structure_image = 'assets/maps/<zone>_structure.png',
     width = 512,
     height = 512,
     view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
@@ -66,8 +65,9 @@ Required fields are:
 },
 ```
 
-A temporary flattened `image` is supported, but a production map should use
-separate vanilla and walkable-structure layers when the source permits it.
+A temporary flattened `image` remains supported for legacy maps.
+`structure_image`, `structure_pages`, and `structure_layers` are optional
+dormant metadata and are not required for a routing-first production map.
 `view_bounds` is optional. Use it when the source texture contains transparent
 padding or an adjacent composite page. It defines the calibrated source-pixel
 rectangle that the overview camera should keep visible; it does not crop or
@@ -220,16 +220,16 @@ Validate a new map before calling it complete:
    exact live world coordinates, not coordinates guessed from a grid label.
 7. Test at multiple user zoom levels. Static geometry, the player, entities,
    target rings, and the coordinate grid must scale around the same center.
-8. Toggle vanilla and structure independently and confirm neither layer moves.
-9. Check every additional floor or map variant separately.
-10. Audit every stair, ramp, bridge, elevator landing, and other transition at
-    its entrance, middle, and exit. At close zoom, the player marker must remain
-    over structure along the complete route.
-11. Classify every plausible nearby navmesh component as included main path,
-    included alternate floor, included connector, excluded with reason, or
-    unresolved. An unresolved component makes the map partial.
-12. Keep disconnected overlapping components in separate `structure_layers`
-    textures and confirm their boundaries do not form false 2D junctions.
+8. Check every additional floor or map variant separately.
+9. Inspect stairs, ramps, bridges, elevator landings, and zoning thresholds in
+   Developer mode's full graph web. Capture entrance, midpoint, and exit
+   positions when correcting a concrete defect or authoring an exception.
+10. Resolve every navmesh component that can affect a supported destination or
+    normal route. Preserve separate elevations in the path graph and verify
+    that projected crossings never become false junctions.
+11. Test representative long routes, endpoint snapping, off-route recovery,
+    and every known or reported transition defect against the calibrated
+    vanilla map.
 
 Interpret mismatches by their pattern:
 
@@ -246,9 +246,8 @@ Interpret mismatches by their pattern:
   judging scale or origin.
 
 Record the source DAT/page, wrap or crop values, calibration derivation,
-component classification, transition-route positions, exclusions, and all
-other validation positions in the map entry comments or an adjacent manifest.
-That provenance is part of the map asset.
+routing-component decisions, transition positions, exclusions, destinations,
+and route-test positions in the map entry comments or adjacent provenance.
 
 ## Current automation boundary
 

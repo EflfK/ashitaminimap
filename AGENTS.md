@@ -1,200 +1,166 @@
-# AshitaMinimap repository instructions
+# AshitaMiniMap repository instructions
 
-## Adding or replacing maps
+## Primary purpose
+
+AshitaMiniMap is a display-only directional pathing addon for AshitaGuide,
+custom waypoints, and other allowed attended destinations. It owns reusable
+map-page navigation graphs, computes shortest paths, and renders directions.
+AshitaGuide supplies destinations; it does not author or duplicate routes.
+
+Keep the addon display-only. Never add movement automation, input simulation,
+gameplay commands, packet injection, timers, unattended loops, multibox
+routing, detection evasion, or any capability that acts on the player's behalf.
+
+## Required reading
 
 Read `docs/MAP_CALIBRATION.md`, `docs/MAP_AUTHORING_PITFALLS.md`,
-`docs/MAP_COMPONENT_AUDIT.md`, and `docs/VANILLA_FALLBACKS.md` completely
-before adding, replacing, cropping, splitting, or recalibrating a map. Also
-read `docs/PATH_GRAPHS.md` before creating or changing a map-owned navigation
-graph. Treat their validation and deployment checklists as required work, not
-optional background.
+`docs/MAP_COMPONENT_AUDIT.md`, `docs/VANILLA_FALLBACKS.md`, and
+`docs/PATH_GRAPHS.md` before adding or changing calibration, destinations, or a
+map-owned graph. Read zone-specific provenance when it exists.
 
-Also read a zone-specific provenance document when one exists. Kuftal Tunnel
-work must read `docs/KUFTAL_TUNNEL.md` before changing its page rules,
-calibration, component selection, elevation bands, or structure assets.
+Structure-rendering code, assets, reports, and provenance are retained for
+possible future restoration, but structure rendering is dormant during normal
+addon operation. Do not generate, expand, replace, or recertify structure
+images unless the user explicitly requests structure work.
 
 ## Production-map shorthand
 
-When the user says `complete map <zone>`, treat it as a request to finish that
-zone's production map end to end and make it visible in game without requiring
-the user to restate the workflow:
+When the user says `complete map <zone>`, finish that zone's routing and
+destination support end to end:
 
-1. Follow every map-authoring document and use exact stock calibration plus
-   deterministic collision/navigation sources.
-2. Generate, inventory, and classify every plausible component as main path,
-   alternate floor, connector, excluded with evidence, or unresolved. Preserve
-   overlapping floors as separate cyan/violet layers with verified player-Z
-   bounds and transition treatments. Generate structure component selection
-   from native `dtPoly.neis` topology and authored external tile portals, using
-   the same verified `--blocked-link` and relevant `--transition` records as
-   the page's path graph. Every structure-generation command must emit a
-   `--component-report`; review it and transfer every component's disposition
-   into zone provenance. The `--adjacency-mode inferred` compatibility mode is
-   audit-only and must not produce a completed structure layer.
-3. Conduct the required attended live route audit. Give the user concise
-   destinations to visit, capture entrance/middle/exit positions for every
-   floor transition, and continue when live evidence arrives. Never substitute
-   an overview image for traversal evidence or call unresolved work complete.
-   Before asking the player to traverse, publish a temporary AshitaGuide map
-   audit guide with a stable zone-specific key such as
-   `ashitaminimap-<zone>-audit`. Put every requested control point and every
-   transition entrance, midpoint, and exit in its own ordered step with the
-   exact zone, X/Y destination, stock map/page id when known, and an explicit
-   instruction to stop and report ready. Keep the guide updated as component
-   evidence changes so the player can follow map markers instead of raw chat
-   coordinates. Do not treat reaching or advancing an AshitaGuide step as
-   traversal proof: capture the live X/Y/Z and confirm the rendered structure
-   at each stop before recording the audit. Prefer the structured temporary
-   guide publisher; if it is unavailable, preserve all existing AI guides when
-   publishing through AshitaGuide's supported local guide file, then reload and
-   verify the addon before continuing.
-4. Add display-only static references for every active Home Point and Survival
-   Guide, all verified Treasure Chest or Treasure Coffer locations, and relevant
-   notorious-monster spawn points or ranges available from trustworthy
-   CatsEyeXI-compatible data. Home Points use the cyan crystal symbol and
-   Survival Guides use the open-book symbol. Every treasure record must declare
-   `kind = 'chest'` or `kind = 'coffer'`: Treasure Chests use the wooden chest
-   symbol and Treasure Coffers use the gold coffer symbol. Never combine or
-   relabel the two types. Record provenance plus exact coordinates and
-   page/floor metadata; explicitly register an empty travel-reference set when
-   an audited zone has neither travel NPC. Do not add live detection, status
-   reporting, entity-name recovery, commands, movement, or automation.
-5. Generate the map-owned display-path graph from the same pinned deterministic
-   Detour source using native `dtPoly.neis` topology and authored external tile
-   portals, and register it in `ashitaminimap_paths.lua`. AshitaGuide must
-   continue to supply only destination coordinates; do not duplicate routes in
-   guides. Run `tools/audit_path_graphs.py` and require production/native parity
-   before publishing. Treat Detour as source evidence, not unquestionable
-   player-route truth: record a verified `--blocked-link` for every source edge
-   that crosses an impassable boundary, and record a verified `--transition`
-   for every real stair, ramp, door, or landing connection missing from the
-   source topology. Never create either from 2D proximity alone. Validate node
-   and edge integrity, bidirectional links, connected and deliberately
-   disconnected destinations, endpoint snapping, shortest-path output,
-   off-route recovery, page/floor filtering, and close-zoom alignment with
-   verified walkable structure. Do not join disconnected components without
-   live transition evidence; leave those destinations marker-only and the
-   graph partial.
-6. Register every finished asset and overlay in `ashitaminimap_maps.lua`,
-   document complete provenance, regenerate twice, and verify deterministic
-   hashes for both map and path artifacts, referenced paths, dimensions, alpha,
-   calibration, floor/page filtering, overview zoom, close zoom, marker
-   placement, and rendered guide paths.
-7. Preserve the installed user configuration, sync the finished addon into the
-   game installation, reload it through AshitaDevTools, and verify the expected
-   version, map layers, destination marker, and computed path behavior in the
-   live log and game.
-8. Finish the repository workflow: update relevant documentation, commit only
-   the intended work in one request-specific commit, and push `main` to
-   `origin/main`. If required live traversal or authoritative source data is
-   unavailable, clearly leave the map partial and report the exact remaining
-   audit rather than lowering the completion standard.
+1. Establish exact vanilla-map calibration for every relevant stock page.
+   Derive page, origin, scale, grid anchor, crop, and wrap from deterministic
+   source records plus well-separated live controls. Never eyeball calibration.
+2. Generate a display-only graph from the pinned Detour navmesh using native
+   `dtPoly.neis` topology and authored external tile portals. A production
+   graph must not require a structure PNG. A retained structure mask may be
+   used only as an optional diagnostic selector with independent routing
+   evidence.
+3. Analyze every component, elevation, overlapping floor, and nearby
+   connection that could affect a normal guide destination. Include reachable
+   public routes and required connectors. Exclude inaccessible roofs,
+   decorative collision, isolated surfaces, false connections, private
+   cutscene spaces, and irrelevant geometry with deterministic evidence.
+4. Keep separate floors distinct in graph Z. Never join overlapping X/Y
+   coordinates across elevations. Apply `--blocked-link` for a source edge
+   proven impassable and `--transition` only for a real connection verified at
+   its entrance, midpoint, and exit.
+5. Publish the best graph supported by deterministic navmesh, collision,
+   server data, and existing live evidence. Use Developer mode's **Show all
+   pathing** web for an at-a-glance review. Do not create a long manual audit
+   guide merely because a seam might be wrong. When the player reports a
+   concrete defect, add only the focused attended checkpoints needed to
+   capture that connection.
+6. Add every active Home Point and Survival Guide, all verified Treasure Chest
+   and Treasure Coffer locations, relevant notorious-monster references, zone
+   exits, and other supported destinations from pinned trustworthy data.
+   Treasure records must explicitly use `kind = 'chest'` or `kind = 'coffer'`.
+   Record verified-empty categories instead of silently omitting them.
+7. Test representative long routes, endpoint snapping, shortest-path output,
+   off-route recovery, zone/page filtering, and cross-zone handoffs where
+   relevant. Resolve defects revealed by deterministic analysis, the full
+   graph web, or player reports. Focused live traversal remains required before
+   authoring an exception edge, but speculative manual traversal of every
+   plausible junction is not a publication gate.
+8. Run `tools/validate_path_graphs.py` and `tools/audit_path_graphs.py`.
+   Regenerate twice and compare hashes. Verify production/native parity except
+   for documented live-verified `--transition` and `--blocked-link` exceptions.
+9. Preserve the installed user configuration, sync the runtime and graph into
+   CatsEyeXI, reload through AshitaDevTools, and verify the version, destination,
+   computed route, and recovery behavior in game.
+10. Commit only the intended request changes and push `main` to `origin/main`.
+    If live evidence or trustworthy source data is unavailable, report the
+    exact routing gap and keep the map partial rather than weakening the gate.
 
-## Non-vanilla map completeness invariant
+## Routing completeness invariant
 
-Any zone or stock page that has any authored/non-vanilla content must undergo
-the complete-map workflow above. This applies even when the first change is
-small, such as one structure component, one corrected calibration value, one
-path graph, or one static marker. Do not treat a partly customized map as
-exempt from the remaining layer audit.
+Any authored calibration, navigation graph, or static destination triggers the
+routing-first completion workflow for that zone or page. Completion means:
 
-For every authored zone and authored page, inventory and resolve all supported
-layer and reference categories:
+- accurate vanilla-map calibration;
+- a complete display-only graph for all relevant reachable areas and floors;
+- truthful handling of stairs, ramps, bridges, doors, elevators, zoning
+  thresholds, and broken navmesh seams;
+- trustworthy supported destinations and explicit verified-empty categories;
+- representative long-route tests plus focused live tests for known defects or
+  authored transition exceptions; and
+- no unresolved component capable of affecting a normal guide destination.
 
-- optional calibrated vanilla reference artwork;
-- every walkable structure, alternate-floor, and transition component;
-- the map-owned navigation graph for every authored page;
-- Home Points;
-- Survival Guides;
-- Treasure Chests;
-- Treasure Coffers;
-- relevant notorious-monster points or spawn ranges;
-- guide/custom destination markers and computed-path compatibility.
+Component analysis remains mandatory for routing quality, not for producing a
+cyan overlay. Do not require exhaustive classification of decorative or
+irrelevant components once deterministic evidence proves they cannot affect
+allowed destinations or routes. Deterministically review components near a
+supported destination, known route, zone exit, alternate floor, or plausible
+connector. Escalate to a focused live audit when evidence or the developer
+graph web exposes a concrete ambiguity; do not assume every nearby component
+requires a manual walkthrough.
 
-Every static reference category must be recorded as one of:
+Prefer a zone's matching collision OBJ and Detour navmesh. The OBJ is useful
+diagnostic geometry; Detour topology is the graph source. Neither source is
+unquestionable player-route truth. Never use AI-generated or visually traced
+geometry for routing.
 
-- **populated** — all records from a pinned trustworthy source are present;
-- **verified empty** — the pinned source was checked and proves the zone has no
-  records of that type;
-- **unresolved** — source coverage, page membership, or floor membership is not
-  yet truthful enough to publish.
+Native adjacency is the production default. Inferred adjacency is audit-only.
+Never connect components from two-dimensional proximity, an overview image, or
+a shortest-route result. A missing connection remains marker-only until live
+evidence proves the physical transition.
 
-An absent table or undocumented omission is never equivalent to verified
-empty. Record the source revision, coordinate conversion, record count, and
-page/floor assignment evidence in zone provenance. An unresolved category
-keeps the map explicitly partial; do not describe, document, or present that
-map as complete. Never guess a missing marker, duplicate a zone-wide marker
-onto every page, or remove page filtering merely to make a category appear
-filled.
+Path elevation is authoritative for floor-aware snapping. A guide destination
+without Z may route only when the graph can resolve it to one reachable floor;
+otherwise it remains marker-only as floor-ambiguous. Route projection must
+remain three-dimensional so walking above or below a route cannot count as
+following it.
 
-- Prefer a zone's intermediate collision OBJ plus matching Detour navmesh for
-  accessible-area geometry. The OBJ preserves explicit triangles; the navmesh
-  excludes flat but unreachable surfaces such as roofs. If those sources are
-  unavailable, navigation geometry must come from the vanilla DAT or another
-  deterministic, verified source. Never use AI-generated or visually traced
-  artwork for navigation geometry.
-- Structure and path generation must share native Detour topology and verified
-  topology-exception evidence. Apply blocked links before seed traversal. A
-  transition may join split structure components only when its entrance,
-  middle, and exit have been live verified. For separately styled floors,
-  apply only transitions whose endpoints belong to that generated layer, and
-  record cross-layer transitions in the path job and provenance. Never join
-  structure components from proximity, inferred adjacency, or a shortest-route
-  result.
-- Production maps have only two static source categories: an optional vanilla
-  reference and clean walkable structure. The structure category may contain
-  multiple component textures when disconnected floors or connectors overlap
-  in two dimensions. Do not create separate static label or landmark layers.
-  Every texture must use exactly the same crop, wrap, origin, and scale.
-- Treat map calibration as zone- and map-variant-specific data. Do not reuse a
-  global scale or grid-cell size.
-- Derive `grid_yalms`, `origin_x`, `origin_y`, and
-  `image_pixels_per_yalm` from source data and verified control points. Do not
-  finish a map using eyeballed tuning.
-- Keep source-image calibration independent of the user's display size and
-  zoom.
-- Validate at multiple well-separated world positions and compare static map
-  geometry, the player marker, and entity markers before calling a map precise.
-- Never call a structure map complete until every plausible navmesh component
-  has been classified as included main path, included alternate floor,
-  included connector, or excluded with a recorded reason. Audit every stair,
-  ramp, bridge, elevator landing, and other floor transition with live player
-  coordinates; the player marker must remain over authored structure along the
-  complete route.
-- Never flatten disconnected overlapping floors into one PNG. Preserve their
-  component boundaries with `structure_layers`; use cyan for the main
-  connected network and violet for alternate floors and their connectors.
-  When a verified transition remains ambiguous, use small path-clipped stripes
-  perpendicular to travel: alternate cyan and violet, widen cyan toward the
-  main floor, and widen violet toward the alternate floor. Do not blend the
-  colors or place a stair glyph, opaque block, arrow, or inferred destination
-  marker over the map. Generate the shared tapered-threshold treatment and
-  declare its structure layer with `role = 'floor_transition'` so overview
-  opacity, close-zoom opacity, and single-pass visibility are consistent on
-  every authored map.
-- For multi-floor pages, give each floor layer truthful
-  `minimum_player_z`/`maximum_player_z` bounds. Keep the matching current floor
-  at full opacity and make nonmatching floors substantially fainter with
-  the user-level `inactive_floor_opacity` setting; do not hardcode inactive
-  opacity per map or rely on color alone to show the player's floor.
-- Map-calibration controls are intentionally hidden from the normal config UI
-  with `SHOW_MAP_CALIBRATION = false`. Existing origin adjustments remain
-  active; only expose the controls temporarily for attended development.
-- A visually plausible overview is not coverage validation. Inspect close zoom
-  and record live control points on every floor and at the entrance, middle,
-  and exit of every transition. If full traversal is unavailable, document the
-  map as partial rather than assuming omitted components are inaccessible.
-- Preserve the user's installed `ashitaminimap_config.lua` when syncing addon
-  updates into the game installation.
-- Do not add entity-name labels or recover entity names solely for minimap
-  display. AshitaMinimap intentionally limits dynamic entities to anonymous
-  dots, target styling, and the player arrow. The former entity-name rendering
-  capability was removed and must not be reintroduced.
-- Never assume a dark DAT seam is a page edge. Decode the complete texture and
-  test for cyclic continuation before cropping.
-- Keep the navigation origin and printed H-8 grid origin separate when the
-  vanilla artwork requires it.
-- Treat the current asset-validation steps as manual completion gates. There
-  is not yet an automated validator for page-to-asset references, PNG
-  dimensions and alpha, deterministic regeneration, or prohibited
-  entity-name rendering.
+## Dormant structure subsystem
+
+Preserve all existing structure-rendering implementation, generated assets,
+component reports, provenance, and map metadata. Do not delete or rewrite them
+as part of routing work.
+
+Normal operation must not load or render structure textures, and the config UI
+must not expose structure enablement, opacity, inactive-floor opacity, or
+visibility controls. The retained settings may continue to round-trip through
+the config file for forward compatibility.
+
+Structure masks remain optional internal diagnostics for
+`generate_path_graph.py`; production pathing must be reproducible without
+requiring a newly generated visible structure image. Structure audits and
+structure-image provenance are required only when the user explicitly requests
+structure work.
+
+## Calibration and destination rules
+
+- Treat calibration as zone-, page-, and variant-specific.
+- Keep source calibration independent of display size and zoom.
+- Keep the navigation origin and printed H-8 grid origin separate where the
+  stock artwork requires it.
+- Never assume a dark DAT seam is a page edge; test for cyclic continuation.
+- Prefer exact live `visible_entities` coordinates for named destinations.
+  Otherwise use pinned server data or another trustworthy source. Never guess
+  coordinates from a printed grid label.
+- Home Points use the cyan crystal symbol; Survival Guides use the open-book
+  symbol; Treasure Chests use the wooden chest symbol; Treasure Coffers use the
+  gold coffer symbol.
+- Static references never inspect or report live chest, coffer, NM, or travel
+  status beyond the read-only registration masks already used for routing.
+- Preserve the user's installed `ashitaminimap_config.lua` when syncing.
+
+## UI and privacy
+
+Map-calibration controls remain hidden from normal configuration with
+`SHOW_MAP_CALIBRATION = false`; expose them only for attended development.
+
+Do not add entity-name labels or recover entity names solely for minimap
+display. Dynamic entities remain anonymous dots, target styling, and the
+player arrow.
+
+Public repository content must not include personal paths, credentials,
+private logs, account information, or screenshots containing private data.
+
+## Windurst Walls
+
+Preserve the existing partial Windurst Walls structure work as dormant
+repository evidence. Do not expand its visible structure overlay unless the
+user explicitly requests it. Complete Windurst Walls through its navigation
+graph, exact stock calibration, three active Home Points, verified supported
+markers and exits, truthful transitions, and live route verification.

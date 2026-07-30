@@ -1,7 +1,7 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.14.1';
-addon.desc      = 'Transparent Lua-rendered minimap for Ashita v4.';
+addon.version   = '1.16.0';
+addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
 
@@ -26,6 +26,10 @@ local ENTITY_FLOOR_TOLERANCE = 8.0;
 local PATH_FLOOR_TOLERANCE = 4.0;
 local MAP_CORNER_RADIUS = 7.0;
 local SHOW_MAP_CALIBRATION = false;
+-- Structure rendering is intentionally dormant. Keep the implementation,
+-- metadata, and assets intact so attended development can restore it later,
+-- but normal operation must not load or draw structure textures.
+local STRUCTURE_RENDERING_ENABLED = false;
 
 local DEFAULTS = {
     visible = true,
@@ -35,7 +39,7 @@ local DEFAULTS = {
     size = 330,
     pixels_per_yalm = 4.41,
     show_map_vanilla = true,
-    show_map_structure = true,
+    show_map_structure = false,
     vanilla_opacity = 0.35,
     structure_opacity = 0.82,
     inactive_floor_opacity = 0.14,
@@ -48,6 +52,8 @@ local DEFAULTS = {
     show_travel_references = true,
     show_nm_spawn_ranges = true,
     show_guide_paths = true,
+    developer_mode = false,
+    show_all_pathing = false,
     show_players = true,
     show_npcs = true,
     show_monsters = true,
@@ -312,6 +318,8 @@ local function config_text()
         string.format('    show_travel_references = %s,', bool_text(settings.show_travel_references)),
         string.format('    show_nm_spawn_ranges = %s,', bool_text(settings.show_nm_spawn_ranges)),
         string.format('    show_guide_paths = %s,', bool_text(settings.show_guide_paths)),
+        string.format('    developer_mode = %s,', bool_text(settings.developer_mode)),
+        string.format('    show_all_pathing = %s,', bool_text(settings.show_all_pathing)),
         string.format('    show_players = %s,', bool_text(settings.show_players)),
         string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
@@ -509,7 +517,9 @@ local function load_configuration()
 
     local maps, maps_error = load_module_file('ashitaminimap_maps.lua');
     state.maps = type(maps) == 'table' and maps or {};
-    validate_structure_layers(state.maps);
+    if (STRUCTURE_RENDERING_ENABLED) then
+        validate_structure_layers(state.maps);
+    end
     if (maps_error ~= nil) then
         log('Map calibration warning: ' .. tostring(maps_error));
     end
@@ -1493,30 +1503,28 @@ state.ensure_guide_path = function (player, map)
         return nil;
     end
 
-    local destination_z = tonumber(destination.z);
-    local floor_sensitive = false;
-    for _, layer in ipairs(
-            type(map.structure_layers) == 'table'
-                and map.structure_layers
-                or {}) do
-        if (layer.minimum_player_z ~= nil
-                or layer.maximum_player_z ~= nil) then
-            floor_sensitive = true;
-            break;
-        end
-    end
-    if (floor_sensitive and destination_z == nil) then
-        state.guide_path.route = nil;
-        state.guide_path.last_error = 'destination floor unknown';
-        return nil;
-    end
-
     local graph = state.path_graph_for(player.zone_id, map.page_id);
     if (graph == nil
             or (graph.page_id ~= nil
                 and tonumber(map.page_id) ~= tonumber(graph.page_id))) then
         state.guide_path.route = nil;
         return nil;
+    end
+    local destination_z = tonumber(destination.z);
+    if (destination_z == nil) then
+        local floor_ambiguous = false;
+        destination_z, floor_ambiguous = state.path_waypoint_z(
+            graph,
+            destination.x,
+            destination.y,
+            player.x,
+            player.y,
+            player.z);
+        if (floor_ambiguous) then
+            state.guide_path.route = nil;
+            state.guide_path.last_error = 'destination floor ambiguous';
+            return nil;
+        end
     end
 
     local route = state.guide_path.route;
@@ -2324,6 +2332,13 @@ local function floor_layer_matches_z(layer, z)
 end
 
 local function shares_authored_floor(map, player_z, marker_z)
+    if (not STRUCTURE_RENDERING_ENABLED) then
+        player_z = tonumber(player_z);
+        marker_z = tonumber(marker_z);
+        return player_z == nil
+            or marker_z == nil
+            or math.abs(player_z - marker_z) <= ENTITY_FLOOR_TOLERANCE;
+    end
     player_z = tonumber(player_z);
     marker_z = tonumber(marker_z);
     local layers = type(map) == 'table' and map.structure_layers or nil;
@@ -2921,6 +2936,93 @@ local function draw_player(draw_list, center_x, center_y, yaw, visual_scale)
         player_color,
         16,
         math.max(1.0, 1.5 * visual_scale));
+end
+
+state.draw_all_pathing = function (
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale)
+    if (state.settings.developer_mode ~= true
+            or state.settings.show_all_pathing ~= true) then
+        return nil;
+    end
+    local graph = state.path_graph_for(player.zone_id, map.page_id);
+    if (graph == nil) then
+        return nil;
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local floor_tolerance = tonumber(graph.floor_tolerance)
+        or PATH_FLOOR_TOLERANCE;
+    local active_edge = imgui.GetColorU32({ 0.05, 0.94, 1.00, 0.70 });
+    local inactive_edge = imgui.GetColorU32({ 0.12, 0.55, 0.66, 0.28 });
+    local active_node = imgui.GetColorU32({ 0.45, 0.98, 1.00, 0.90 });
+    local inactive_node = imgui.GetColorU32({ 0.22, 0.62, 0.70, 0.42 });
+
+    local function screen(node)
+        return {
+            center_x + (((tonumber(node[1]) or 0) - camera.x) * scale),
+            center_y - (((tonumber(node[2]) or 0) - camera.y) * scale),
+        };
+    end
+
+    local function on_player_floor(node)
+        local live_z = state.path_node_live_z(graph, node);
+        return player.z == nil
+            or live_z == nil
+            or math.abs(live_z - player.z) <= floor_tolerance;
+    end
+
+    local function segment_might_be_visible(a, b)
+        return not ((a[1] < left and b[1] < left)
+            or (a[1] > left + size and b[1] > left + size)
+            or (a[2] < top and b[2] < top)
+            or (a[2] > top + size and b[2] > top + size));
+    end
+
+    local edge_count = 0;
+    for index, node in ipairs(graph.nodes) do
+        local start = screen(node);
+        for _, neighbor_index in ipairs(node[4] or {}) do
+            local neighbor = graph.nodes[tonumber(neighbor_index) or 0];
+            if (neighbor ~= nil and neighbor_index > index) then
+                edge_count = edge_count + 1;
+                local finish = screen(neighbor);
+                if (segment_might_be_visible(start, finish)) then
+                    local active = on_player_floor(node)
+                        and on_player_floor(neighbor);
+                    draw_list:AddLine(
+                        start,
+                        finish,
+                        active and active_edge or inactive_edge,
+                        active and 1.4 or 1.0);
+                end
+            end
+        end
+    end
+
+    for _, node in ipairs(graph.nodes) do
+        local point = screen(node);
+        if (point[1] >= left and point[1] <= left + size
+                and point[2] >= top and point[2] <= top + size) then
+            local active = on_player_floor(node);
+            draw_list:AddCircleFilled(
+                point,
+                active and 1.7 or 1.2,
+                active and active_node or inactive_node,
+                6);
+        end
+    end
+    return {
+        nodes = #graph.nodes,
+        edges = edge_count,
+    };
 end
 
 state.draw_guide_path = function (
@@ -3624,7 +3726,8 @@ local function render_minimap()
         and texture_for(vanilla_image)
         or nil;
     local structure_layers = {};
-    if (state.settings.show_map_structure == true) then
+    if (STRUCTURE_RENDERING_ENABLED
+            and state.settings.show_map_structure == true) then
         if (type(map.structure_layers) == 'table') then
             for _, layer in ipairs(map.structure_layers) do
                 local image = type(layer) == 'table' and layer.image or layer;
@@ -3771,6 +3874,15 @@ local function render_minimap()
             map,
             scale,
             player.z);
+        state.draw_all_pathing(
+            draw_list,
+            left,
+            top,
+            size,
+            player,
+            camera,
+            map,
+            scale);
         draw_grid(draw_list, left, top, size, camera, map, scale);
         draw_treasure_spawns(
             draw_list,
@@ -3877,6 +3989,17 @@ local function render_config_window()
     imgui.SetNextWindowSize({ 410, 0 }, first_use);
     local flags = bit.lshift(1, 5); -- NoCollapse
     if (imgui.Begin('AshitaMinimap Config###AshitaMinimapConfig', state.config_visible, flags)) then
+        local tabs_supported = type(imgui.BeginTabBar) == 'function'
+            and type(imgui.BeginTabItem) == 'function'
+            and type(imgui.EndTabItem) == 'function'
+            and type(imgui.EndTabBar) == 'function';
+        local tab_bar_open = tabs_supported
+            and imgui.BeginTabBar('##ashitaminimap_config_tabs')
+            or false;
+        local map_tab_open = not tabs_supported
+            or (tab_bar_open
+                and imgui.BeginTabItem('Map##ashitaminimap_config_map'));
+        if (map_tab_open) then
         imgui.Text('Map');
         imgui.Separator();
         config_checkbox('Show minimap##ashitaminimap_visible', 'visible');
@@ -4021,52 +4144,6 @@ local function render_config_window()
             mark_configuration_changed();
         end
 
-        config_checkbox('Map structure##ashitaminimap_structure', 'show_map_structure');
-        local structure_opacity_buffer = {
-            math.floor(clamp(state.settings.structure_opacity, 0, 1) * 100 + 0.5),
-        };
-        if (imgui.SliderInt(
-                'Current floor opacity##ashitaminimap_structure_opacity',
-                structure_opacity_buffer,
-                0,
-                100,
-                '%d%%')) then
-            state.settings.structure_opacity = structure_opacity_buffer[1] / 100;
-            mark_configuration_changed();
-        end
-
-        local inactive_floor_opacity_buffer = {
-            math.floor(
-                clamp(state.settings.inactive_floor_opacity, 0, 1) * 100 + 0.5),
-        };
-        if (imgui.SliderInt(
-                'Other floors opacity##ashitaminimap_inactive_floor_opacity',
-                inactive_floor_opacity_buffer,
-                0,
-                100,
-                '%d%%')) then
-            state.settings.inactive_floor_opacity =
-                inactive_floor_opacity_buffer[1] / 100;
-            mark_configuration_changed();
-        end
-
-        local structure_visibility_buffer = {
-            math.floor(clamp(state.settings.structure_visibility_boost, 1, 12) + 0.5),
-        };
-        if (imgui.SliderInt(
-                'Structure visibility##ashitaminimap_structure_visibility',
-                structure_visibility_buffer,
-                1,
-                12,
-                '%d x')) then
-            state.settings.structure_visibility_boost = structure_visibility_buffer[1];
-            mark_configuration_changed();
-        end
-
-        imgui.TextColored(
-            { 0.65, 0.68, 0.70, 1.00 },
-            'Vanilla and walkable structure are independent layers.');
-
         local backdrop_buffer = {
             math.floor(clamp(state.settings.backdrop_opacity, 0, 0.75) * 100 + 0.5),
         };
@@ -4139,6 +4216,72 @@ local function render_config_window()
             state.settings.x = DEFAULTS.x;
             state.settings.y = DEFAULTS.y;
             mark_configuration_changed();
+        end
+        end
+        if (tabs_supported and map_tab_open) then
+            imgui.EndTabItem();
+        end
+
+        if (tab_bar_open
+                and imgui.BeginTabItem(
+                    'Developer##ashitaminimap_config_developer')) then
+            imgui.Text('Developer mode');
+            imgui.Separator();
+            config_checkbox(
+                'Enable developer mode##ashitaminimap_developer_mode',
+                'developer_mode');
+            imgui.TextColored(
+                { 1.00, 0.71, 0.20, 1.00 },
+                'Display diagnostics only. No movement or gameplay actions.');
+
+            if (state.settings.developer_mode == true) then
+                imgui.Spacing();
+                config_checkbox(
+                    'Show all pathing##ashitaminimap_show_all_pathing',
+                    'show_all_pathing');
+                imgui.TextColored(
+                    { 0.65, 0.68, 0.70, 1.00 },
+                    'Draw every node and connection in the active map graph.');
+                imgui.TextColored(
+                    { 0.65, 0.68, 0.70, 1.00 },
+                    'Current-floor edges are bright cyan; other floors are dim.');
+
+                local developer_player = current_player();
+                local developer_map = map_for_player(developer_player);
+                local developer_graph = developer_player ~= nil
+                    and developer_map ~= nil
+                    and state.path_graph_for(
+                        developer_player.zone_id,
+                        developer_map.page_id)
+                    or nil;
+                if (developer_graph ~= nil) then
+                    local edge_count = 0;
+                    for node_index, node in ipairs(developer_graph.nodes) do
+                        for _, neighbor_index in ipairs(node[4] or {}) do
+                            if (tonumber(neighbor_index) ~= nil
+                                    and tonumber(neighbor_index) > node_index) then
+                                edge_count = edge_count + 1;
+                            end
+                        end
+                    end
+                    imgui.Text(string.format(
+                        'Active graph: %d nodes, %d connections',
+                        #developer_graph.nodes,
+                        edge_count));
+                else
+                    imgui.TextColored(
+                        { 0.65, 0.68, 0.70, 1.00 },
+                        'No navigation graph is authored for the active page.');
+                end
+            else
+                imgui.TextColored(
+                    { 0.65, 0.68, 0.70, 1.00 },
+                    'Enable developer mode to reveal diagnostic controls.');
+            end
+            imgui.EndTabItem();
+        end
+        if (tab_bar_open) then
+            imgui.EndTabBar();
         end
     end
     imgui.End();

@@ -11,12 +11,20 @@ from detour_navmesh import point_in_polygon, read_detour_topology
 from PIL import Image
 
 
-def parse_seed(value: str) -> tuple[float, float]:
+def parse_seed(value: str) -> tuple[float, float, float | None]:
     try:
-        x, y = value.split(",", 1)
-        return float(x), float(y)
+        parts = value.split(",")
+        if len(parts) not in (2, 3):
+            raise ValueError
+        return (
+            float(parts[0]),
+            float(parts[1]),
+            float(parts[2]) if len(parts) == 3 else None,
+        )
     except ValueError as exception:
-        raise argparse.ArgumentTypeError("seed must be world-x,world-y") from exception
+        raise argparse.ArgumentTypeError(
+            "seed must be world-x,world-y[,live-z]"
+        ) from exception
 
 
 def parse_transition(
@@ -51,7 +59,7 @@ def parse_args() -> argparse.Namespace:
         type=parse_seed,
         default=[],
         help=(
-            "verified world-x,world-y selecting a connected component; "
+            "verified world-x,world-y[,live-z] selecting a connected component; "
             "repeat for disconnected authored components"
         ),
     )
@@ -243,7 +251,7 @@ def filtered_native_adjacency(
 def selected_indices(
     polygons: list[list[tuple[float, ...]]],
     adjacency: list[set[int]],
-    seeds: list[tuple[float, float]],
+    seeds: list[tuple[float, float, float | None]],
     maximum_seed_snap: float,
 ) -> list[int]:
     if not seeds:
@@ -251,23 +259,64 @@ def selected_indices(
     visited = set()
     pending = deque()
     for seed in seeds:
-        start = next(
-            (
-                index
-                for index, polygon in enumerate(polygons)
-                if point_in_polygon(polygon, seed[0], -seed[1])
-            ),
-            None,
+        seed_live_z = seed[2] if len(seed) > 2 else None
+        containing = [
+            index
+            for index, polygon in enumerate(polygons)
+            if point_in_polygon(polygon, seed[0], -seed[1])
+        ]
+        start = (
+            min(
+                containing,
+                key=lambda index: abs(
+                    (
+                        -sum(vertex[1] for vertex in polygons[index])
+                        / len(polygons[index])
+                    )
+                    - seed_live_z
+                ),
+            )
+            if containing and seed_live_z is not None
+            else (containing[0] if containing else None)
         )
         if start is None:
             nearest = min(
                 (
                     (
-                        math.hypot(
-                            sum(vertex[0] for vertex in polygon) / len(polygon)
-                            - seed[0],
-                            -sum(vertex[2] for vertex in polygon) / len(polygon)
-                            - seed[1],
+                        math.sqrt(
+                            (
+                                sum(vertex[0] for vertex in polygon)
+                                / len(polygon)
+                                - seed[0]
+                            )
+                            ** 2
+                            + (
+                                -sum(vertex[2] for vertex in polygon)
+                                / len(polygon)
+                                - seed[1]
+                            )
+                            ** 2
+                            + (
+                                (
+                                    -sum(vertex[1] for vertex in polygon)
+                                    / len(polygon)
+                                )
+                                - seed_live_z
+                            )
+                            ** 2
+                            if seed_live_z is not None
+                            else (
+                                sum(vertex[0] for vertex in polygon)
+                                / len(polygon)
+                                - seed[0]
+                            )
+                            ** 2
+                            + (
+                                -sum(vertex[2] for vertex in polygon)
+                                / len(polygon)
+                                - seed[1]
+                            )
+                            ** 2
                         ),
                         index,
                     )

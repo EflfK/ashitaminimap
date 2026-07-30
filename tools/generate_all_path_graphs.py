@@ -34,6 +34,37 @@ JOBS = (
         ),
     ),
     GraphJob(
+        "Castle_Oztroja.nav",
+        "151.lua",
+        (
+            "--zone-id",
+            "151",
+            "--seed=-221,-13,0.25",
+            "--seed=7.378,-193.590,-16.293",
+            "--seed=-100.197,-13.141,-72.511",
+        ),
+    ),
+    GraphJob(
+        "Middle_Delkfutts_Tower.nav",
+        "157.lua",
+        (
+            "--zone-id",
+            "157",
+            "--seed=-495.262,-37.750,-128",
+            "--seed=16.367,-40.372,-76.125",
+        ),
+    ),
+    GraphJob(
+        "Upper_Delkfutts_Tower.nav",
+        "158.lua",
+        (
+            "--zone-id",
+            "158",
+            "--seed=-365,-36,-176.5",
+            "--seed=272.758,29.514,19.024",
+        ),
+    ),
+    GraphJob(
         "Kuftal_Tunnel.nav",
         "174_01.lua",
         (
@@ -144,6 +175,29 @@ JOBS = (
         ),
     ),
     GraphJob(
+        "Lower_Delkfutts_Tower.nav",
+        "184.lua",
+        (
+            "--zone-id",
+            "184",
+            "--seed=464,-51,0",
+        ),
+    ),
+    GraphJob(
+        "Inner_Horutoto_Ruins.nav",
+        "192.lua",
+        (
+            "--zone-id",
+            "192",
+            "--seed=453,182.3,-8",
+            "--seed=-177.956,-220.058,-0.002",
+            "--seed=429.002,180,-12.992",
+            "--seed=-193.007,59.969,-15.057",
+            "--seed=-259.981,250.063,6.448",
+            "--seed=-259.996,242.859,6.399",
+        ),
+    ),
+    GraphJob(
         "Garlaige_Citadel.nav",
         "200_16.lua",
         (
@@ -168,6 +222,28 @@ JOBS = (
     GraphJob("Port_Bastok.nav", "236.lua", ("--zone-id", "236")),
     GraphJob("Metalworks.nav", "237.lua", ("--zone-id", "237")),
     GraphJob(
+        "Windurst_Walls.nav",
+        "239.lua",
+        (
+            "--zone-id",
+            "239",
+            "--page-id",
+            "0",
+            "--seed=31,-40",
+            "--seed=-212,-99",
+            "--transition=0.128,-37.894,-5.769:2.599,-39.386,-5.234",
+        ),
+    ),
+    GraphJob(
+        "Port_Windurst.nav",
+        "240.lua",
+        (
+            "--zone-id",
+            "240",
+            "--seed=-188,101,-4",
+        ),
+    ),
+    GraphJob(
         "Windurst_Woods.nav",
         "241.lua",
         (
@@ -182,6 +258,20 @@ JOBS = (
             "288",
             "--pixels-per-yalm",
             "0.8",
+        ),
+    ),
+    GraphJob(
+        "Heavens_Tower.nav",
+        "242.lua",
+        (
+            "--zone-id",
+            "242",
+            "--seed=-2.127,-25.997,-45",
+            "--seed=-2.557,8.598,0.5",
+            "--seed=2.05,32.4,0",
+            "--seed=2.319,14,-47",
+            "--seed=0,44.86,-61.521",
+            "--seed=3.132,0,-47",
         ),
     ),
     GraphJob(

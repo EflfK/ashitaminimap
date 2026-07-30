@@ -9,10 +9,14 @@ original chat history.
 
 1. Decode and reconstruct the complete vanilla page.
 2. Establish one final source-image coordinate system.
-3. Generate the walkable structure in that coordinate system.
-4. Calibrate navigation geometry and the printed coordinate grid separately.
+3. Calibrate navigation geometry and the printed coordinate grid separately.
+4. Generate the routing graph from native topology and verified exceptions.
 5. Set overview bounds from the complete vanilla page.
-6. Validate with live player and entity coordinates at several positions.
+6. Validate calibration and representative routes at several live positions.
+
+Visible structure generation is dormant and is not part of normal routing
+work. Retain the structure-specific sections below as diagnostic history; use
+them only when the user explicitly requests structure assets.
 
 Do not tune later stages to compensate for an error in an earlier stage.
 
@@ -195,7 +199,7 @@ Common symptoms:
 | --- | --- | --- |
 | Large blocky protrusions | Collision geometry rendered without sufficient navmesh filtering | Select only the seeded Detour-connected component |
 | Real walkable region missing | Model seam separates valid navmesh components | Add another verified walkable seed for that region |
-| Floor looks complete but omits stairs | Stair flights are isolated tiny components | Audit every transition and seed each verified fragment |
+| Floor looks complete but omits stairs | Stair flights are isolated tiny components | Inspect the graph web; live-audit and seed fragments when a concrete missing connection appears |
 | Bridge appears connected to path below | Disconnected floors were unioned into one PNG | Render ordered component textures with distinct floor styling |
 | Seed selects the wrong floor | Multiple polygons overlap the seed X/Y | Inspect containing polygon elevations and choose an unambiguous seed or verified elevation band |
 | Long straight tail at a zone exit | Collision continues past the useful transition endpoint | Add one narrow image-space exclusion at the tail |
@@ -318,8 +322,10 @@ After changing addon code or assets:
 4. confirm the chat log reports the expected addon version;
 5. test overview zoom, an ordinary zoom, and a close zoom;
 6. test at multiple well-separated player positions;
-7. toggle vanilla and structure independently;
-8. confirm the coordinate badge agrees with the printed vanilla cell.
+7. confirm structure controls are absent and no structure texture is loaded;
+8. confirm the coordinate badge agrees with the printed vanilla cell;
+9. test a representative long route and every changed transition exception or
+   reported defect.
 
 Copying files without reloading leaves old Lua metadata and texture handles in
 memory. A screenshot taken before a confirmed reload does not validate the new
@@ -332,15 +338,16 @@ Before publishing a map:
 - record the source DAT, internal page or variant, wrap offset, crop, and
   exclusions;
 - record navigation origin, printed H-8 grid origin, scale, and grid size;
-- regenerate each asset twice and compare hashes;
-- confirm all outputs are the expected dimensions;
-- inspect each output's alpha bounding box;
-- inventory and classify every plausible navmesh component;
-- record live positions on every floor and at the entrance, middle, and exit
-  of every transition;
-- confirm disconnected projected crossings retain separate boundaries and
-  cyan/violet floor styling;
-- treat any unclassified or unvisited plausible area as partial, not complete;
+- regenerate each path graph twice and compare hashes;
+- validate finite nodes, bidirectional edges, page metadata, and native parity;
+- resolve every component that can affect a supported destination or normal
+  route, excluding roofs and irrelevant geometry with evidence;
+- record live entrance, midpoint, and exit positions for every authored
+  transition exception and every concrete defect being corrected;
+- confirm projected crossings do not become false graph junctions;
+- inspect the complete graph using Developer mode's **Show all pathing** web;
+- test representative long routes, endpoint snapping, and off-route recovery;
+- treat any unresolved destination-affecting component as partial;
 - run `git diff --check`;
 - reload the installed addon and confirm its version in the game log;
 - document any zone-specific exception next to the map asset;
@@ -352,14 +359,14 @@ For Windurst Woods, `assets/maps/241.md` is the concrete provenance example.
 
 The repository does not yet have automated checks for:
 
-- `structure_image`, `structure_pages`, and `structure_layers` paths that do
-  not exist;
-- mismatched layer dimensions, missing per-pixel alpha, or unexpected alpha
-  bounds;
-- nondeterministic asset regeneration;
-- incomplete page/component provenance or live route-audit evidence;
-- reintroduction of entity-name rendering.
+- completeness of destination catalogs against every upstream source;
+- whether every nearby disconnected component is routing-relevant;
+- automated live truth of doors, stairs, ramps, elevators, and zoning
+  thresholds when deterministic evidence or player review identifies a defect;
+- representative route quality and off-route recovery in game;
+- reintroduction of structure controls or entity-name rendering.
 
-Until those checks exist, every item in the completion checklist above is a
-required manual gate. A clean Lua load and a visually plausible screenshot do
-not cover these gaps.
+Until those checks exist, every item in the completion checklist above remains
+a publication gate. The graph web replaces speculative seam-by-seam
+walkthroughs, but a clean Lua load and a visually plausible screenshot still do
+not validate reported defects or authored transition exceptions.

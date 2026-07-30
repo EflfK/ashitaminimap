@@ -1,13 +1,29 @@
-# Required navmesh component and transition audit
+# Navmesh component and transition analysis
 
-This component audit is only one part of completing a non-vanilla map. Any
-authored structure, calibration, path graph, or static overlay triggers the
-repository-wide **Non-vanilla map completeness invariant** in `AGENTS.md`.
-Before calling the map complete, its provenance must also account for Home
-Points, Survival Guides, Treasure Chests, Treasure Coffers, relevant
-notorious-monster references, and a page-owned navigation graph. Each static
-category must be populated, proven empty from a pinned source, or explicitly
-left unresolved. Missing data is not proof that a layer is empty.
+## Routing-first scope
+
+This document preserves the stricter structure-rendering workflow for the day
+that visible structure layers are explicitly restored. Normal `complete map`
+work is routing-first: do not generate or expand structure images, and do not
+require exhaustive decorative-component classification merely to publish a
+cyan overlay.
+
+Component, elevation, floor, and transition analysis remains mandatory wherever
+it can affect routing. Resolve every component near a supported destination,
+known route, zone exit, alternate floor, or plausible connector. Exclude roofs,
+decorative collision, private cutscene spaces, false links, and irrelevant
+islands with deterministic evidence. Verify ambiguous stairs, ramps, bridges,
+doors, elevators, zoning thresholds, and navmesh seams live.
+
+The structure-specific texture, color, opacity, and provenance rules below
+apply only when the user explicitly requests visible structure work. They are
+not a prerequisite for a routing-only production graph.
+
+Routing completion still accounts for Home Points, Survival Guides, Treasure
+Chests, Treasure Coffers, relevant notorious-monster references, zone exits,
+and a page-owned navigation graph. Each static category must be populated,
+proven empty from a pinned source, or explicitly left unresolved. Missing data
+is not proof that a category is empty.
 
 Read this document before creating, correcting, or declaring complete any
 authored walkable-structure map. It records the coverage failures found while
@@ -44,7 +60,7 @@ live-Z equivalent, and whether it was selected, explicitly excluded, or left
 unresolved. Review it before inspecting the PNG. An unresolved component
 remains unresolved even when it is too small to notice at overview zoom.
 
-## Completion gate: classify components before publishing
+## Structure-work gate: classify components before publishing a structure layer
 
 Before calling a map complete, inventory the Detour components and classify
 every component that is spatially near the stock map, selected geometry, a
@@ -181,10 +197,10 @@ nonmatching layer at the independently configured
 
 Use narrow nonoverlapping Z ranges derived from live transition samples. A
 transition-only stripe layer may omit bounds and use a moderate fixed
-`opacity`. The config UI exposes **Current floor opacity** and **Other floors
-opacity** separately. Do not hardcode the inactive value in map metadata. Keep
-inactive floors faint but visible so they still provide orientation and warn
-about projected crossings.
+`opacity`. These retained settings are hidden from the normal config UI while
+structure rendering is dormant. If structure rendering is explicitly restored,
+do not hardcode the inactive value in map metadata; keep inactive floors faint
+but visible so they still warn about projected crossings.
 
 Every multi-texture set in `ashitaminimap_maps.lua` must use
 `structure_layer_set`. Each record must declare `minimum_player_z` and/or
@@ -238,7 +254,8 @@ walkable coverage.
 Before committing, answer all of these with evidence:
 
 - Did every named floor receive live or deterministic component review?
-- Did every transition receive entrance, middle, and exit checks?
+- Did every authored transition exception receive entrance, middle, and exit
+  checks?
 - Are any small nearby components still unclassified?
 - Does any seed overlap polygons at multiple elevations?
 - Were disconnected floors kept in separate textures?

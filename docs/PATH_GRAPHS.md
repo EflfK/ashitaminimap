@@ -43,44 +43,26 @@ future map. A shortest-path result is only accepted after its complete route
 has been checked for walls, railings, floor changes, stairs, ramps, doors, and
 other transitions.
 
-## Shared topology for structure and routing
+## Routing-first topology
 
-`generate_walkable_map.py` and `generate_path_graph.py` use the same native
-Detour reader. Structure generation uses polygon geometry for the visible mask
-and native adjacency for seeded component selection; path generation uses the
-same adjacency for A*. Both accept the same `--transition`, `--blocked-link`,
-`--transition-snap-radius`, `--maximum-step`, and `--adjacency-mode` syntax.
+`generate_path_graph.py` reads native Detour topology directly. A production
+graph must be explainable from verified seeds, elevation bounds, blocked links,
+and transitions without requiring a visible structure PNG.
 
-For every new or regenerated structure layer:
+`--mask` remains available as an optional internal diagnostic selector for
+retained legacy assets. It is not a routing-completion requirement, must not be
+used as the only evidence that an area is reachable, and must never force the
+author to generate or publish a structure image.
 
-```text
-python tools/generate_walkable_map.py <zone.obj> <zone.nav> <structure.png> \
-  --origin-x <x> --origin-y <y> --pixels-per-yalm <scale> \
-  --seed=<verified-x>,<verified-y> \
-  --blocked-link=<verified-endpoints-if-any> \
-  --transition=<verified-endpoints-for-this-layer-if-any> \
-  --component-report=<component-report.json>
-```
+Native mode is the production default. Inferred mode is comparison-only.
+Review every component that is near a supported destination, known route,
+alternate floor, zone exit, or plausible connector. Decorative or irrelevant
+components may be excluded once deterministic evidence proves that they cannot
+affect a normal route; they do not require exhaustive structure-image
+classification.
 
-Native mode is the production default. Inferred mode exists only to compare the
-old geometric reconstruction. Review every component report and copy its
-classification evidence into zone provenance. The structure report prevents
-silent geometry omissions; the path audit prevents production graph drift.
-
-Regenerate and audit every existing production structure selector with:
-
-```text
-python tools/audit_structure_catalog.py <xiNavmeshOBJs>/obj <xiNavmeshes> \
-  --markdown-report assets/maps/STRUCTURE_TOPOLOGY_AUDIT.md
-```
-
-The command fails when native and inferred selector output differs or when an
-exactly reproducible committed PNG drifts from native output.
-
-Cross-floor transitions remain in the page's path job, but they must not
-flatten separately styled floor layers. A structure-layer command includes
-only verified transitions whose two endpoints belong to that layer; provenance
-records the remaining cross-layer connection.
+`tools/audit_structure_catalog.py` is retained only for an explicitly requested
+structure audit. It is not part of the routing-first completion gate.
 
 ## Runtime behavior
 
@@ -122,13 +104,18 @@ attach the player to a projected path on another floor.
 
 ## Deterministic generation
 
-Generate a graph from the same pinned Detour `.nav` source used by the map:
+Generate a graph from the pinned Detour `.nav` source:
 
 ```text
 python tools/generate_path_graph.py <zone.nav> assets/paths/<zone-id>.lua \
   --zone-id <zone-id> --page-id <page-id> \
   --seed=<verified-world-x>,<verified-world-y>
 ```
+
+Do not add `--mask` merely because an authored map previously displayed a
+structure layer. Prefer truthful seeds and elevation bounds, then prove every
+destination-affecting component through deterministic inspection and attended
+route tests.
 
 When a verified walkable staircase or ramp is split by source-navmesh gaps,
 repeat `--transition` to join only the aligned polygons:
@@ -195,9 +182,12 @@ components. A suggested component pair is never proof of a staircase, door, or
 other transition.
 
 The auditor is a required completion gate, not an optional diagnostic. Its
-production/native comparison must pass. Disconnected-component advisories must
-be reviewed against structure and live evidence, but they must never be
-converted automatically into links. Traveling-salesman or nearest-neighbor
+production/native comparison must pass. Destination- or route-affecting
+disconnected-component advisories must be reviewed against collision,
+navmesh, existing live evidence, and the Developer mode graph web. They must
+never be converted automatically into links. A focused live traversal is
+required when adding an exception link or correcting a reported defect, not
+merely because a nearby component exists. Traveling-salesman or nearest-neighbor
 logic may choose an order among multiple destinations only after each leg has
 a truthful graph route; it must never infer map connectivity.
 
@@ -207,10 +197,14 @@ a truthful graph route; it must never infer map connectivity.
 - Use a verified live seed; never infer it from a map-grid label.
 - Confirm graph node and edge counts are identical across two generations.
 - Run the catalog audit and require production/native parity. Investigate every
-  native/inferred delta and every nearby-component advisory against the rendered
-  structure and a live traversal; never add an edge from proximity alone.
+  native/inferred delta and every destination- or route-affecting nearby
+  component against collision/navmesh evidence and the full-graph overlay.
+  Never add an edge from proximity alone; live-verify any authored exception.
 - Confirm every linked node index exists and every edge is bidirectional.
 - Test endpoint snapping near the intended entrances, exits, and destination.
+- Enable Developer mode and **Show all pathing** to inspect the complete graph
+  web. Use focused attended checkpoints for concrete defects instead of a
+  speculative walkthrough of every possible seam.
 - Test overlapping X/Y points on different elevations and confirm each snaps
   only to its own floor.
 - Test at least one connected route and one deliberately disconnected target.

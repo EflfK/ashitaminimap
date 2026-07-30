@@ -2,12 +2,12 @@
 
 The Windurst, Bastok, and San d'Oria production-map packs are intentionally
 deferred. Their locally imported vanilla pages remain available as fallbacks,
-but no capital-city set is complete under the current non-vanilla map
-completeness invariant.
+but no capital-city set is complete under the routing-first map invariant.
 
-Do not describe the following maps as complete until each zone has passed the
-full component, transition, static-reference, path-graph, deterministic-build,
-deployment, and attended live-route audits:
+Do not describe the following maps as complete until each zone has accurate
+stock calibration, supported destinations, a deterministic path graph, all
+destination-affecting components and transitions resolved, deployment
+verification, and attended live-route tests:
 
 | Nation | Zone | Current status |
 | --- | --- | --- |
@@ -17,17 +17,18 @@ deployment, and attended live-route audits:
 | San d'Oria | Chateau d'Oraguille (`233`) | Vanilla fallback only |
 | Bastok | Bastok Mines (`234`) | Vanilla fallback only |
 | Bastok | Bastok Markets (`235`) | Vanilla fallback only |
-| Bastok | Port Bastok (`236`) | Legacy flattened prototype; production rebuild required |
-| Bastok | Metalworks (`237`) | Legacy structure prototype; production rebuild required |
+| Bastok | Port Bastok (`236`) | Existing graph; routing and destination re-audit required |
+| Bastok | Metalworks (`237`) | Existing graph; routing and destination re-audit required |
 | Windurst | Windurst Waters (`238`) | Vanilla fallback only; active stock pages are `1` and `2` |
-| Windurst | Windurst Walls (`239`) | Vanilla fallback only |
-| Windurst | Port Windurst (`240`) | Vanilla fallback only |
-| Windurst | Windurst Woods (`241`) | Existing calibrated structure; complete modern component and route re-audit required |
-| Windurst | Heaven's Tower (`242`) | Vanilla fallback only; stock calibration remains unresolved |
+| Windurst | Windurst Walls (`239`) | Routing-first graph and destination catalog complete; partial dormant structure evidence retained |
+| Windurst | Port Windurst (`240`) | Routing-first graph and destination catalog complete |
+| Windurst | Windurst Woods (`241`) | Existing graph; complete modern routing and destination re-audit required |
+| Windurst | Heaven's Tower (`242`) | Routing-first multi-floor graph and destination catalog complete |
 
 When this work resumes, read all map-authoring documents before changing
-assets. Preserve the existing exact stock calibration evidence for zones
-`230` through `241`, but independently verify every generated component and
-page assignment. Conduct the attended traversal one zone at a time and record
-entrance, midpoint, and exit coordinates for every floor transition before
-publishing a production layer.
+routing or calibration. Preserve the existing exact stock calibration evidence
+for zones `230` through `241` and all dormant structure artifacts. Conduct the
+attended traversal only for concrete defects and authored exception edges,
+recording entrance, midpoint, and exit coordinates before publishing those
+corrections. Use the Developer mode graph web for broad review. Do not generate
+or expand structure images unless explicitly requested.

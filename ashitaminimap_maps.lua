@@ -106,6 +106,27 @@ return {
             { kind = 'home_point', name = 'Home Point #1', unlock_index = 16, x = 46.000, y = -19.000, z = -14.000 },
         }),
     },
+    [239] = {
+        name = 'Windurst Walls',
+        stock_calibration = true,
+        -- Preserved partial structure evidence. Runtime structure rendering is
+        -- dormant; routing completion does not depend on this texture.
+        structure_image = 'assets/maps/239_partial_structure.png',
+        width = 512,
+        height = 512,
+        view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
+        grid_origin_x = 255.0,
+        grid_origin_y = 256.0,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 19, x = -72.069, y = 124.784, z = -5.013 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 20, x = -212.000, y = -99.000, z = 0.001 },
+            { kind = 'home_point', name = 'Home Point #3', unlock_index = 21, x = 31.000, y = -40.000, z = -6.500 },
+        }),
+        treasure_spawns = {
+            { kind = 'coffer', page_id = 0, x = -214.300, y = -147.650, z = 0.000 },
+        },
+        nm_spawn_ranges = {},
+    },
     [241] = {
         name = 'Windurst Woods',
         vanilla_image = 'assets/maps/241_vanilla.png',
@@ -258,7 +279,7 @@ return {
         -- Page 16 fallback values; the live page record supplies exact values.
         origin_x = 352.0,
         origin_y = 336.0,
-        grid_origin_x = 256.0,
+        grid_origin_x = 255.0,
         grid_origin_y = 256.0,
         grid_yalms = 80,
         image_pixels_per_yalm = 0.40,
@@ -479,5 +500,100 @@ return {
                 page_id = 1,
             },
         }),
+    },
+    [151] = {
+        name = 'Castle Oztroja',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 38, x = -221.000, y = -13.000, z = 0.250 },
+        }),
+        treasure_spawns = {
+            { kind = 'chest', x =    7.378, y = -193.590, z = -16.293 },
+            { kind = 'chest', x =  -52.531, y =  -12.087, z =  24.218 },
+            { kind = 'chest', x =  -79.345, y =  -39.930, z =  23.731 },
+            { kind = 'chest', x = -107.048, y =  -67.696, z =  24.218 },
+            { kind = 'chest', x =  113.076, y =  -85.606, z = -16.326 },
+            { kind = 'chest', x =   50.230, y = -186.078, z = -16.000 },
+            { kind = 'chest', x =   66.460, y = -140.403, z =  -4.285 },
+            { kind = 'chest', x = -167.569, y =  193.410, z = -16.293 },
+            { kind = 'chest', x = -274.293, y =  193.509, z = -16.285 },
+            { kind = 'chest', x = -206.721, y =   85.103, z = -16.000 },
+            { kind = 'chest', x = -213.101, y =  139.820, z =  -4.285 },
+            { kind = 'chest', x = -102.026, y =  180.448, z = -52.000 },
+            { kind = 'chest', x =  -19.589, y =  -15.309, z = -15.750 },
+            { kind = 'coffer', x = -102.723, y = -222.555, z = -60.000 },
+            { kind = 'coffer', x = -266.089, y =  -20.133, z = -15.750 },
+            { kind = 'coffer', x = -262.641, y =  -60.291, z = -20.000 },
+            { kind = 'coffer', x = -144.194, y =  -15.149, z = -39.729 },
+            { kind = 'coffer', x =  -80.274, y =  -80.277, z = -40.203 },
+            { kind = 'coffer', x =  -15.114, y = -134.880, z = -39.745 },
+            { kind = 'coffer', x =  -13.623, y = -184.540, z = -39.834 },
+            { kind = 'coffer', x =  -60.369, y = -146.231, z = -71.750 },
+            { kind = 'coffer', x = -139.729, y =  -53.252, z = -71.750 },
+            { kind = 'coffer', x = -100.197, y =  -13.141, z = -72.511 },
+        },
+    },
+    [157] = {
+        name = 'Middle Delkfutt\'s Tower',
+        stock_calibration = true,
+        travel_references = travel_reference_set({}),
+        treasure_spawns = {
+            { kind = 'chest', x = -339.909, y =  20.816, z = -127.601 },
+            { kind = 'chest', x = -420.058, y =  99.913, z = -127.601 },
+            { kind = 'chest', x = -398.356, y =  20.397, z = -127.424 },
+            { kind = 'chest', x = -499.848, y =  20.397, z = -127.601 },
+            { kind = 'chest', x = -359.633, y = -39.286, z = -111.424 },
+            { kind = 'chest', x = -416.369, y =  62.454, z = -112.000 },
+            { kind = 'chest', x = -425.616, y =  -0.879, z = -111.424 },
+            { kind = 'chest', x = -504.196, y =  55.353, z = -112.000 },
+        },
+    },
+    [158] = {
+        name = 'Upper Delkfutt\'s Tower',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 71, x = -365.000, y = -36.000, z = -176.500 },
+        }),
+        treasure_spawns = {
+            { kind = 'chest', x = -380.060, y = 20.603, z = -143.601 },
+            { kind = 'chest', x = -333.356, y = -0.481, z = -144.016 },
+            { kind = 'chest', x = -250.738, y = 72.633, z = -144.019 },
+            { kind = 'chest', x = -220.087, y = 19.370, z = -143.601 },
+        },
+    },
+    [184] = {
+        name = 'Lower Delkfutt\'s Tower',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 46, x = 464.000, y = -51.000, z = 0.000 },
+        }),
+        treasure_spawns = {},
+    },
+    [192] = {
+        name = 'Inner Horutoto Ruins',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 30, x = 453.000, y = 182.300, z = -8.000 },
+        }),
+        treasure_spawns = {
+            { kind = 'chest', x = -177.956, y = -220.058, z = -0.002 },
+        },
+    },
+    [240] = {
+        name = 'Port Windurst',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 22, x = -188.000, y = 101.000, z = -4.000 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 23, x = -207.000, y = 210.000, z = -8.159 },
+            { kind = 'home_point', name = 'Home Point #3', unlock_index = 24, x = 180.000, y = 226.000, z = -12.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 2, x = -220.000, y = 179.000, z = -8.284 },
+        }),
+        treasure_spawns = {},
+    },
+    [242] = {
+        name = 'Heaven\'s Tower',
+        stock_calibration = true,
+        travel_references = travel_reference_set({}),
+        treasure_spawns = {},
     },
 }

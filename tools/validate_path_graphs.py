@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import math
 import re
+from collections import deque
 from pathlib import Path
 
 
@@ -22,7 +23,20 @@ NODE_PATTERN = re.compile(
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description=(
+            "Validate display-only routing graphs independently of structure "
+            "images."
+        )
+    )
+    parser.add_argument(
+        "--require-connected",
+        action="store_true",
+        help=(
+            "fail when a graph contains more than one connected component; "
+            "use for zones whose supported destinations must all interroute"
+        ),
+    )
     parser.add_argument("graphs", nargs="+", type=Path)
     return parser.parse_args()
 
@@ -51,7 +65,7 @@ def parse_graph(path: Path) -> tuple[int, int | None, float, list[tuple]]:
     return zone_id, page_id, snap_radius, nodes
 
 
-def validate(path: Path) -> tuple[int, int]:
+def validate(path: Path, require_connected: bool = False) -> tuple[int, int]:
     zone_id, page_id, snap_radius, nodes = parse_graph(path)
     if zone_id <= 0:
         raise ValueError(f"{path}: invalid zone_id {zone_id}")
@@ -80,12 +94,26 @@ def validate(path: Path) -> tuple[int, int]:
             raise ValueError(
                 f"{path}: edge {edge[0]} -> {edge[1]} is not bidirectional"
             )
+    if require_connected:
+        visited = {1}
+        pending = deque([1])
+        while pending:
+            current = pending.popleft()
+            for neighbor in nodes[current - 1][3]:
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    pending.append(neighbor)
+        if len(visited) != len(nodes):
+            raise ValueError(
+                f"{path}: graph has disconnected routing components "
+                f"({len(visited)}/{len(nodes)} nodes reachable from node 1)"
+            )
     return len(nodes), len(edges) // 2
 
 
 def main() -> None:
     for path in args.graphs:
-        nodes, edges = validate(path)
+        nodes, edges = validate(path, args.require_connected)
         print(f"{path}: {nodes} nodes, {edges} bidirectional edges")
 
 

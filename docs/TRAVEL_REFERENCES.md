@@ -44,11 +44,19 @@ structure maps use `z` to dim references that belong to another authored floor.
 | Zone | Map | Home Points | Survival Guides |
 | ---: | --- | ---: | ---: |
 | 107 | South Gustaberg | 0 | 0 |
+| 151 | Castle Oztroja | 0 | 1 |
+| 157 | Middle Delkfutt's Tower | 0 | 0 |
+| 158 | Upper Delkfutt's Tower | 1 | 0 |
 | 174 | Kuftal Tunnel | 0 | 1 |
+| 184 | Lower Delkfutt's Tower | 0 | 1 |
+| 192 | Inner Horutoto Ruins | 0 | 1 |
 | 200 | Garlaige Citadel | 0 | 1 |
 | 236 | Port Bastok | 2 | 0 |
 | 237 | Metalworks | 1 | 0 |
+| 239 | Windurst Walls | 3 | 0 |
+| 240 | Port Windurst | 3 | 1 |
 | 241 | Windurst Woods | 5 | 0 |
+| 242 | Heaven's Tower | 0 | 0 |
 | 243 | Ru'Lude Gardens | 2 | 1 |
 | 244 | Upper Jeuno | 3 | 0 |
 | 245 | Lower Jeuno | 2 | 0 |

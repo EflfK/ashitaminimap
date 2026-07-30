@@ -12,9 +12,10 @@ return {
     -- 210 px mask * 0.70 zoom / 100 * 3.00 UI scale = 4.41.
     pixels_per_yalm = 4.41,
 
-    -- Independently composited map layers.
+    -- Vanilla reference map. Structure settings below are retained only for
+    -- forward compatibility while structure rendering is dormant.
     show_map_vanilla = true,
-    show_map_structure = true,
+    show_map_structure = false,
     vanilla_opacity = 0.35,
     structure_opacity = 0.82,
     inactive_floor_opacity = 0.14,
@@ -30,6 +31,9 @@ return {
     show_coffer_spawns = true,
     -- Draw a map-owned shortest path to AshitaGuide's current destination.
     show_guide_paths = true,
+    -- Display-only diagnostic features. Both are disabled by default.
+    developer_mode = false,
+    show_all_pathing = false,
     show_players = true,
     show_npcs = true,
     show_monsters = true,
