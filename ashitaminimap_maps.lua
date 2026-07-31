@@ -1728,7 +1728,7 @@ return {
         -- footprints are spatially disjoint, so exact graph-derived bounds
         -- select immediately and component seeds remain the fallback.
         page_rules = {
-            { page_id = 4, minimum_x = -340.0, maximum_x = -235.0, minimum_y =   80.0, maximum_y =  310.0 },
+            { page_id = 4, minimum_x = -340.0, maximum_x = -225.0, minimum_y =  -55.0, maximum_y =  310.0, minimum_z = -4.0, maximum_z = 12.0 },
             { page_id = 1, minimum_x =  365.0, maximum_x =  475.0, minimum_y =   95.0, maximum_y =  205.0 },
             { page_id = 3, minimum_x = -235.0, maximum_x = -170.0, minimum_y =    5.0, maximum_y =   85.0, maximum_z = -10.0 },
             { page_id = 2, minimum_x = -275.0, maximum_x =  275.0, minimum_y = -265.0, maximum_y =  150.0, minimum_z = -4.0, maximum_z = 12.0 },
