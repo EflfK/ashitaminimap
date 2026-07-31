@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.18.5';
+addon.version   = '1.18.6';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -26,9 +26,10 @@ local ENTITY_FLOOR_TOLERANCE = 8.0;
 local PATH_FLOOR_TOLERANCE = 4.0;
 local MAP_CORNER_RADIUS = 7.0;
 local SHOW_MAP_CALIBRATION = false;
--- Structure rendering is intentionally dormant. Keep the implementation,
--- metadata, and assets intact so attended development can restore it later,
--- but normal operation must not load or draw structure textures.
+-- General structure rendering is intentionally dormant. Keep the
+-- implementation, metadata, and assets intact so attended development can
+-- restore it later. A map may force one narrowly authored correction overlay
+-- after live traversal proves that the stock artwork omits walkable geometry.
 local STRUCTURE_RENDERING_ENABLED = false;
 
 local DEFAULTS = {
@@ -3974,8 +3975,18 @@ local function render_minimap()
         and texture_for(vanilla_image)
         or nil;
     local structure_layers = {};
-    if (STRUCTURE_RENDERING_ENABLED
-            and state.settings.show_map_structure == true) then
+    local force_structure_overlay = map.force_structure_overlay == true;
+    local draw_structure = force_structure_overlay
+        or (STRUCTURE_RENDERING_ENABLED
+            and state.settings.show_map_structure == true);
+    local structure_opacity = force_structure_overlay
+        and clamp(map.force_structure_opacity or 0.72, 0, 1)
+        or state.settings.structure_opacity;
+    local inactive_structure_opacity = force_structure_overlay
+        and clamp(map.force_inactive_structure_opacity
+            or structure_opacity, 0, 1)
+        or state.settings.inactive_floor_opacity;
+    if (draw_structure) then
         if (type(map.structure_layers) == 'table') then
             for _, layer in ipairs(map.structure_layers) do
                 local image = type(layer) == 'table' and layer.image or layer;
@@ -3992,13 +4003,13 @@ local function render_minimap()
                             floor_layer_matches_z(layer, player_z);
                         if (is_bounded and player_z ~= nil) then
                             opacity = opacity * (is_current_floor
-                                and state.settings.structure_opacity
-                                or state.settings.inactive_floor_opacity);
+                                and structure_opacity
+                                or inactive_structure_opacity);
                         else
-                            opacity = opacity * state.settings.structure_opacity;
+                            opacity = opacity * structure_opacity;
                         end
                     else
-                        opacity = opacity * state.settings.structure_opacity;
+                        opacity = opacity * structure_opacity;
                     end
                     structure_layers[#structure_layers + 1] = {
                         texture = texture,
@@ -4024,7 +4035,7 @@ local function render_minimap()
             if (texture ~= nil) then
                 structure_layers[1] = {
                     texture = texture,
-                    opacity = state.settings.structure_opacity,
+                    opacity = structure_opacity,
                 };
             end
         end

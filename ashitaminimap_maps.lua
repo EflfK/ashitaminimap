@@ -1710,6 +1710,19 @@ return {
     [192] = {
         name = 'Inner Horutoto Ruins',
         stock_calibration = true,
+        -- Stock page 2 omits the walkable continuation south of its D-10
+        -- room. This focused, live-verified overlay keeps the exact stock
+        -- transform while showing that retained navmesh component.
+        force_structure_overlay = true,
+        force_structure_opacity = 0.72,
+        structure_pages = {
+            [2] = structure_layer_set({
+                {
+                    image = 'assets/maps/192_02_structure.png',
+                    floor_selection = 'always',
+                },
+            }),
+        },
         -- Without Minimap.dll, the catalog default kept Lily Tower page 1
         -- active in all four disconnected tower sections. Their retained
         -- footprints are spatially disjoint, so exact graph-derived bounds
