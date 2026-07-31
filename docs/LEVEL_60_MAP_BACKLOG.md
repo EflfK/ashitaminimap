@@ -14,29 +14,29 @@ gate.
 
 ## Level 1-10
 
-- [ ] West Ronfaure (`100`) — batch 1 partial
-- [ ] East Ronfaure (`101`) — batch 1 partial
-- [ ] North Gustaberg (`106`) — batch 1 partial
-- [ ] South Gustaberg (`107`) — batch 2 partial
+- [ ] West Ronfaure (`100`) — batch 15 re-audited partial
+- [ ] East Ronfaure (`101`) — batch 15 re-audited partial
+- [ ] North Gustaberg (`106`) — batch 16 expanded/re-audited partial
+- [ ] South Gustaberg (`107`) — batch 16 re-audited partial
 - [x] West Sarutabaruta (`115`)
 - [x] East Sarutabaruta (`116`)
 
 ## Level 10-20
 
-- [ ] La Theine Plateau (`102`) — batch 2 partial
-- [ ] Konschtat Highlands (`108`) — batch 2 partial
+- [ ] La Theine Plateau (`102`) — batch 16 re-audited partial
+- [ ] Konschtat Highlands (`108`) — batch 17 re-audited partial
 - [x] Tahrongi Canyon (`117`)
-- [ ] Valkurm Dunes (`103`) — batch 3 partial
+- [ ] Valkurm Dunes (`103`) — batch 17 re-audited partial
 - [x] Buburimu Peninsula (`118`)
-- [ ] King Ranperre's Tomb (`190`) — batch 3 partial
-- [ ] Dangruf Wadi (`191`) — batch 3 partial
-- [ ] Zeruhn Mines (`172`) — batch 4 partial
+- [ ] King Ranperre's Tomb (`190`) — batch 17 re-audited partial
+- [ ] Dangruf Wadi (`191`) — batch 18 re-audited partial
+- [ ] Zeruhn Mines (`172`) — batch 18 re-audited partial
 - [x] Inner Horutoto Ruins (`192`)
 - [x] Outer Horutoto Ruins (`194`)
 
 ## Level 20-30
 
-- [ ] Jugner Forest (`104`) — batch 4 partial
+- [ ] Jugner Forest (`104`) — batch 18 re-audited partial
 - [ ] Pashhow Marshlands (`109`) — batch 4 partial
 - [ ] Meriphataud Mountains (`119`) — batch 5 partial
 - [ ] Ghelsba Outpost (`140`) — batch 5 partial
@@ -84,10 +84,10 @@ gate.
 - [ ] Castle Zvahl Baileys (`161`) — batch 13 partial
 - [ ] Castle Zvahl Keep (`162`) — batch 13 partial
 - [ ] The Boyahda Tree (`153`) — batch 13 partial
-- [ ] Kuftal Tunnel (`174`) — re-audit
-- [ ] Wajaom Woodlands (`51`)
-- [ ] Bhaflau Thickets (`52`)
-- [ ] Caedarva Mire (`79`)
+- [ ] Kuftal Tunnel (`174`) — batch 14 re-audited partial
+- [ ] Wajaom Woodlands (`51`) — batch 14 partial
+- [ ] Bhaflau Thickets (`52`) — batch 14 partial
+- [ ] Caedarva Mire (`79`) — batch 15 partial
 
 ## Batch order
 
