@@ -60,28 +60,28 @@ gate.
 - [ ] Yhoator Jungle (`124`) — batch 23 re-audited partial
 - [ ] Gusgen Mines (`196`) — batch 23 re-audited partial
 - [ ] Davoi (`149`) — batch 23 expanded/re-audited partial
-- [ ] Beadeaux (`147`) — partial
+- [ ] Beadeaux (`147`) — batch 24 expanded/re-audited partial
 - [x] Castle Oztroja (`151`)
 
 ## Level 40-50
 
-- [ ] Crawler's Nest (`197`) — batch 9 partial
-- [ ] Garlaige Citadel (`200`) — partial
-- [ ] Eastern Altepa Desert (`114`) — batch 9 partial
-- [ ] Western Altepa Desert (`125`) — batch 10 partial
-- [ ] Quicksand Caves (`208`) — batch 10 partial
-- [ ] The Sanctuary of Zi'Tah (`121`) — batch 10 partial
-- [ ] Labyrinth of Onzozo (`213`) — batch 11 partial
-- [ ] The Eldieme Necropolis (`195`) — partial
-- [ ] Gustav Tunnel (`212`) — batch 11 partial
-- [ ] Bostaunieux Oubliette (`167`) — batch 11 partial
-- [ ] Fei'Yin (`204`) — batch 12 partial
+- [ ] Crawler's Nest (`197`) — batch 24 re-audited partial
+- [ ] Garlaige Citadel (`200`) — batch 24 expanded/re-audited partial
+- [ ] Eastern Altepa Desert (`114`) — batch 25 re-audited partial
+- [ ] Western Altepa Desert (`125`) — batch 25 re-audited partial
+- [ ] Quicksand Caves (`208`) — batch 25 corrected/re-audited partial
+- [ ] The Sanctuary of Zi'Tah (`121`) — batch 26 re-audited partial
+- [ ] Labyrinth of Onzozo (`213`) — batch 26 re-audited partial
+- [ ] The Eldieme Necropolis (`195`) — batch 26 expanded/re-audited partial
+- [ ] Gustav Tunnel (`212`) — batch 27 re-audited partial
+- [ ] Bostaunieux Oubliette (`167`) — batch 27 re-audited partial
+- [ ] Fei'Yin (`204`) — batch 27 re-audited partial
 
 ## Level 50-60
 
-- [ ] Xarcabard (`112`) — batch 12 partial
-- [ ] Beaucedine Glacier (`111`) — batch 12 partial
-- [ ] Castle Zvahl Baileys (`161`) — batch 13 partial
+- [ ] Xarcabard (`112`) — batch 28 expanded/re-audited partial
+- [ ] Beaucedine Glacier (`111`) — batch 28 re-audited partial
+- [ ] Castle Zvahl Baileys (`161`) — batch 28 re-audited partial
 - [ ] Castle Zvahl Keep (`162`) — batch 13 partial
 - [ ] The Boyahda Tree (`153`) — batch 13 partial
 - [ ] Kuftal Tunnel (`174`) — batch 14 re-audited partial
