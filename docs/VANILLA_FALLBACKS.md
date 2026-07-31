@@ -82,6 +82,23 @@ per-page fallback origin, scale, and grid anchor. These values are used only
 when neither the stock record nor Minimap.dll provides the corresponding live
 metadata; live calibration remains authoritative.
 
+For an irregular dungeon whose pages cannot be separated truthfully with
+rectangular X/Y/Z rules, `page_graph_seeds` can assign retained navigation
+components to stock pages. Each record supplies a page and one exact point on
+that component:
+
+```lua
+page_graph_seeds = {
+    { page_id = 15, x = 100.0, y = 20.0, z = -32.0 },
+}
+```
+
+In automatic mode, the runtime snaps the live player to the shared graph and
+uses the seed assigned to that connected component. Every retained component
+that should select a page needs exactly one non-conflicting seed. Areas absent
+from a partial graph deliberately fall through to the normal stock/default
+selection instead of borrowing a nearby page.
+
 ## Validation
 
 After each import:

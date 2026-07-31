@@ -1707,6 +1707,33 @@ return {
     [195] = {
         name = 'The Eldieme Necropolis',
         stock_calibration = true,
+        -- Page 14 is blank parchment. Without Minimap.dll, select pages 15-17
+        -- from the retained navigation component nearest the live player.
+        -- Every retained component has one deterministic graph-node seed.
+        page_graph_seeds = {
+            { page_id = 16, x = -499.200, y =  538.800, z = -12.112 },
+            { page_id = 16, x = -383.625, y =  337.000, z =  -3.232 },
+            { page_id = 16, x =  -64.333, y =  336.667, z = -16.299 },
+            { page_id = 16, x =  340.800, y =  339.000, z = -52.112 },
+            { page_id = 16, x = -654.500, y =  213.500, z =  -0.632 },
+            { page_id = 16, x = -299.000, y =  178.900, z = -12.352 },
+            { page_id = 16, x =   64.500, y =  179.167, z = -36.699 },
+            { page_id = 15, x =  172.125, y =  178.875, z =  -4.532 },
+            { page_id = 15, x =  160.333, y =  159.000, z = -28.032 },
+            { page_id = 15, x =  125.800, y =  140.400, z = -32.032 },
+            { page_id = 15, x =  180.000, y =  114.000, z = -32.032 },
+            { page_id = 15, x =  100.000, y =  101.375, z = -33.832 },
+            { page_id = 15, x =  260.000, y =  101.375, z = -33.832 },
+            { page_id = 15, x =  279.083, y =   59.750, z =  -0.032 },
+            { page_id = 15, x =   41.125, y =   38.875, z = -28.032 },
+            { page_id = 15, x =   95.625, y =   20.000, z = -32.032 },
+            { page_id = 15, x =  256.500, y =   20.625, z = -32.032 },
+            { page_id = 15, x =  180.125, y =  -41.500, z = -32.032 },
+            { page_id = 15, x =  100.000, y =  -58.625, z = -33.832 },
+            { page_id = 15, x =  260.000, y =  -58.625, z = -33.832 },
+            { page_id = 17, x =  174.625, y =  -99.750, z =  -0.932 },
+            { page_id = 17, x =  394.667, y = -300.000, z = -39.499 },
+        },
         travel_references = travel_reference_set({
             { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 21, x = 418.000, y = -99.500, z = -52.500 },
         }),

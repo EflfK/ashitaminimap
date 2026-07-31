@@ -143,6 +143,14 @@ Rules run continuously only in automatic page mode. A user-selected manual
 page remains authoritative. Derive the bounds from verified navmesh geometry
 and live player coordinates; do not estimate them from visual map labels.
 
+When irregular disconnected components overlap in X/Y/Z and cannot be
+described by truthful rectangular rules, use `page_graph_seeds` instead. Give
+every retained connected component one exact graph or live point and its stock
+page. The runtime labels the component from that seed and selects the page from
+the component nearest the live player. Do not use one seed to infer the page of
+another disconnected component, and do not let a partial graph claim page
+coverage for components that it does not retain.
+
 ## Navigation origin and printed-grid origin are different concepts
 
 `origin_x` and `origin_y` identify the image pixel for navigation world

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.18.2';
+addon.version   = '1.18.3';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -759,6 +759,47 @@ state.path_nearest_node = function (graph, x, y, live_z)
         return nil, distance;
     end
     return best_index, distance;
+end
+
+state.path_component_ids = function (graph)
+    if (type(graph) ~= 'table' or type(graph.nodes) ~= 'table') then
+        return nil;
+    end
+    if (type(graph._component_ids) == 'table') then
+        return graph._component_ids;
+    end
+    local component_ids = {};
+    local component_id = 0;
+    for start_index = 1, #graph.nodes do
+        if (component_ids[start_index] == nil) then
+            component_id = component_id + 1;
+            component_ids[start_index] = component_id;
+            local pending = { start_index };
+            while (#pending > 0) do
+                local index = pending[#pending];
+                pending[#pending] = nil;
+                local node = graph.nodes[index];
+                local neighbors = type(node) == 'table' and node[4] or nil;
+                if (type(neighbors) == 'table') then
+                    for _, raw_neighbor in ipairs(neighbors) do
+                        local neighbor = tonumber(raw_neighbor);
+                        if (neighbor ~= nil) then
+                            neighbor = math.floor(neighbor);
+                        end
+                        if (neighbor ~= nil
+                                and neighbor >= 1
+                                and neighbor <= #graph.nodes
+                                and component_ids[neighbor] == nil) then
+                            component_ids[neighbor] = component_id;
+                            pending[#pending + 1] = neighbor;
+                        end
+                    end
+                end
+            end
+        end
+    end
+    graph._component_ids = component_ids;
+    return component_ids;
 end
 
 state.path_waypoint_z = function (
@@ -1961,30 +2002,94 @@ end
 local function authored_page_for_player(zone_id, player)
     local authored = state.maps[zone_id];
     local rules = type(authored) == 'table' and authored.page_rules or nil;
-    if (type(rules) ~= 'table' or player == nil) then
+    if (type(authored) ~= 'table' or player == nil) then
         return nil;
     end
     local player_x = tonumber(player.x);
     local player_y = tonumber(player.y);
     local player_z = tonumber(player.z);
-    for _, rule in ipairs(rules) do
-        local page_id = tonumber(rule.page_id);
-        local matches = page_id ~= nil and player_z ~= nil
-            and player_z >= (tonumber(rule.minimum_z) or -math.huge)
-            and player_z <= (tonumber(rule.maximum_z) or math.huge)
-            and (rule.minimum_x == nil
-                or (player_x ~= nil and player_x >= tonumber(rule.minimum_x)))
-            and (rule.maximum_x == nil
-                or (player_x ~= nil and player_x <= tonumber(rule.maximum_x)))
-            and (rule.minimum_y == nil
-                or (player_y ~= nil and player_y >= tonumber(rule.minimum_y)))
-            and (rule.maximum_y == nil
-                or (player_y ~= nil and player_y <= tonumber(rule.maximum_y)));
-        if (matches) then
-            return math.floor(page_id);
+    if (type(rules) == 'table') then
+        for _, rule in ipairs(rules) do
+            local page_id = tonumber(rule.page_id);
+            local matches = page_id ~= nil and player_z ~= nil
+                and player_z >= (tonumber(rule.minimum_z) or -math.huge)
+                and player_z <= (tonumber(rule.maximum_z) or math.huge)
+                and (rule.minimum_x == nil
+                    or (player_x ~= nil and player_x >= tonumber(rule.minimum_x)))
+                and (rule.maximum_x == nil
+                    or (player_x ~= nil and player_x <= tonumber(rule.maximum_x)))
+                and (rule.minimum_y == nil
+                    or (player_y ~= nil and player_y >= tonumber(rule.minimum_y)))
+                and (rule.maximum_y == nil
+                    or (player_y ~= nil and player_y <= tonumber(rule.maximum_y)));
+            if (matches) then
+                return math.floor(page_id);
+            end
         end
     end
-    return nil;
+    local seeds = authored.page_graph_seeds;
+    if (type(seeds) ~= 'table'
+            or player_x == nil
+            or player_y == nil) then
+        return nil;
+    end
+    local graph = state.path_graph_for(zone_id, nil);
+    if (graph == nil) then
+        return nil;
+    end
+    local component_ids = state.path_component_ids(graph);
+    if (component_ids == nil) then
+        return nil;
+    end
+    if (type(graph._authored_page_ids_by_component) ~= 'table') then
+        local pages_by_component = {};
+        local conflicts = {};
+        for _, seed in ipairs(seeds) do
+            local page_id = tonumber(seed.page_id);
+            local seed_x = tonumber(seed.x);
+            local seed_y = tonumber(seed.y);
+            local seed_z = tonumber(seed.z);
+            if (page_id ~= nil and seed_x ~= nil and seed_y ~= nil) then
+                local node_index = state.path_nearest_node(
+                    graph,
+                    seed_x,
+                    seed_y,
+                    seed_z);
+                local component_id = node_index ~= nil
+                    and component_ids[node_index]
+                    or nil;
+                if (component_id ~= nil) then
+                    page_id = math.floor(page_id);
+                    local previous = pages_by_component[component_id];
+                    if (previous == nil or previous == page_id) then
+                        pages_by_component[component_id] = page_id;
+                    else
+                        pages_by_component[component_id] = false;
+                        conflicts[component_id] = true;
+                    end
+                end
+            end
+        end
+        for component_id in pairs(conflicts) do
+            log(string.format(
+                'Conflicting authored map pages for zone %d graph component %d.',
+                zone_id,
+                component_id));
+        end
+        graph._authored_page_ids_by_component = pages_by_component;
+    end
+    local node_index = state.path_nearest_node(
+        graph,
+        player_x,
+        player_y,
+        player_z);
+    local component_id = node_index ~= nil
+        and component_ids[node_index]
+        or nil;
+    local page_id = component_id ~= nil
+        and graph._authored_page_ids_by_component[component_id]
+        or nil;
+    return tonumber(page_id) ~= nil and math.floor(page_id) or nil;
 end
 
 local function fallback_page(zone_id, player)
