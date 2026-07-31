@@ -1791,6 +1791,18 @@ return {
     [145] = {
         name = 'Giddeus',
         stock_calibration = true,
+        -- Minimap.dll remains on page 1 after the in-zone descent. The page-15
+        -- underground navmesh starts at live Z 6.067 and extends to 17.533;
+        -- all retained nodes above Z 5.5 are confined to its map footprint.
+        page_rules = {
+            {
+                page_id = 15,
+                minimum_z = 5.5,
+            },
+            {
+                page_id = 1,
+            },
+        },
         travel_references = travel_reference_set({
             { kind = 'home_point', name = 'Home Point #1', unlock_index = 54, x = -132.000, y = -303.000, z = -3.000 },
         }),
