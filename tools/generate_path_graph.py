@@ -97,6 +97,17 @@ def parse_args() -> argparse.Namespace:
         ),
     )
     parser.add_argument(
+        "--one-way-transition",
+        action="append",
+        type=parse_transition,
+        default=[],
+        help=(
+            "authored directed link from the first navigation polygon to the "
+            "second, expressed as start-x,start-y,start-live-z:"
+            "end-x,end-y,end-live-z; repeat for multiple links"
+        ),
+    )
+    parser.add_argument(
         "--blocked-link",
         action="append",
         type=parse_transition,
@@ -256,6 +267,10 @@ def selected_indices(
 ) -> list[int]:
     if not seeds:
         return list(range(len(polygons)))
+    selection_adjacency = [set(neighbors) for neighbors in adjacency]
+    for left, neighbors in enumerate(adjacency):
+        for right in neighbors:
+            selection_adjacency[right].add(left)
     visited = set()
     pending = deque()
     for seed in seeds:
@@ -335,7 +350,7 @@ def selected_indices(
             pending.append(start)
     while pending:
         current = pending.popleft()
-        for neighbor in adjacency[current]:
+        for neighbor in selection_adjacency[current]:
             if neighbor not in visited:
                 visited.add(neighbor)
                 pending.append(neighbor)
@@ -468,6 +483,37 @@ def apply_transitions(
         adjacency[end_index].add(start_index)
 
 
+def apply_one_way_transitions(
+    polygons: list[list[tuple[float, ...]]],
+    adjacency: list[set[int]],
+    transitions: list[
+        tuple[tuple[float, float, float], tuple[float, float, float]]
+    ],
+    snap_radius: float,
+) -> set[tuple[int, int]]:
+    if snap_radius <= 0:
+        raise ValueError("--transition-snap-radius must be positive")
+    centroids = [centroid(polygon) for polygon in polygons]
+    directed_edges = set()
+
+    for start, end in transitions:
+        start_index = nearest_centroid(
+            centroids, start, snap_radius, "one-way transition"
+        )
+        end_index = nearest_centroid(
+            centroids, end, snap_radius, "one-way transition"
+        )
+        if start_index == end_index:
+            raise ValueError(
+                f"one-way transition endpoints {start} and {end} "
+                "resolve to one polygon"
+            )
+        adjacency[start_index].add(end_index)
+        adjacency[end_index].discard(start_index)
+        directed_edges.add((start_index, end_index))
+    return directed_edges
+
+
 def remove_blocked_links(
     polygons: list[list[tuple[float, ...]]],
     adjacency: list[set[int]],
@@ -507,6 +553,7 @@ def write_graph(
     polygons: list[list[tuple[float, ...]]],
     adjacency: list[set[int]],
     indices: list[int],
+    directed_edges: set[tuple[int, int]],
 ) -> None:
     remap = {source: target + 1 for target, source in enumerate(indices)}
     lines = [
@@ -515,8 +562,18 @@ def write_graph(
         f"    zone_id = {zone_id},",
         f"    page_id = {page_id if page_id is not None else 'nil'},",
         f"    snap_radius = {lua_number(snap_radius)},",
-        "    nodes = {",
     ]
+    retained_directed_edges = sorted(
+        (remap[start], remap[end])
+        for start, end in directed_edges
+        if start in remap and end in remap
+    )
+    if retained_directed_edges:
+        lines.append("    one_way_edges = {")
+        for start, end in retained_directed_edges:
+            lines.append(f"        {{ {start}, {end} }},")
+        lines.append("    },")
+    lines.append("    nodes = {")
     for source_index in indices:
         x, y, z = centroid(polygons[source_index])
         links = sorted(
@@ -576,6 +633,12 @@ def main() -> None:
         args.blocked_link,
         args.transition_snap_radius,
     )
+    directed_edges = apply_one_way_transitions(
+        polygons,
+        adjacency,
+        args.one_way_transition,
+        args.transition_snap_radius,
+    )
     indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
     selected = set(indices)
     write_graph(
@@ -586,14 +649,22 @@ def main() -> None:
         polygons,
         adjacency,
         indices,
+        directed_edges,
     )
-    edge_count = sum(
-        1
+    connections = {
+        tuple(sorted((index, neighbor)))
         for index in indices
         for neighbor in adjacency[index]
-        if neighbor in selected and neighbor > index
+        if neighbor in selected
+    }
+    retained_directed = sum(
+        start in selected and end in selected
+        for start, end in directed_edges
     )
-    print(f"wrote {args.output}: {len(indices)} nodes, {edge_count} edges")
+    print(
+        f"wrote {args.output}: {len(indices)} nodes, "
+        f"{len(connections)} connections ({retained_directed} one-way)"
+    )
 
 
 if __name__ == "__main__":

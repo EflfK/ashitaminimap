@@ -339,7 +339,8 @@ Before publishing a map:
   exclusions;
 - record navigation origin, printed H-8 grid origin, scale, and grid size;
 - regenerate each path graph twice and compare hashes;
-- validate finite nodes, bidirectional edges, page metadata, and native parity;
+- validate finite nodes, bidirectional or explicitly declared one-way edges,
+  page metadata, and native parity;
 - resolve every component that can affect a supported destination or normal
   route, excluding roofs and irrelevant geometry with evidence;
 - record live entrance, midpoint, and exit positions for every authored

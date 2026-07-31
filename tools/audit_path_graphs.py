@@ -84,12 +84,20 @@ def graph_sets(nodes: list[tuple]) -> tuple[set, set]:
     for index, node in enumerate(nodes, start=1):
         left = node_key(node)
         for neighbor in node[3]:
-            if neighbor > index:
-                edges.add(tuple(sorted((left, node_key(nodes[neighbor - 1])))))
+            right = node_key(nodes[neighbor - 1])
+            reverse = index in nodes[neighbor - 1][3]
+            if reverse:
+                edges.add(("two-way", *sorted((left, right))))
+            else:
+                edges.add(("one-way", left, right))
     return node_keys, edges
 
 
 def components(nodes: list[tuple]) -> tuple[list[int], list[list[int]]]:
+    undirected = [set(node[3]) for node in nodes]
+    for left, node in enumerate(nodes, start=1):
+        for right in node[3]:
+            undirected[right - 1].add(left)
     component_of = [-1] * len(nodes)
     groups = []
     for start in range(len(nodes)):
@@ -102,7 +110,7 @@ def components(nodes: list[tuple]) -> tuple[list[int], list[list[int]]]:
         while pending:
             current = pending.popleft()
             members.append(current)
-            for neighbor in nodes[current][3]:
+            for neighbor in undirected[current]:
                 target = neighbor - 1
                 if component_of[target] < 0:
                     component_of[target] = component_id
@@ -186,10 +194,13 @@ def metrics(
     edges = 0
     long_edges = 0
     steep_edges = 0
+    seen_edges = set()
     for index, node in enumerate(nodes, start=1):
         for neighbor in node[3]:
-            if neighbor <= index:
+            edge = tuple(sorted((index, neighbor)))
+            if edge in seen_edges:
                 continue
+            seen_edges.add(edge)
             edges += 1
             other = nodes[neighbor - 1]
             planar = math.hypot(node[0] - other[0], node[1] - other[1])

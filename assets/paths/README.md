@@ -81,7 +81,7 @@ authored stock page. Unauthored Garlaige pages remain marker-only.
 
 ## Generated artifacts
 
-| Artifact | Nodes | Bidirectional edges | SHA-256 |
+| Artifact | Nodes | Connections | SHA-256 |
 | --- | ---: | ---: | --- |
 | `100.lua` | 19,412 | 22,356 | `3A7D311460D007562BF1E8E40C75F7E81AA7FB7EAB625BF839F70B69F337EEC5` |
 | `101.lua` | 17,361 | 19,874 | `059AA0B99E02AE17DB6B13B2BF70DAC3AC075BDF51345478E47A6A78BCECB878` |
@@ -110,7 +110,7 @@ authored stock page. Unauthored Garlaige pages remain marker-only.
 | `147_01.lua` | 8,050 | 8,552 | `2D78C7E0795759CE6FE6953B984E61C6BAF91CF53749857945D0B3623A1FFF98` |
 | `147_15.lua` | 2,197 | 2,206 | `617329D3B80DCBBD6A994DCDF220DA825771FF012F4442034483216AF7407615` |
 | `149.lua` | 2,950 | 3,204 | `9F641090DD812DD11EAE6EF7DC543A7D445590C2B4E72763CF733CE5A4F014E8` |
-| `145.lua` | 3,469 | 3,814 | `E5B60B582019B054E0B1BA221B1F0A05A7F11F9FBF1D2194D09C14EF876C4CA8` |
+| `145.lua` | 3,521 | 3,869 | `A2CBE346C32962D0C96C798E813DA949B288587ED39F0DA631FBF2921A17ABFD` |
 | `151.lua` | 3,262 | 3,534 | `287CFA458BFB16D18A7BADC64BBC73399C8C8C6AC87CEBE20753B71EE389D621` |
 | `157.lua` | 2,160 | 2,367 | `F0588EE4423D8EDB7906929A75F3D06B0861871C3D79C3830F1C6DAFF9D8390C` |
 | `158.lua` | 1,351 | 1,462 | `47ED221654F9188AE40B9BA744B2ABF852DD4D14B3A8E4776B223AB9E167770C` |
@@ -146,4 +146,4 @@ authored stock page. Unauthored Garlaige pages remain marker-only.
 
 Every table above was regenerated twice and compared byte-for-byte. The
 validator confirmed finite coordinates, valid node indices, no self-links, and
-bidirectional edges.
+only bidirectional or explicitly declared one-way edges.

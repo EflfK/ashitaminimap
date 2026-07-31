@@ -20,6 +20,9 @@ NODE_PATTERN = re.compile(
     r"\{\s*([^}]*)\}\s*"
     r"\},\s*$"
 )
+ONE_WAY_PATTERN = re.compile(
+    r"^\s*\{\s*(\d+)\s*,\s*(\d+)\s*\},\s*$"
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -67,6 +70,11 @@ def parse_graph(path: Path) -> tuple[int, int | None, float, list[tuple]]:
 
 def validate(path: Path, require_connected: bool = False) -> tuple[int, int]:
     zone_id, page_id, snap_radius, nodes = parse_graph(path)
+    one_way_edges = {
+        (int(match.group(1)), int(match.group(2)))
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if (match := ONE_WAY_PATTERN.match(line))
+    }
     if zone_id <= 0:
         raise ValueError(f"{path}: invalid zone_id {zone_id}")
     if page_id is not None and page_id < 0:
@@ -89,17 +97,34 @@ def validate(path: Path, require_connected: bool = False) -> tuple[int, int]:
                 raise ValueError(f"{path}: node {index} links to itself")
             edges.add((index, neighbor))
 
-    for edge in edges:
-        if (edge[1], edge[0]) not in edges:
+    for edge in one_way_edges:
+        if edge not in edges:
             raise ValueError(
-                f"{path}: edge {edge[0]} -> {edge[1]} is not bidirectional"
+                f"{path}: declared one-way edge {edge[0]} -> {edge[1]} "
+                "is not present"
+            )
+        if (edge[1], edge[0]) in edges:
+            raise ValueError(
+                f"{path}: declared one-way edge {edge[0]} -> {edge[1]} "
+                "also has a reverse edge"
+            )
+    for edge in edges:
+        reverse = (edge[1], edge[0])
+        if reverse not in edges and edge not in one_way_edges:
+            raise ValueError(
+                f"{path}: edge {edge[0]} -> {edge[1]} is neither "
+                "bidirectional nor declared one-way"
             )
     if require_connected:
+        undirected = [set(node[3]) for node in nodes]
+        for left, neighbors in enumerate(nodes, start=1):
+            for right in neighbors[3]:
+                undirected[right - 1].add(left)
         visited = {1}
         pending = deque([1])
         while pending:
             current = pending.popleft()
-            for neighbor in nodes[current - 1][3]:
+            for neighbor in undirected[current - 1]:
                 if neighbor not in visited:
                     visited.add(neighbor)
                     pending.append(neighbor)
@@ -108,13 +133,25 @@ def validate(path: Path, require_connected: bool = False) -> tuple[int, int]:
                 f"{path}: graph has disconnected routing components "
                 f"({len(visited)}/{len(nodes)} nodes reachable from node 1)"
             )
-    return len(nodes), len(edges) // 2
+    connections = {
+        tuple(sorted(edge))
+        for edge in edges
+    }
+    return len(nodes), len(connections)
 
 
 def main() -> None:
     for path in args.graphs:
         nodes, edges = validate(path, args.require_connected)
-        print(f"{path}: {nodes} nodes, {edges} bidirectional edges")
+        one_way_count = sum(
+            1
+            for line in path.read_text(encoding="utf-8").splitlines()
+            if ONE_WAY_PATTERN.match(line)
+        )
+        print(
+            f"{path}: {nodes} nodes, {edges} connections "
+            f"({one_way_count} one-way)"
+        )
 
 
 if __name__ == "__main__":

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.18.0';
+addon.version   = '1.18.1';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3122,11 +3122,19 @@ state.draw_all_pathing = function (
     end
 
     local edge_count = 0;
+    local seen_edges = {};
     for index, node in ipairs(graph.nodes) do
         local start = screen(node);
         for _, neighbor_index in ipairs(node[4] or {}) do
             local neighbor = graph.nodes[tonumber(neighbor_index) or 0];
-            if (neighbor ~= nil and neighbor_index > index) then
+            local edge_key = neighbor ~= nil
+                and string.format(
+                    '%d:%d',
+                    math.min(index, neighbor_index),
+                    math.max(index, neighbor_index))
+                or nil;
+            if (neighbor ~= nil and seen_edges[edge_key] ~= true) then
+                seen_edges[edge_key] = true;
                 edge_count = edge_count + 1;
                 local finish = screen(neighbor);
                 if (segment_might_be_visible(start, finish)) then
@@ -4391,10 +4399,19 @@ local function render_config_window()
                     or nil;
                 if (developer_graph ~= nil) then
                     local edge_count = 0;
+                    local seen_edges = {};
                     for node_index, node in ipairs(developer_graph.nodes) do
                         for _, neighbor_index in ipairs(node[4] or {}) do
-                            if (tonumber(neighbor_index) ~= nil
-                                    and tonumber(neighbor_index) > node_index) then
+                            neighbor_index = tonumber(neighbor_index);
+                            local edge_key = neighbor_index ~= nil
+                                and string.format(
+                                    '%d:%d',
+                                    math.min(node_index, neighbor_index),
+                                    math.max(node_index, neighbor_index))
+                                or nil;
+                            if (edge_key ~= nil
+                                    and seen_edges[edge_key] ~= true) then
+                                seen_edges[edge_key] = true;
                                 edge_count = edge_count + 1;
                             end
                         end

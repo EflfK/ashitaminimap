@@ -129,6 +129,19 @@ Every transition is bidirectional and must be backed by a verified physical
 connection; it must never bridge unrelated surfaces that merely overlap on the
 flattened map.
 
+For a verified drop, gate, or other passage that can be crossed in only one
+direction, use:
+
+```text
+--one-way-transition=<start-x>,<start-y>,<start-live-z>:<end-x>,<end-y>,<end-live-z>
+```
+
+The first endpoint is the allowed start and the second is the allowed
+destination. Generated graphs record the resolved node pair in
+`one_way_edges`; runtime A* follows only the forward adjacency. The validator
+requires every asymmetric edge to have that declaration and rejects a declared
+one-way edge if its reverse adjacency is present.
+
 When live verification proves that a source-navmesh adjacency crosses a wall,
 door, railing, or other impassable boundary, remove only that edge with:
 
@@ -200,7 +213,8 @@ a truthful graph route; it must never infer map connectivity.
   native/inferred delta and every destination- or route-affecting nearby
   component against collision/navmesh evidence and the full-graph overlay.
   Never add an edge from proximity alone; live-verify any authored exception.
-- Confirm every linked node index exists and every edge is bidirectional.
+- Confirm every linked node index exists and every edge is either
+  bidirectional or explicitly declared one-way.
 - Test endpoint snapping near the intended entrances, exits, and destination.
 - Enable Developer mode and **Show all pathing** to inspect the complete graph
   web. Use focused attended checkpoints for concrete defects instead of a
