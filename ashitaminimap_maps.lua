@@ -1610,12 +1610,25 @@ return {
     [169] = {
         name = 'Toraimarai Canal',
         stock_calibration = true,
+        -- Without Minimap.dll, page 1 was selected throughout the zone. The
+        -- retained graph has four components on each stock page, so assign
+        -- every component from an exact supported-destination seed.
+        page_graph_seeds = {
+            { page_id = 1, x = -308.216, y = 262.000, z = 15.999 },
+            { page_id = 2, x =  139.984, y = 132.962, z = -3.771 },
+            { page_id = 1, x = -257.500, y =  82.000, z = 24.000 },
+            { page_id = 2, x =  219.993, y = -49.049, z = 16.003 },
+            { page_id = 1, x = -138.800, y =  24.550, z = 22.500 },
+            { page_id = 1, x = -378.200, y = -15.414, z = 21.997 },
+            { page_id = 2, x =   60.000, y = 135.400, z = 22.500 },
+            { page_id = 2, x =  169.270, y = -110.580, z = 8.028 },
+        },
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', unlock_index = 115, x = -257.500, y = 82.000, z = 24.000 },
-            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 20, x = -308.216, y = 262.000, z = 15.999 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 115, page_id = 1, x = -257.500, y = 82.000, z = 24.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 20, page_id = 1, x = -308.216, y = 262.000, z = 15.999 },
         }),
         treasure_spawns = {
-            { kind = 'coffer', x = 219.993, y = -49.049, z = 16.003 },
+            { kind = 'coffer', page_id = 2, x = 219.993, y = -49.049, z = 16.003 },
         },
     },
     [172] = {
