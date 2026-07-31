@@ -1731,7 +1731,7 @@ return {
             { page_id = 4, minimum_x = -340.0, maximum_x = -235.0, minimum_y =   80.0, maximum_y =  310.0 },
             { page_id = 1, minimum_x =  365.0, maximum_x =  475.0, minimum_y =   95.0, maximum_y =  205.0 },
             { page_id = 3, minimum_x = -235.0, maximum_x = -170.0, minimum_y =    5.0, maximum_y =   85.0 },
-            { page_id = 2, minimum_x = -275.0, maximum_x = -170.0, minimum_y = -265.0, maximum_y = -175.0 },
+            { page_id = 2, minimum_x = -275.0, maximum_x = -170.0, minimum_y = -265.0, maximum_y = -100.0 },
         },
         page_graph_seeds = {
             { page_id = 4, x = -259.981, y =  250.063, z =   6.448 },
