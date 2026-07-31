@@ -1710,11 +1710,27 @@ return {
     [192] = {
         name = 'Inner Horutoto Ruins',
         stock_calibration = true,
+        -- Without Minimap.dll, the catalog default kept Lily Tower page 1
+        -- active in all four disconnected tower sections. Their retained
+        -- footprints are spatially disjoint, so exact graph-derived bounds
+        -- select immediately and component seeds remain the fallback.
+        page_rules = {
+            { page_id = 4, minimum_x = -340.0, maximum_x = -235.0, minimum_y =   80.0, maximum_y =  310.0 },
+            { page_id = 1, minimum_x =  365.0, maximum_x =  475.0, minimum_y =   95.0, maximum_y =  205.0 },
+            { page_id = 3, minimum_x = -235.0, maximum_x = -170.0, minimum_y =    5.0, maximum_y =   85.0 },
+            { page_id = 2, minimum_x = -275.0, maximum_x = -170.0, minimum_y = -265.0, maximum_y = -175.0 },
+        },
+        page_graph_seeds = {
+            { page_id = 4, x = -259.981, y =  250.063, z =   6.448 },
+            { page_id = 1, x =  453.000, y =  182.300, z =  -8.000 },
+            { page_id = 3, x = -193.007, y =   59.969, z = -15.057 },
+            { page_id = 2, x = -177.956, y = -220.058, z =  -0.002 },
+        },
         travel_references = travel_reference_set({
-            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 30, x = 453.000, y = 182.300, z = -8.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 30, page_id = 1, x = 453.000, y = 182.300, z = -8.000 },
         }),
         treasure_spawns = {
-            { kind = 'chest', x = -177.956, y = -220.058, z = -0.002 },
+            { kind = 'chest', page_id = 2, x = -177.956, y = -220.058, z = -0.002 },
         },
     },
     [195] = {
