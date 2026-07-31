@@ -37,29 +37,29 @@ gate.
 ## Level 20-30
 
 - [ ] Jugner Forest (`104`) — batch 18 re-audited partial
-- [ ] Pashhow Marshlands (`109`) — batch 4 partial
-- [ ] Meriphataud Mountains (`119`) — batch 5 partial
-- [ ] Ghelsba Outpost (`140`) — batch 5 partial
-- [ ] Fort Ghelsba (`141`) — batch 5 partial
-- [ ] Yughott Grotto (`142`) — batch 6 partial
-- [ ] Palborough Mines (`143`) — batch 6 partial
+- [ ] Pashhow Marshlands (`109`) — batch 19 re-audited partial
+- [ ] Meriphataud Mountains (`119`) — batch 19 re-audited partial
+- [ ] Ghelsba Outpost (`140`) — batch 19 expanded/re-audited partial
+- [ ] Fort Ghelsba (`141`) — batch 20 re-audited partial
+- [ ] Yughott Grotto (`142`) — batch 20 re-audited partial
+- [ ] Palborough Mines (`143`) — batch 20 corrected/re-audited partial
 - [x] Giddeus (`145`)
-- [ ] Ordelle's Caves (`193`) — batch 8 partial
+- [ ] Ordelle's Caves (`193`) — batch 21 re-audited partial
 - [x] Maze of Shakhrami (`198`)
 
 ## Level 30-40
 
-- [ ] Qufim Island (`126`) — batch 7 partial
+- [ ] Qufim Island (`126`) — batch 21 re-audited partial
 - [x] Lower Delkfutt's Tower (`184`)
 - [x] Middle Delkfutt's Tower (`157`)
 - [x] Upper Delkfutt's Tower (`158`)
-- [ ] Rolanberry Fields (`110`) — batch 7 partial
-- [ ] Batallia Downs (`105`) — partial
-- [ ] Sauromugue Champaign (`120`) — batch 7 partial
-- [ ] Yuhtunga Jungle (`123`) — batch 8 partial
-- [ ] Yhoator Jungle (`124`) — batch 8 partial
-- [ ] Gusgen Mines (`196`) — batch 9 partial
-- [ ] Davoi (`149`) — partial
+- [ ] Rolanberry Fields (`110`) — batch 21 re-audited partial
+- [ ] Batallia Downs (`105`) — batch 22 expanded/re-audited partial
+- [ ] Sauromugue Champaign (`120`) — batch 22 re-audited partial
+- [ ] Yuhtunga Jungle (`123`) — batch 22 re-audited partial
+- [ ] Yhoator Jungle (`124`) — batch 23 re-audited partial
+- [ ] Gusgen Mines (`196`) — batch 23 re-audited partial
+- [ ] Davoi (`149`) — batch 23 expanded/re-audited partial
 - [ ] Beadeaux (`147`) — partial
 - [x] Castle Oztroja (`151`)
 
