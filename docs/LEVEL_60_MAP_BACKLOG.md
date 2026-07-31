@@ -44,7 +44,7 @@ gate.
 - [ ] Yughott Grotto (`142`) — batch 6 partial
 - [ ] Palborough Mines (`143`) — batch 6 partial
 - [x] Giddeus (`145`)
-- [ ] Ordelle's Caves (`193`)
+- [ ] Ordelle's Caves (`193`) — batch 8 partial
 - [x] Maze of Shakhrami (`198`)
 
 ## Level 30-40
@@ -56,8 +56,8 @@ gate.
 - [ ] Rolanberry Fields (`110`) — batch 7 partial
 - [ ] Batallia Downs (`105`) — partial
 - [ ] Sauromugue Champaign (`120`) — batch 7 partial
-- [ ] Yuhtunga Jungle (`123`)
-- [ ] Yhoator Jungle (`124`)
+- [ ] Yuhtunga Jungle (`123`) — batch 8 partial
+- [ ] Yhoator Jungle (`124`) — batch 8 partial
 - [ ] Gusgen Mines (`196`)
 - [ ] Davoi (`149`) — partial
 - [ ] Beadeaux (`147`) — partial
