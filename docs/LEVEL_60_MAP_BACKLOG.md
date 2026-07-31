@@ -58,32 +58,32 @@ gate.
 - [ ] Sauromugue Champaign (`120`) — batch 7 partial
 - [ ] Yuhtunga Jungle (`123`) — batch 8 partial
 - [ ] Yhoator Jungle (`124`) — batch 8 partial
-- [ ] Gusgen Mines (`196`)
+- [ ] Gusgen Mines (`196`) — batch 9 partial
 - [ ] Davoi (`149`) — partial
 - [ ] Beadeaux (`147`) — partial
 - [x] Castle Oztroja (`151`)
 
 ## Level 40-50
 
-- [ ] Crawler's Nest (`197`)
+- [ ] Crawler's Nest (`197`) — batch 9 partial
 - [ ] Garlaige Citadel (`200`) — partial
-- [ ] Eastern Altepa Desert (`114`)
-- [ ] Western Altepa Desert (`125`)
-- [ ] Quicksand Caves (`208`)
-- [ ] The Sanctuary of Zi'Tah (`121`)
-- [ ] Labyrinth of Onzozo (`213`)
+- [ ] Eastern Altepa Desert (`114`) — batch 9 partial
+- [ ] Western Altepa Desert (`125`) — batch 10 partial
+- [ ] Quicksand Caves (`208`) — batch 10 partial
+- [ ] The Sanctuary of Zi'Tah (`121`) — batch 10 partial
+- [ ] Labyrinth of Onzozo (`213`) — batch 11 partial
 - [ ] The Eldieme Necropolis (`195`) — partial
-- [ ] Gustav Tunnel (`212`)
-- [ ] Bostaunieux Oubliette (`167`)
-- [ ] Fei'Yin (`204`)
+- [ ] Gustav Tunnel (`212`) — batch 11 partial
+- [ ] Bostaunieux Oubliette (`167`) — batch 11 partial
+- [ ] Fei'Yin (`204`) — batch 12 partial
 
 ## Level 50-60
 
-- [ ] Xarcabard (`112`)
-- [ ] Beaucedine Glacier (`111`)
-- [ ] Castle Zvahl Baileys (`161`)
-- [ ] Castle Zvahl Keep (`162`)
-- [ ] The Boyahda Tree (`153`)
+- [ ] Xarcabard (`112`) — batch 12 partial
+- [ ] Beaucedine Glacier (`111`) — batch 12 partial
+- [ ] Castle Zvahl Baileys (`161`) — batch 13 partial
+- [ ] Castle Zvahl Keep (`162`) — batch 13 partial
+- [ ] The Boyahda Tree (`153`) — batch 13 partial
 - [ ] Kuftal Tunnel (`174`) — re-audit
 - [ ] Wajaom Woodlands (`51`)
 - [ ] Bhaflau Thickets (`52`)
