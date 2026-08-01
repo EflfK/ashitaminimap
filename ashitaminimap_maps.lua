@@ -2460,6 +2460,13 @@ return {
                 },
             }),
         },
+        -- Minimap.dll can retain page 1 after the player descends in-zone.
+        -- Page-1 authored geometry ends at live Z 8.3; select the authored
+        -- underground page above that source-derived boundary while page
+        -- selection is automatic.
+        page_rules = {
+            { page_id = 15, minimum_z = 8.4 },
+        },
         width = 512,
         height = 512,
         view_bounds = { left = 0, top = 0, right = 512, bottom = 512 },
