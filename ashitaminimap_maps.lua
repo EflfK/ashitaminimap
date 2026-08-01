@@ -2311,6 +2311,16 @@ return {
     [157] = {
         name = 'Middle Delkfutt\'s Tower',
         stock_calibration = true,
+        -- Minimap.dll can retain page 4 after each in-zone stair transition.
+        -- The six repeated tower floors occupy distinct 16-yalm Z bands.
+        page_rules = {
+            { page_id = 9, maximum_z = -120.0 },
+            { page_id = 8, minimum_z = -120.0, maximum_z = -104.0 },
+            { page_id = 7, minimum_z = -104.0, maximum_z = -88.0 },
+            { page_id = 6, minimum_z = -88.0, maximum_z = -72.0 },
+            { page_id = 5, minimum_z = -72.0, maximum_z = -56.0 },
+            { page_id = 4, minimum_z = -56.0 },
+        },
         travel_references = travel_reference_set({}),
         treasure_spawns = {
             { kind = 'chest', x = -339.909, y =  20.816, z = -127.601 },
