@@ -2710,9 +2710,14 @@ return {
         name = 'Lower Delkfutt\'s Tower',
         stock_calibration = true,
         -- Minimap.dll can retain floor-1 page 1 after the player climbs either
-        -- in-zone staircase. Live floor-2 and floor-3 states confirm the
-        -- repeated tower floors are separated by non-overlapping Z bands.
+        -- in-zone staircase or enters the basement from the post-elevator
+        -- descent. Live states confirm that the basement and repeated tower
+        -- floors are separated by non-overlapping Z bands.
         page_rules = {
+            {
+                page_id = 15,
+                minimum_z = 8.0,
+            },
             {
                 page_id = 3,
                 maximum_z = -24.0,
