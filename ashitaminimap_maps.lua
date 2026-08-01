@@ -2336,6 +2336,17 @@ return {
     [158] = {
         name = 'Upper Delkfutt\'s Tower',
         stock_calibration = true,
+        -- The stock page pointer can remain stale after floor and elevator
+        -- transitions. Main floors occupy distinct Z bands; the post-elevator
+        -- spiral is a separate graph component assigned to stock page 5.
+        page_rules = {
+            { page_id = 3, maximum_x = -150.0, maximum_z = -168.0 },
+            { page_id = 2, maximum_x = -150.0, minimum_z = -168.0, maximum_z = -152.0 },
+            { page_id = 1, maximum_x = -150.0, minimum_z = -152.0, maximum_z = -136.0 },
+        },
+        page_graph_seeds = {
+            { page_id = 5, x = 12.098, y = 27.683, z = -101.999 },
+        },
         travel_references = travel_reference_set({
             { kind = 'home_point', name = 'Home Point #1', unlock_index = 71, x = -365.000, y = -36.000, z = -176.500 },
         }),
