@@ -3495,6 +3495,15 @@ return {
         stock_calibration = true,
         page_rules = {
             {
+                page_id = 15,
+                minimum_x = -230.0,
+                maximum_x = 70.0,
+                minimum_y = -180.0,
+                maximum_y = 230.0,
+                minimum_z = 20.0,
+                maximum_z = 28.0,
+            },
+            {
                 page_id = 6,
                 minimum_x = -310.0,
                 maximum_x = -50.0,
