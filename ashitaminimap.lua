@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.3';
+addon.version   = '1.23.4';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -93,7 +93,6 @@ local state = {
     textures = {},
     device = nil,
     warned_zones = {},
-    reported_fallback = nil,
     stock_minimap_pointer_address = 0,
     stock_minimap_checked_at = 0,
     stock_map_table_address = 0,
@@ -3979,29 +3978,6 @@ local function render_minimap()
         end
         return;
     end
-    if (map.fallback == true and map.page_id ~= nil) then
-        local token = string.format(
-            '%d:%d:%s:%s',
-            player.zone_id,
-            map.page_id,
-            tostring(map.live_scale == true),
-            tostring(map.live_origin == true));
-        if (state.reported_fallback ~= token) then
-            state.reported_fallback = token;
-            log(string.format(
-                'Vanilla fallback: %s page %d (%s scale raw %d, %s origin %.1f, %.1f; record offsets %s, %s).',
-                map.name or ('zone ' .. tostring(player.zone_id)),
-                map.page_id,
-                map.live_scale == true and 'stock' or 'default',
-                tonumber(map.stock_scale_raw) or 0,
-                map.live_origin == true and 'stock' or 'provisional',
-                tonumber(map.base_origin_x) or tonumber(map.origin_x) or 0,
-                tonumber(map.base_origin_y) or tonumber(map.origin_y) or 0,
-                map.stock_offset_x ~= nil and tostring(map.stock_offset_x) or '?',
-                map.stock_offset_y ~= nil and tostring(map.stock_offset_y) or '?'));
-        end
-    end
-
     local vanilla_image = map.vanilla_image;
     local vanilla_texture = state.settings.show_map_vanilla == true
         and texture_for(vanilla_image)
