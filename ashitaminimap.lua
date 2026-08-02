@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.4';
+addon.version   = '1.23.5';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -808,7 +808,8 @@ state.path_waypoint_z = function (
         y,
         player_x,
         player_y,
-        player_z)
+        player_z,
+        require_unambiguous_floor)
     if (type(graph) ~= 'table' or type(graph.nodes) ~= 'table') then
         return nil, false;
     end
@@ -851,6 +852,9 @@ state.path_waypoint_z = function (
     end
     if (nearest_candidate ~= nil and not multiple_floors) then
         return nearest_candidate.z, false;
+    end
+    if (multiple_floors and require_unambiguous_floor == true) then
+        return nil, true;
     end
 
     local start_index = player_x ~= nil
@@ -1670,7 +1674,8 @@ state.ensure_guide_path = function (player, map)
             destination.y,
             player.x,
             player.y,
-            player.z);
+            player.z,
+            custom_waypoint == nil);
         if (floor_ambiguous) then
             state.guide_path.route = nil;
             state.guide_path.last_error = 'destination floor ambiguous';
