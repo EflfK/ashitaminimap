@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.2';
+addon.version   = '1.23.3';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3297,6 +3297,7 @@ state.draw_guide_path = function (
     local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local active = imgui.GetColorU32({ 0.10, 0.86, 1.00, 0.96 });
     local traveled = imgui.GetColorU32({ 0.34, 0.40, 0.44, 0.88 });
+    local floor_tolerance = PATH_FLOOR_TOLERANCE;
 
     local function screen(point)
         return {
@@ -3312,8 +3313,39 @@ state.draw_guide_path = function (
         draw_list:AddLine(screen_start, screen_finish, fill, 2.8);
     end
 
+    local function segment_on_player_floor(start, finish)
+        if (player.z == nil) then
+            return true;
+        end
+        local start_z = tonumber(start.z);
+        local finish_z = tonumber(finish.z);
+        return start_z == nil
+            or finish_z == nil
+            or math.abs(start_z - player.z) <= floor_tolerance
+            or math.abs(finish_z - player.z) <= floor_tolerance;
+    end
+
+    -- A shared dungeon graph can span several stock map pages. Only draw the
+    -- contiguous portion around the player projection that belongs to the
+    -- current floor; flattening later floors onto this page produces false
+    -- corridors even though the three-dimensional route itself is valid.
+    local visible_first = projection.index;
+    while (visible_first > 1
+            and segment_on_player_floor(
+                route.points[visible_first - 1],
+                route.points[visible_first])) do
+        visible_first = visible_first - 1;
+    end
+    local visible_last = projection.index;
+    while (visible_last < #route.points
+            and segment_on_player_floor(
+                route.points[visible_last],
+                route.points[visible_last + 1])) do
+        visible_last = visible_last + 1;
+    end
+
     local projected_point = { x = projection.x, y = projection.y };
-    for index = 1, #route.points - 1 do
+    for index = visible_first, visible_last - 1 do
         local start = route.points[index];
         local finish = route.points[index + 1];
         if (index < projection.index) then
@@ -3353,7 +3385,7 @@ state.draw_guide_path = function (
 
     local arrow_spacing = 58;
     local since_arrow = 0;
-    for index = projection.index, #route.points - 1 do
+    for index = projection.index, visible_last - 1 do
         local start = index == projection.index
             and projected_point
             or route.points[index];
