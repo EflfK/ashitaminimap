@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.5';
+addon.version   = '1.23.6';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3295,6 +3295,7 @@ state.draw_guide_path = function (
     if (projection == nil) then
         return route.world == true and route or nil;
     end
+    route.floor_transition_direction = nil;
 
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
@@ -3419,6 +3420,70 @@ state.draw_guide_path = function (
             since_arrow = (since_arrow + distance) % arrow_spacing;
         end
     end
+    if (visible_last < #route.points) then
+        local transition = route.points[visible_last];
+        local next_point = route.points[visible_last + 1];
+        local transition_screen = screen(transition);
+        local minimum_x = left + 13;
+        local maximum_x = left + size - 13;
+        local minimum_y = top + 13;
+        local maximum_y = top + size - 51;
+        local transition_x = clamp(transition_screen[1], minimum_x, maximum_x);
+        local transition_y = clamp(transition_screen[2], minimum_y, maximum_y);
+        for index = projection.index, visible_last - 1 do
+            local start = index == projection.index
+                and projected_point
+                or route.points[index];
+            local finish = route.points[index + 1];
+            local screen_start = screen(start);
+            local screen_finish = screen(finish);
+            local start_inside = screen_start[1] >= minimum_x
+                and screen_start[1] <= maximum_x
+                and screen_start[2] >= minimum_y
+                and screen_start[2] <= maximum_y;
+            local finish_inside = screen_finish[1] >= minimum_x
+                and screen_finish[1] <= maximum_x
+                and screen_finish[2] >= minimum_y
+                and screen_finish[2] <= maximum_y;
+            if (start_inside and not finish_inside) then
+                local delta_x = screen_finish[1] - screen_start[1];
+                local delta_y = screen_finish[2] - screen_start[2];
+                local ratio = 1.0;
+                if (screen_finish[1] < minimum_x and delta_x ~= 0) then
+                    ratio = math.min(ratio, (minimum_x - screen_start[1]) / delta_x);
+                elseif (screen_finish[1] > maximum_x and delta_x ~= 0) then
+                    ratio = math.min(ratio, (maximum_x - screen_start[1]) / delta_x);
+                end
+                if (screen_finish[2] < minimum_y and delta_y ~= 0) then
+                    ratio = math.min(ratio, (minimum_y - screen_start[2]) / delta_y);
+                elseif (screen_finish[2] > maximum_y and delta_y ~= 0) then
+                    ratio = math.min(ratio, (maximum_y - screen_start[2]) / delta_y);
+                end
+                transition_x = screen_start[1] + (delta_x * ratio);
+                transition_y = screen_start[2] + (delta_y * ratio);
+                break;
+            end
+        end
+        local direction = (tonumber(next_point.z) or 0)
+                > (tonumber(transition.z) or 0)
+            and 'UP'
+            or 'DN';
+        draw_list:AddCircleFilled(
+            { transition_x, transition_y },
+            10.0,
+            outline,
+            20);
+        draw_list:AddCircleFilled(
+            { transition_x, transition_y },
+            8.0,
+            active,
+            20);
+        draw_list:AddText(
+            { transition_x - 7, transition_y - 6 },
+            outline,
+            direction);
+        route.floor_transition_direction = direction;
+    end
     return route;
 end
 
@@ -3488,6 +3553,11 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
         instruction = route.destination_source == 'custom'
             and 'Right-click waypoint to clear'
             or 'Shortest route from map navigation graph';
+        if (route.floor_transition_direction ~= nil) then
+            instruction = string.format(
+                'Follow cyan route to %s floor change',
+                route.floor_transition_direction);
+        end
     end
     draw_list:AddText(
         { left + 10, panel_top + 5 },
@@ -3563,7 +3633,11 @@ state.draw_guide_markers = function (
     local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local pulse = 0.82 + ((math.sin(os.clock() * 5) + 1) * 0.09);
     for _, marker in ipairs(state.active_guide_markers(player)) do
-        if (marker.map_id == nil or current_page == marker.map_id) then
+        local marker_on_player_floor = marker.z == nil
+            or player.z == nil
+            or math.abs(marker.z - player.z) <= PATH_FLOOR_TOLERANCE;
+        if ((marker.map_id == nil or current_page == marker.map_id)
+                and marker_on_player_floor) then
             local screen_x = center_x + ((marker.x - camera.x) * scale);
             local screen_y = center_y - ((marker.y - camera.y) * scale);
             local clamped_x = clamp(screen_x, minimum_x, maximum_x);
