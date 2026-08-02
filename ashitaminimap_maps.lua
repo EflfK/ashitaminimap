@@ -3508,8 +3508,8 @@ return {
             {
                 page_id = 6,
                 minimum_x = -310.0,
-                maximum_x = -50.0,
-                minimum_y = 0.0,
+                maximum_x = -100.0,
+                minimum_y = 100.0,
                 maximum_y = 240.0,
                 minimum_z = -18.0,
                 maximum_z = -12.0,
