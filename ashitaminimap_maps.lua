@@ -3493,6 +3493,9 @@ return {
     [151] = {
         name = 'Castle Oztroja',
         stock_calibration = true,
+        page_rules = {
+            { page_id = 2, minimum_z = -18.0, maximum_z = -12.0 },
+        },
         travel_references = travel_reference_set({
             { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 38, x = -221.000, y = -13.000, z = 0.250 },
         }),
