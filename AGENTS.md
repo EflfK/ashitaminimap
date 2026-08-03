@@ -105,6 +105,35 @@ Never connect components from two-dimensional proximity, an overview image, or
 a shortest-route result. A missing connection remains marker-only until live
 evidence proves the physical transition.
 
+## Missing-connection screenshot shorthand
+
+When the user attaches coordinate screenshots and says `fix connection` (or
+equivalent), treat that as a request to repair one reported missing routing
+link without requiring them to restate this workflow. The screenshots are an
+ordered attended traversal record: the first is the start of the physical
+transition, the last is its end, and every screenshot between them is an
+intermediate checkpoint needed to describe the traversable path. Three
+screenshots normally mean entrance, midpoint, and exit, but accept as many
+intermediate checkpoints as the user supplies.
+
+Extract the zone, page or floor, player X/Y/Z coordinates, and any visible
+developer diagnostics from the screenshots. Locate both graph components and
+the corresponding Detour/collision evidence, then determine why native routing
+does not cross between them. Prefer correcting a genuine source-topology or
+authored external-portal defect. If the game permits the traversal but the
+Detour data has a seam, add the narrowest `--transition` supported by the
+ordered checkpoints, including intermediate nodes where needed instead of
+joining distant endpoints directly. Never create the link solely from visual
+proximity, and do not collapse distinct elevations.
+
+Treat a clear entrance/midpoint/exit capture sequence as the focused live
+evidence required to attempt the repair. Ask for another screenshot only when
+the zone, coordinates, elevation, checkpoint order, or physical continuity is
+actually ambiguous. After changing the graph, run the normal graph validation,
+audit, deterministic-regeneration, route, sync, reload, and in-game checks
+required elsewhere in this file, then report exactly how the components were
+connected.
+
 Path elevation is authoritative for floor-aware snapping. A guide destination
 without Z may route only when the graph can resolve it to one reachable floor;
 otherwise it remains marker-only as floor-ambiguous. Route projection must
