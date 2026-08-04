@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.6';
+addon.version   = '1.23.7';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -98,6 +98,11 @@ local state = {
     stock_map_table_address = 0,
     stock_map_table_checked_at = 0,
     stock_map_records = {},
+    stock_page_selector_address = 0,
+    stock_page_context_pointer_address = 0,
+    stock_page_selector_checked_at = 0,
+    stock_page_by_zone = {},
+    stock_page_selector_warning = nil,
     config_visible = { false },
     config_dirty = false,
     config_changed_at = 0,
@@ -1863,6 +1868,10 @@ local STOCK_MINIMAP_SIGNATURE =
     'A1????????F30F104044C3CCCCCCCCCCA1????????F30F10402C';
 local STOCK_MAP_TABLE_SIGNATURE =
     '8A0D????????5333C05684C95774??8A5424188B7424148B7C2410B9';
+local STOCK_MAP_SELECTOR_SIGNATURE =
+    '8B542408568D4424108BF18B4C2410508B44240C';
+local STOCK_MAP_CONTEXT_SIGNATURE =
+    '8B7424148B4424108B7C240C8B0D';
 local STOCK_MAP_ENTRY_SIZE = 0x0E;
 
 local function signed_uint16(value)
@@ -1938,7 +1947,7 @@ local function stock_map_record(zone_id, page_id)
     return nil;
 end
 
-local function stock_minimap_info()
+local function stock_minimap_runtime()
     local now = os.clock();
     if (state.stock_minimap_pointer_address == 0
             and now - state.stock_minimap_checked_at >= 1.0) then
@@ -1960,11 +1969,15 @@ local function stock_minimap_info()
 
     local pointer_address = state.stock_minimap_pointer_address;
     if (pointer_address == 0) then
-        return nil;
+        return 0;
     end
-    local runtime = tonumber(safe_read(function ()
+    return tonumber(safe_read(function ()
         return ashita.memory.read_uint32(pointer_address);
     end, 0)) or 0;
+end
+
+local function stock_minimap_info()
+    local runtime = stock_minimap_runtime();
     local map_info = runtime ~= 0 and tonumber(safe_read(function ()
         return ashita.memory.read_uint32(runtime + 0x14);
     end, 0)) or 0;
@@ -1989,6 +2002,79 @@ local function stock_minimap_info()
         map_x = map_x,
         map_y = map_y,
     };
+end
+
+local function stock_page_id_for_position(player)
+    if (player == nil) then
+        return nil;
+    end
+    local x = tonumber(player.x);
+    local y = tonumber(player.y);
+    local z = tonumber(player.z);
+    if (x == nil or y == nil or z == nil) then
+        return nil;
+    end
+
+    -- The stock plugin resolves its active map through FFXiMain's native
+    -- coordinate selector. Its cached map record can lag behind a physical
+    -- page boundary (notably Garlaige Citadel's Banishing Gates), so invoke
+    -- the same read-only selector for the current position instead. Resolve
+    -- it directly from FFXiMain because the stock plugin need not be loaded.
+    local now = os.clock();
+    if ((state.stock_page_selector_address == 0
+                or state.stock_page_context_pointer_address == 0)
+            and now - state.stock_page_selector_checked_at >= 1.0) then
+        state.stock_page_selector_checked_at = now;
+        state.stock_page_selector_address = tonumber(safe_read(function ()
+            return ashita.memory.find(
+                'FFXiMain.dll',
+                0,
+                STOCK_MAP_SELECTOR_SIGNATURE,
+                0,
+                0);
+        end, 0)) or 0;
+        local context_signature = tonumber(safe_read(function ()
+            return ashita.memory.find(
+                'FFXiMain.dll',
+                0,
+                STOCK_MAP_CONTEXT_SIGNATURE,
+                0,
+                0);
+        end, 0)) or 0;
+        if (context_signature ~= 0) then
+            state.stock_page_context_pointer_address =
+                tonumber(safe_read(function ()
+                    return ashita.memory.read_uint32(context_signature + 0x0E);
+                end, 0)) or 0;
+        end
+    end
+    local selector_address = state.stock_page_selector_address;
+    local context_pointer_address = state.stock_page_context_pointer_address;
+    local context = context_pointer_address ~= 0 and tonumber(safe_read(function ()
+        return ashita.memory.read_uint32(context_pointer_address);
+    end, 0)) or 0;
+    if (selector_address == 0 or context == 0) then
+        return nil, 'native selector or context is unavailable';
+    end
+
+    local succeeded, result = pcall(function ()
+        local selector = ffi.cast(
+            'int32_t (__thiscall *)(void*, float, float, float)',
+            selector_address);
+        -- FFXiMain's position tuple is ordered X, vertical Z, horizontal Y.
+        return selector(ffi.cast('void*', context), x, z, y);
+    end);
+    if (not succeeded) then
+        return nil, 'native selector call failed: ' .. tostring(result);
+    end
+    local page_id = tonumber(result);
+    if (page_id == nil or page_id < 0 or page_id > 255) then
+        return nil, 'native selector returned no stock page';
+    end
+    if (page_id == 0) then
+        return nil, nil;
+    end
+    return math.floor(page_id), nil;
 end
 
 local function zone_name(zone_id)
@@ -2105,6 +2191,28 @@ local function fallback_page(zone_id, player)
     local manual_page = tonumber(state.settings.map_pages[zone_id]);
     local page_id = manual_page;
     local stock = stock_minimap_info();
+    if (page_id == nil) then
+        local native_page, selector_warning = stock_page_id_for_position(player);
+        if (state.settings.developer_mode == true
+                and selector_warning ~= nil
+                and state.stock_page_selector_warning ~= selector_warning) then
+            state.stock_page_selector_warning = selector_warning;
+            log('Native stock-page selection unavailable: '
+                .. selector_warning .. '.');
+        end
+        if (state.settings.developer_mode == true
+                and native_page ~= nil
+                and state.stock_page_by_zone[zone_id] ~= native_page) then
+            state.stock_page_by_zone[zone_id] = native_page;
+            log(string.format(
+                'Native stock page for zone %d changed to %d.',
+                zone_id,
+                native_page));
+        end
+        if (native_page ~= nil and zone.pages[native_page] ~= nil) then
+            page_id = native_page;
+        end
+    end
     if (page_id == nil) then
         local authored_page = authored_page_for_player(zone_id, player);
         if (authored_page ~= nil and zone.pages[authored_page] ~= nil) then

@@ -75,6 +75,14 @@ Manual selections are stored per zone in `ashitaminimap_config.lua`. They are
 useful for multi-floor zones and remain available whether or not the stock
 plugin is loaded.
 
+In automatic mode, AshitaMiniMap asks FFXiMain's read-only coordinate selector
+for the stock page at the player's current position before consulting authored
+page rules or cached Minimap.dll state. FFXiMain expects its position tuple in
+`X, vertical Z, horizontal Y` order. This native lookup handles irregular page
+boundaries such as Garlaige Citadel's Banishing Gates and works even when the
+stock Minimap plugin is not loaded. A zero/no-page result falls through to the
+authored and default-page safeguards.
+
 An authored multi-page zone may define `page_rules` to avoid an unrecorded
 overview page when live page metadata is unavailable. If its recorded detail
 pages use different transforms, `page_calibrations[page_id]` supplies an exact
