@@ -2867,6 +2867,17 @@ return {
         }),
         treasure_spawns = {
             { kind = 'chest', page_id = 16, x = -352.798, y = 266.998, z = 15.602 },
+            -- Fixed possible Treasure Coffer locations from CatsEyeXI's pinned
+            -- treasure table. Stock-page membership remains unresolved, so
+            -- these stay unpaged reference markers rather than claiming a
+            -- guessed page or route.
+            { kind = 'coffer', x =    9.831, y =  10.208, z =  5.781 },
+            { kind = 'coffer', x =  -20.193, y =  85.064, z =  5.144 },
+            { kind = 'coffer', x =  100.057, y = 103.200, z = -3.250 },
+            { kind = 'coffer', x = -183.168, y =  59.951, z = -3.250 },
+            { kind = 'coffer', x = -127.756, y = 379.906, z =  0.000 },
+            { kind = 'coffer', x =  -20.570, y = 296.848, z = -3.250 },
+            { kind = 'coffer', x =   20.042, y = 376.955, z = -9.250 },
         },
         nm_spawn_ranges = {
             { name = 'Serket', level = '70', z = 19.000, floor = 'SURFACE', page_id = 16, spawn_type = 'Timed', placeholder_count = 0, points = {
