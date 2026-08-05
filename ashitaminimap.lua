@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.7';
+addon.version   = '1.23.8';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -1873,6 +1873,11 @@ local STOCK_MAP_SELECTOR_SIGNATURE =
 local STOCK_MAP_CONTEXT_SIGNATURE =
     '8B7424148B4424108B7C240C8B0D';
 local STOCK_MAP_ENTRY_SIZE = 0x0E;
+-- LuaJIT interns string declarations passed to ffi.cast. Re-parsing this
+-- signature every frame eventually exhausts its ctype table and disables
+-- automatic stock-page selection with a "table overflow" error.
+local STOCK_MAP_SELECTOR_CTYPE =
+    ffi.typeof('int32_t (__thiscall *)(void*, float, float, float)');
 
 local function signed_uint16(value)
     value = tonumber(value);
@@ -2058,9 +2063,7 @@ local function stock_page_id_for_position(player)
     end
 
     local succeeded, result = pcall(function ()
-        local selector = ffi.cast(
-            'int32_t (__thiscall *)(void*, float, float, float)',
-            selector_address);
+        local selector = ffi.cast(STOCK_MAP_SELECTOR_CTYPE, selector_address);
         -- FFXiMain's position tuple is ordered X, vertical Z, horizontal Y.
         return selector(ffi.cast('void*', context), x, z, y);
     end);

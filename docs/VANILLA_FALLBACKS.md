@@ -83,6 +83,11 @@ boundaries such as Garlaige Citadel's Banishing Gates and works even when the
 stock Minimap plugin is not loaded. A zero/no-page result falls through to the
 authored and default-page safeguards.
 
+The LuaJIT FFI function type for this selector must be created once and reused.
+Constructing the same string-declared ctype on every render eventually exhausts
+LuaJIT's ctype table, causing automatic page selection to fail with `table
+overflow` until the addon is reloaded.
+
 An authored multi-page zone may define `page_rules` to avoid an unrecorded
 overview page when live page metadata is unavailable. If its recorded detail
 pages use different transforms, `page_calibrations[page_id]` supplies an exact
