@@ -51,10 +51,11 @@ required walking leg lacks an authored graph or an endpoint cannot snap
 truthfully.
 
 The footer names the endpoint of the current cyan walking leg and the exact
-action to take there. Travel-menu directions include the destination zone and,
-for Home Points, the numbered destination crystal. This keeps same-zone Home
-Point transfers unambiguous instead of displaying only the zone already shown
-on the map.
+action to take there. Home Point and Survival Guide instructions use the
+in-game **By Region Name** hierarchy: one line names the region group and the
+next names the destination. Home Point destinations also include the numbered
+crystal. This keeps both nested travel menus and same-zone transfers
+unambiguous.
 
 Home Point and Survival Guide endpoints currently come from each authored map's
 audited `travel_references`. Expanding travel coverage therefore follows the

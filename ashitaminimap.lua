@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.9';
+addon.version   = '1.23.10';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3617,6 +3617,66 @@ local function world_step_target_name(step, next_action)
     return 'guide destination';
 end
 
+-- Travel menus can be sorted by region or by expansion. World-route
+-- instructions use the in-game "By Region Name" hierarchy so every route
+-- supplies a stable group followed by the exact destination. Only zones with
+-- an authored Home Point or Survival Guide endpoint are retained here.
+local WORLD_TRAVEL_MENU_GROUPS = {
+    { name = 'Republic of Bastok', zones = { 235, 236, 237 } },
+    { name = 'Federation of Windurst', zones = { 238, 239, 240, 241 } },
+    { name = 'Grand Duchy of Jeuno', zones = { 243, 244, 245, 246 } },
+    { name = 'Ronfaure', zones = { 100, 140, 141, 167, 190 } },
+    { name = 'Zulkheim', zones = { 102, 103, 108, 196 } },
+    { name = 'Norvallen', zones = { 2, 104, 105, 149, 195 } },
+    { name = 'Gustaberg', zones = { 106, 143, 172, 173, 191 } },
+    { name = 'Derfland', zones = { 109, 110, 147, 197 } },
+    { name = 'Sarutabaruta', zones = { 115, 145, 169, 192 } },
+    { name = 'Kolshushu', zones = { 4, 117, 118, 198, 213, 249 } },
+    { name = 'Aragoneu', zones = { 119, 120, 151, 200 } },
+    { name = 'Fauregandi', zones = { 9, 111, 166, 204 } },
+    { name = 'Valdeaunia', zones = { 5, 112, 161, 162 } },
+    { name = 'Qufim', zones = { 126, 127, 158, 184 } },
+    { name = 'Li\'Telor', zones = { 121, 122, 153, 154 } },
+    { name = 'Kuzotz', zones = { 114, 125, 208 } },
+    { name = 'Vollbow', zones = { 113, 128, 174, 212 } },
+    { name = 'Elshimo Lowlands', zones = { 123, 176 } },
+    { name = 'Elshimo Uplands', zones = { 124, 159, 160, 205 } },
+    { name = 'Tu\'Lia', zones = { 130, 178 } },
+    { name = 'Movalpolos', zones = { 11, 12 } },
+    { name = 'Tavnazian Archipelago', zones = { 24, 25, 27, 28, 29, 30 } },
+    { name = 'Lumoria', zones = { 33, 34, 35 } },
+    { name = 'West Aht Urhgan', zones = { 52 } },
+    { name = 'Mamool Ja Savagelands', zones = { 51, 65, 68 } },
+    { name = 'Halvung Territory', zones = { 61, 62 } },
+    { name = 'Arrapago Islands', zones = { 54, 79 } },
+    { name = 'Ronfaure Front', zones = { 81 } },
+    { name = 'Norvallen Front', zones = { 82, 84, 175 } },
+    { name = 'Gustaberg Front', zones = { 88, 89 } },
+    { name = 'Derfland Front', zones = { 83, 90, 91, 171 } },
+    { name = 'Sarutabaruta Front', zones = { 95, 96 } },
+    { name = 'Aragoneu Front', zones = { 97, 98 } },
+    { name = 'Fauregandi Front', zones = { 136 } },
+    { name = 'Dark Kindred', zones = { 138, 155 } },
+    { name = 'East Ulbuka Territory', zones = { 261, 263, 265, 267 } },
+    { name = 'Ra\'Kaznar', zones = { 276 } },
+};
+local WORLD_TRAVEL_MENU_GROUP_BY_ZONE = {};
+for _, group in ipairs(WORLD_TRAVEL_MENU_GROUPS) do
+    for _, zone_id in ipairs(group.zones) do
+        WORLD_TRAVEL_MENU_GROUP_BY_ZONE[zone_id] = group.name;
+    end
+end
+
+local function world_action_menu_group(action)
+    if (action == nil
+            or (action.kind ~= 'home_point'
+                and action.kind ~= 'survival_guide')) then
+        return nil;
+    end
+    return WORLD_TRAVEL_MENU_GROUP_BY_ZONE[
+        tonumber(action.destination_zone)];
+end
+
 local function world_action_instruction(action)
     if (action == nil) then
         return nil;
@@ -3628,14 +3688,10 @@ local function world_action_instruction(action)
         local destination = zone_name(action.destination_zone);
         if (type(action.destination_name) == 'string'
                 and action.destination_name ~= '') then
-            local compact_name = string.gsub(
-                action.destination_name,
-                'Home Point',
-                'HP');
             destination = string.format(
                 '%s %s',
                 destination,
-                compact_name);
+                action.destination_name);
         end
         return string.format('select %s', destination);
     elseif (action.kind == 'survival_guide') then
@@ -3662,7 +3718,7 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
             or (route.world ~= true and route.projection == nil)) then
         return;
     end
-    local height = 38;
+    local height = route.world == true and 54 or 38;
     local panel_top = top + size - height;
     local background = imgui.GetColorU32({ 0.015, 0.025, 0.030, 0.88 });
     local border = color('border', { 0.67, 0.47, 0.22, 0.90 });
@@ -3681,6 +3737,7 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
         1.0);
     local title = nil;
     local instruction = nil;
+    local instruction_detail = nil;
     if (route.world == true) then
         local first = route.world_steps[1];
         if (first ~= nil and first.kind == 'walk') then
@@ -3696,14 +3753,28 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
                 target_name);
             local next_instruction = world_action_instruction(action);
             if (next_instruction ~= nil) then
-                instruction = capitalize_instruction(next_instruction);
+                local menu_group = world_action_menu_group(action);
+                if (menu_group ~= nil) then
+                    instruction = 'Region: ' .. menu_group;
+                    instruction_detail = capitalize_instruction(
+                        next_instruction);
+                else
+                    instruction = capitalize_instruction(next_instruction);
+                end
             else
                 instruction = 'Follow cyan line to the guide destination';
             end
         elseif (first ~= nil) then
             title = 'WORLD ROUTE   next action';
-            instruction = capitalize_instruction(
-                world_action_instruction(first));
+            local menu_group = world_action_menu_group(first);
+            if (menu_group ~= nil) then
+                instruction = 'Region: ' .. menu_group;
+                instruction_detail = capitalize_instruction(
+                    world_action_instruction(first));
+            else
+                instruction = capitalize_instruction(
+                    world_action_instruction(first));
+            end
         else
             title = 'WORLD ROUTE';
             instruction = 'Guide destination reached';
@@ -3732,6 +3803,12 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
         { left + 10, panel_top + 21 },
         accent,
         instruction);
+    if (instruction_detail ~= nil) then
+        draw_list:AddText(
+            { left + 10, panel_top + 37 },
+            accent,
+            instruction_detail);
+    end
     if (route.world ~= true) then
         draw_list:AddText(
             { left + size - 63, panel_top + 21 },
