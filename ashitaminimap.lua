@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.8';
+addon.version   = '1.23.9';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3598,6 +3598,65 @@ state.draw_guide_path = function (
     return route;
 end
 
+local function world_step_target_name(step, next_action)
+    local node = step ~= nil and step.to_node or nil;
+    local metadata = node ~= nil and node.metadata or nil;
+    if (metadata ~= nil
+            and type(metadata.name) == 'string'
+            and metadata.name ~= '') then
+        return metadata.name;
+    end
+    if (next_action ~= nil and next_action.kind == 'zone_line') then
+        return 'zone exit';
+    elseif (next_action ~= nil and next_action.kind == 'home_point') then
+        return 'Home Point';
+    elseif (next_action ~= nil
+            and next_action.kind == 'survival_guide') then
+        return 'Survival Guide';
+    end
+    return 'guide destination';
+end
+
+local function world_action_instruction(action)
+    if (action == nil) then
+        return nil;
+    elseif (action.kind == 'zone_line') then
+        return string.format(
+            'enter %s',
+            zone_name(action.connection.to_zone));
+    elseif (action.kind == 'home_point') then
+        local destination = zone_name(action.destination_zone);
+        if (type(action.destination_name) == 'string'
+                and action.destination_name ~= '') then
+            local compact_name = string.gsub(
+                action.destination_name,
+                'Home Point',
+                'HP');
+            destination = string.format(
+                '%s %s',
+                destination,
+                compact_name);
+        end
+        return string.format('select %s', destination);
+    elseif (action.kind == 'survival_guide') then
+        return string.format(
+            'select %s',
+            zone_name(action.destination_zone));
+    elseif (action.kind == 'warp') then
+        return string.format(
+            'use Warp to return to %s',
+            zone_name(action.destination_zone));
+    end
+    return 'follow the highlighted walking leg';
+end
+
+local function capitalize_instruction(value)
+    if (type(value) ~= 'string' or value == '') then
+        return value;
+    end
+    return string.upper(string.sub(value, 1, 1)) .. string.sub(value, 2);
+end
+
 state.draw_guide_path_status = function (draw_list, left, top, size, route)
     if (route == nil or size < 180
             or (route.world ~= true and route.projection == nil)) then
@@ -3624,35 +3683,30 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
     local instruction = nil;
     if (route.world == true) then
         local first = route.world_steps[1];
-        local action = first ~= nil and first.kind == 'walk'
-            and route.world_steps[2]
-            or first;
-        local leg_remaining = route.projection ~= nil
-            and route.projection.remaining
-            or 0;
-        title = string.format(
-            'WORLD ROUTE   %.0fy current leg',
-            leg_remaining);
-        if (action == nil) then
-            instruction = 'Continue to the guide destination';
-        elseif action.kind == 'zone_line' then
-            instruction = string.format(
-                'Take zone line to %s',
-                zone_name(action.connection.to_zone));
-        elseif action.kind == 'home_point' then
-            instruction = string.format(
-                'Use Home Point to %s',
-                zone_name(action.destination_zone));
-        elseif action.kind == 'survival_guide' then
-            instruction = string.format(
-                'Use Survival Guide to %s',
-                zone_name(action.destination_zone));
-        elseif action.kind == 'warp' then
-            instruction = string.format(
-                'Use Warp to %s',
-                zone_name(action.destination_zone));
+        if (first ~= nil and first.kind == 'walk') then
+            local action = route.world_steps[2];
+            local target_name = world_step_target_name(first, action);
+            local leg_remaining = route.projection ~= nil
+                and route.projection.remaining
+                or first.distance
+                or 0;
+            title = string.format(
+                'WORLD ROUTE   %.0fy to %s',
+                leg_remaining,
+                target_name);
+            local next_instruction = world_action_instruction(action);
+            if (next_instruction ~= nil) then
+                instruction = capitalize_instruction(next_instruction);
+            else
+                instruction = 'Follow cyan line to the guide destination';
+            end
+        elseif (first ~= nil) then
+            title = 'WORLD ROUTE   next action';
+            instruction = capitalize_instruction(
+                world_action_instruction(first));
         else
-            instruction = 'Follow the highlighted walking leg';
+            title = 'WORLD ROUTE';
+            instruction = 'Guide destination reached';
         end
     else
         title = string.format(
@@ -3678,10 +3732,12 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
         { left + 10, panel_top + 21 },
         accent,
         instruction);
-    draw_list:AddText(
-        { left + size - 63, panel_top + 21 },
-        accent,
-        'PATH ON');
+    if (route.world ~= true) then
+        draw_list:AddText(
+            { left + size - 63, panel_top + 21 },
+            accent,
+            'PATH ON');
+    end
 end
 
 state.draw_custom_waypoint = function (
