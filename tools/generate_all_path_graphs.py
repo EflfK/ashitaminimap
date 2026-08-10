@@ -294,6 +294,35 @@ JOBS = (
         ),
     ),
     GraphJob(
+        "Tavnazian_Safehold.nav",
+        "26_01.lua",
+        (
+            "--zone-id", "26",
+            "--page-id", "1",
+            "--seed=73.590,38.870,-36.150",
+            "--seed=83.697,3.250,-25.000",
+        ),
+    ),
+    GraphJob(
+        "Tavnazian_Safehold.nav",
+        "26_02.lua",
+        (
+            "--zone-id", "26",
+            "--page-id", "2",
+            "--seed=-1.250,107.425,-27.907",
+            "--seed=-89.068,-0.030,-13.367",
+        ),
+    ),
+    GraphJob(
+        "Tavnazian_Safehold.nav",
+        "26_03.lua",
+        (
+            "--zone-id", "26",
+            "--page-id", "3",
+            "--seed=14.000,-5.000,-10.000",
+        ),
+    ),
+    GraphJob(
         "Phomiuna_Aqueducts.nav",
         "27.lua",
         (

@@ -625,6 +625,18 @@ return {
             { name = 'Ziphius', level = '60-62', z = -16.000, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, points = { { x = 76.000, y = 534.000 }, { x = 102.500, y = 525.000 }, { x = 144.500, y = 520.000 }, { x = 184.500, y = 517.500 }, { x = 207.000, y = 479.000 }, { x = 253.000, y = 411.500 } } },
         },
     },
+    [26] = {
+        name = 'Tavnazian Safehold',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 64, page_id = 2, x = -1.250, y = 107.425, z = -27.907 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 120, page_id = 3, x = 14.000, y = -5.000, z = -10.000 },
+            { kind = 'home_point', name = 'Home Point #3', unlock_index = 121, page_id = 1, x = 73.590, y = 38.870, z = -36.150 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 19, page_id = 2, x = -5.000, y = 102.000, z = -28.000 },
+        }),
+        treasure_spawns = {},
+        nm_spawn_ranges = {},
+    },
     [27] = {
         name = 'Phomiuna Aqueducts',
         stock_calibration = true,
