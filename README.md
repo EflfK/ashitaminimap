@@ -14,6 +14,8 @@ The first prototype includes:
 - visible player, NPC, monster, and current-target dots;
 - a north-up, zone-calibrated coordinate grid with edge labels;
 - a live `H-8`-style coordinate badge;
+- a compact Vana'diel environment card with time, elemental day, moon phase,
+  moon illumination, and current weather;
 - an in-game configuration window with persistent settings;
 - a Developer tab with an optional full navigation-graph web;
 - unlock-and-drag positioning;
@@ -57,6 +59,8 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility, with optional live numeric
   X/Y/Z values in the badge;
+- Vana'diel time, elemental day, moon phase/illumination, and weather card
+  visibility;
 - possible Treasure Chest or Coffer spawn references for authored zones;
 - static NM spawn-range references for authored zones that provide them;
 - player, NPC, and monster dot markers;

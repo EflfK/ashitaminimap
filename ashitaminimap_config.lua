@@ -27,6 +27,8 @@ return {
     show_grid = true,
     show_coordinate = true,
     show_numeric_coordinates = false,
+    -- Compact Vana'diel time, elemental day, moon phase, and weather card.
+    show_environment_clock = true,
     -- Fixed authored references only; never indicates live treasure positions.
     show_coffer_spawns = true,
     -- Draw a map-owned shortest path to AshitaGuide's current destination.

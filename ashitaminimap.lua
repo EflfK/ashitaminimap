@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.10';
+addon.version   = '1.23.11';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -26,6 +26,8 @@ local ENTITY_FLOOR_TOLERANCE = 8.0;
 local PATH_FLOOR_TOLERANCE = 4.0;
 local MAP_CORNER_RADIUS = 7.0;
 local SHOW_MAP_CALIBRATION = false;
+local VANA_TIME_SIGNATURE = 'B0015EC390518B4C24088D4424005068';
+local WEATHER_SIGNATURE = '66A1????????663D????72';
 -- General structure rendering is intentionally dormant. Keep the
 -- implementation, metadata, and assets intact so attended development can
 -- restore it later. A map may force one narrowly authored correction overlay
@@ -49,6 +51,7 @@ local DEFAULTS = {
     show_grid = true,
     show_coordinate = true,
     show_numeric_coordinates = false,
+    show_environment_clock = true,
     show_coffer_spawns = true,
     show_travel_references = true,
     show_nm_spawn_ranges = true,
@@ -103,6 +106,13 @@ local state = {
     stock_page_selector_checked_at = 0,
     stock_page_by_zone = {},
     stock_page_selector_warning = nil,
+    environment = {
+        time_signature_address = 0,
+        weather_signature_address = 0,
+        checked_at = 0,
+        snapshot = nil,
+        snapshot_at = 0,
+    },
     config_visible = { false },
     config_dirty = false,
     config_changed_at = 0,
@@ -320,6 +330,9 @@ local function config_text()
         string.format(
             '    show_numeric_coordinates = %s,',
             bool_text(settings.show_numeric_coordinates)),
+        string.format(
+            '    show_environment_clock = %s,',
+            bool_text(settings.show_environment_clock)),
         string.format('    show_coffer_spawns = %s,', bool_text(settings.show_coffer_spawns)),
         string.format('    show_travel_references = %s,', bool_text(settings.show_travel_references)),
         string.format('    show_nm_spawn_ranges = %s,', bool_text(settings.show_nm_spawn_ranges)),
@@ -3958,6 +3971,206 @@ state.draw_guide_markers = function (
     end
 end
 
+local VANA_WEEKDAYS = {
+    [0] = { name = 'Firesday', color = { 0.95, 0.35, 0.18, 1.00 } },
+    [1] = { name = 'Earthsday', color = { 0.78, 0.62, 0.28, 1.00 } },
+    [2] = { name = 'Watersday', color = { 0.30, 0.52, 0.95, 1.00 } },
+    [3] = { name = 'Windsday', color = { 0.35, 0.82, 0.40, 1.00 } },
+    [4] = { name = 'Iceday', color = { 0.55, 0.85, 0.98, 1.00 } },
+    [5] = { name = 'Lightningday', color = { 0.72, 0.45, 0.95, 1.00 } },
+    [6] = { name = 'Lightsday', color = { 0.96, 0.94, 0.70, 1.00 } },
+    [7] = { name = 'Darksday', color = { 0.35, 0.28, 0.48, 1.00 } },
+};
+
+local WEATHER_NAMES = {
+    [0] = 'Clear',
+    [1] = 'Sunshine',
+    [2] = 'Clouds',
+    [3] = 'Fog',
+    [4] = 'Hot Spells',
+    [5] = 'Heat Waves',
+    [6] = 'Rain',
+    [7] = 'Squalls',
+    [8] = 'Dust Storms',
+    [9] = 'Sandstorms',
+    [10] = 'Winds',
+    [11] = 'Gales',
+    [12] = 'Snow',
+    [13] = 'Blizzards',
+    [14] = 'Thunder',
+    [15] = 'Thunderstorms',
+    [16] = 'Auroras',
+    [17] = 'Stellar Glare',
+    [18] = 'Gloom',
+    [19] = 'Darkness',
+};
+
+local function ensure_environment_addresses()
+    local environment = state.environment;
+    local now = os.clock();
+    if (environment.time_signature_address ~= 0
+            and environment.weather_signature_address ~= 0) then
+        return;
+    end
+    if (now - environment.checked_at < 5.0) then
+        return;
+    end
+    environment.checked_at = now;
+    if (environment.time_signature_address == 0) then
+        environment.time_signature_address = tonumber(safe_read(function ()
+            return ashita.memory.find(
+                'FFXiMain.dll',
+                0,
+                VANA_TIME_SIGNATURE,
+                0,
+                0);
+        end, 0)) or 0;
+    end
+    if (environment.weather_signature_address == 0) then
+        environment.weather_signature_address = tonumber(safe_read(function ()
+            return ashita.memory.find(
+                'FFXiMain.dll',
+                0,
+                WEATHER_SIGNATURE,
+                0,
+                0);
+        end, 0)) or 0;
+    end
+end
+
+local function current_environment()
+    local now = os.clock();
+    if (state.environment.snapshot ~= nil
+            and now - state.environment.snapshot_at < 0.5) then
+        return state.environment.snapshot;
+    end
+    ensure_environment_addresses();
+    local environment = state.environment;
+    if (environment.time_signature_address == 0) then
+        return nil;
+    end
+    local time_pointer = tonumber(safe_read(function ()
+        return ashita.memory.read_uint32(
+            environment.time_signature_address + 0x34);
+    end, 0)) or 0;
+    if (time_pointer == 0) then
+        return nil;
+    end
+    local raw_time = tonumber(safe_read(function ()
+        return ashita.memory.read_uint32(time_pointer + 0x0C);
+    end, nil));
+    if (raw_time == nil) then
+        return nil;
+    end
+    raw_time = raw_time + 92514960;
+    local day_number = math.floor(raw_time / 3456);
+    local weekday_index = day_number % 8;
+    local weekday = VANA_WEEKDAYS[weekday_index] or VANA_WEEKDAYS[0];
+    local moon_day = (day_number + 26) % 84;
+    local moon_direction = moon_day < 42 and 'Waning' or 'Waxing';
+    local moon_percent = moon_day >= 42
+        and math.floor(100 * ((moon_day - 42) / 42) + 0.5)
+        or math.floor(100 * (1 - (moon_day / 42)) + 0.5);
+    local moon_name = nil;
+    if (moon_percent <= 5) then
+        moon_name = 'New Moon';
+    elseif (moon_percent <= 25) then
+        moon_name = moon_direction .. ' Crescent';
+    elseif (moon_percent <= 40) then
+        moon_name = moon_direction == 'Waning'
+            and 'Last Quarter'
+            or 'First Quarter';
+    elseif (moon_percent <= 90) then
+        moon_name = moon_direction .. ' Gibbous';
+    else
+        moon_name = 'Full Moon';
+    end
+    local weather_id = nil;
+    if (environment.weather_signature_address ~= 0) then
+        local weather_pointer = tonumber(safe_read(function ()
+            return ashita.memory.read_uint32(
+                environment.weather_signature_address + 0x02);
+        end, 0)) or 0;
+        if (weather_pointer ~= 0) then
+            weather_id = tonumber(safe_read(function ()
+                return ashita.memory.read_uint8(weather_pointer);
+            end, nil));
+        end
+    end
+    local snapshot = {
+        time = string.format(
+            '%02d:%02d',
+            math.floor(raw_time / 144) % 24,
+            math.floor((raw_time % 144) / 2.4)),
+        weekday = weekday,
+        moon_name = moon_name,
+        moon_percent = moon_percent,
+        weather = WEATHER_NAMES[weather_id] or 'Weather unknown',
+    };
+    environment.snapshot = snapshot;
+    environment.snapshot_at = now;
+    return snapshot;
+end
+
+local function draw_environment_clock(draw_list, left, top, size)
+    if (state.settings.show_environment_clock ~= true or size < 260) then
+        return;
+    end
+    local environment = current_environment();
+    if (environment == nil) then
+        return;
+    end
+    local time_label = string.format(
+        '%s  %s',
+        environment.time,
+        environment.weekday.name);
+    local detail_label = string.format(
+        '%s %d%%  |  %s',
+        environment.moon_name,
+        environment.moon_percent,
+        environment.weather);
+    local time_width = select(1, imgui.CalcTextSize(time_label));
+    local detail_width = select(1, imgui.CalcTextSize(detail_label));
+    local panel_width = math.max(time_width + 36, detail_width + 16, 150);
+    local panel_height = 41;
+    local panel_left = left + size - panel_width - 6;
+    local panel_top = top + 6;
+    local badge_color = color('badge', { 0.025, 0.055, 0.070, 0.88 });
+    local border = color('border', { 0.67, 0.47, 0.22, 0.90 });
+    local text_color = color('grid_text', { 0.82, 0.71, 0.51, 0.88 });
+    draw_list:AddRectFilled(
+        { panel_left, panel_top },
+        { panel_left + panel_width, panel_top + panel_height },
+        badge_color,
+        3.0);
+    draw_list:AddRect(
+        { panel_left, panel_top },
+        { panel_left + panel_width, panel_top + panel_height },
+        border,
+        3.0,
+        0,
+        1.0);
+    draw_list:AddCircleFilled(
+        { panel_left + 11, panel_top + 12 },
+        5.0,
+        imgui.GetColorU32(environment.weekday.color),
+        18);
+    draw_list:AddCircle(
+        { panel_left + 11, panel_top + 12 },
+        5.0,
+        color('shadow', { 0.01, 0.02, 0.025, 0.94 }),
+        18,
+        1.0);
+    draw_list:AddText(
+        { panel_left + 22, panel_top + 5 },
+        text_color,
+        time_label);
+    draw_list:AddText(
+        { panel_left + 8, panel_top + 22 },
+        text_color,
+        detail_label);
+end
+
 local function draw_badge(draw_list, left, top, player, map)
     local show_grid_coordinate = state.settings.show_coordinate == true;
     local show_numeric_coordinates =
@@ -4546,6 +4759,7 @@ local function render_minimap()
                 1);
         end
         draw_badge(draw_list, left, top, player, map);
+        draw_environment_clock(draw_list, left, top, size);
         draw_unlocked_hint(draw_list, left, top, size);
         draw_list:AddRect(
             { left, top },
@@ -4757,6 +4971,9 @@ local function render_config_window()
         config_checkbox(
             'Numeric X/Y/Z in badge##ashitaminimap_numeric_coordinates',
             'show_numeric_coordinates');
+        config_checkbox(
+            'Vana time, day, moon, and weather##ashitaminimap_environment_clock',
+            'show_environment_clock');
         config_checkbox(
             'Possible treasure spawns##ashitaminimap_coffer_spawns',
             'show_coffer_spawns');
@@ -5056,6 +5273,11 @@ ashita.events.register('unload', 'unload_cb', function ()
     state.world_catalog = {};
     state.world_topology = nil;
     state.custom_waypoint = nil;
+    state.environment.time_signature_address = 0;
+    state.environment.weather_signature_address = 0;
+    state.environment.checked_at = 0;
+    state.environment.snapshot = nil;
+    state.environment.snapshot_at = 0;
     state.device = nil;
     state.config_visible[1] = false;
 end);
