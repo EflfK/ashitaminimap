@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.11';
+addon.version   = '1.23.12';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -9,6 +9,7 @@ local bit = require('bit');
 local d3d8 = require('d3d8');
 local ffi = require('ffi');
 local imgui = require('imgui');
+local spectralfocus_modal = require('spectralfocus_modal');
 
 local commands = T{
     ['/aminimap'] = true,
@@ -4498,6 +4499,9 @@ local function render_minimap()
     if (state.settings.visible ~= true) then
         return;
     end
+    if (spectralfocus_modal.is_decision()) then
+        return;
+    end
 
     local player = current_player();
     if (player == nil) then
@@ -4601,7 +4605,9 @@ local function render_minimap()
         bit.lshift(1, 18), -- NoNavInputs
         bit.lshift(1, 19));-- NoNavFocus
 
-    imgui.SetNextWindowPos({ tonumber(state.settings.x) or 18, tonumber(state.settings.y) or 128 }, 0);
+    local window_x = tonumber(state.settings.x) or 18;
+    local window_y = tonumber(state.settings.y) or 128;
+    imgui.SetNextWindowPos({ window_x, window_y }, 0);
     -- The Ashita ImGui binding applies 8 px of default window padding. Account
     -- for it so the requested map square is not clipped on the right or bottom.
     imgui.SetNextWindowSize({ size + 16, size + 16 }, 0);
