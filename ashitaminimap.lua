@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.15';
+addon.version   = '1.23.16';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -28,6 +28,8 @@ local PATH_FLOOR_TOLERANCE = 4.0;
 local MAP_CORNER_RADIUS = 7.0;
 local DECISION_SELECTOR_TOP = 1230;
 local DECISION_SELECTOR_GUTTER = 16;
+local HOVER_FADE_IN_SECONDS = 0.30;
+local HOVER_FADE_OUT_SECONDS = 0.45;
 local SHOW_MAP_CALIBRATION = false;
 local VANA_TIME_SIGNATURE = 'B0015EC390518B4C24088D4424005068';
 local WEATHER_SIGNATURE = '66A1????????663D????72';
@@ -122,6 +124,8 @@ local state = {
     dragging = false,
     drag_offset_x = 0,
     drag_offset_y = 0,
+    hover_focus = 0,
+    hover_focus_updated_at = 0,
     origin_editor = {
         zone_id = nil,
         page_key = nil,
@@ -4284,10 +4288,30 @@ local function draw_map_layer(
     end
 end
 
-local function draw_map_backdrop(draw_list, left, top, size, hovered)
-    local opacity = hovered == true
-        and 1
-        or clamp(state.settings.backdrop_opacity, 0, 0.75);
+local function focused_opacity(configured, focus)
+    configured = clamp(configured, 0, 1);
+    return configured + ((1 - configured) * clamp(focus, 0, 1));
+end
+
+local function update_hover_focus(hovered)
+    local now = os.clock();
+    local elapsed = state.hover_focus_updated_at > 0
+        and clamp(now - state.hover_focus_updated_at, 0, 0.10)
+        or 0;
+    state.hover_focus_updated_at = now;
+    local duration = hovered and HOVER_FADE_IN_SECONDS or HOVER_FADE_OUT_SECONDS;
+    local direction = hovered and 1 or -1;
+    state.hover_focus = clamp(
+        state.hover_focus + (direction * elapsed / duration),
+        0,
+        1);
+    return state.hover_focus;
+end
+
+local function draw_map_backdrop(draw_list, left, top, size, focus)
+    local opacity = focused_opacity(
+        clamp(state.settings.backdrop_opacity, 0, 0.75),
+        focus);
     if (opacity <= 0) then
         return;
     end
@@ -4623,6 +4647,7 @@ local function render_minimap()
     if (imgui.Begin('##ashitaminimap_overlay', true, window_flags)) then
         local left, top = imgui.GetCursorScreenPos();
         local hovered = handle_map_input(left, top, size, map);
+        local hover_focus = update_hover_focus(hovered);
         minimum_zoom = zoom_minimum_for_map(map, size);
         scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
         if (state.settings.pixels_per_yalm ~= scale) then
@@ -4642,7 +4667,7 @@ local function render_minimap()
         local entity_visual_scale = visual_scale
             * clamp(state.settings.marker_size, 0.25, 2.00);
         local draw_list = imgui.GetWindowDrawList();
-        draw_map_backdrop(draw_list, left, top, size, hovered);
+        draw_map_backdrop(draw_list, left, top, size, hover_focus);
         if (vanilla_texture ~= nil) then
             draw_map_layer(
                 draw_list,
@@ -4653,7 +4678,7 @@ local function render_minimap()
                 map,
                 vanilla_texture,
                 scale,
-                hovered and 1 or state.settings.vanilla_opacity,
+                focused_opacity(state.settings.vanilla_opacity, hover_focus),
                 1);
         end
         for _, layer in ipairs(structure_layers) do
@@ -4674,7 +4699,7 @@ local function render_minimap()
                 map,
                 layer.texture,
                 scale,
-                hovered and 1 or (layer.opacity * zoom_opacity),
+                focused_opacity(layer.opacity * zoom_opacity, hover_focus),
                 visibility_boost);
         end
         -- NM ranges sit immediately above the vanilla and authored pathing
