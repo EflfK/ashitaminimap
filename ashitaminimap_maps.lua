@@ -640,6 +640,10 @@ return {
     [27] = {
         name = 'Phomiuna Aqueducts',
         stock_calibration = true,
+        prefer_authored_page_selection = true,
+        page_graph_seeds = {
+            { page_id = 2, x = 60.001, y = -20.825, z = -5.983 },
+        },
         travel_references = travel_reference_set({
             { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 26, x = 252.000, y = -266.000, z = 0.000 },
         }),

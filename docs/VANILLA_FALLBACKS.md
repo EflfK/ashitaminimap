@@ -83,6 +83,13 @@ boundaries such as Garlaige Citadel's Banishing Gates and works even when the
 stock Minimap plugin is not loaded. A zero/no-page result falls through to the
 authored and default-page safeguards.
 
+If a focused live report proves that FFXiMain selects the wrong stock page for
+a retained navigation component, the zone may set
+`prefer_authored_page_selection = true`. The runtime then consults that zone's
+`page_rules` or `page_graph_seeds` first, but falls back to the native selector
+where the authored metadata does not resolve the player's component. This is a
+targeted exception, not a repository-wide change in precedence.
+
 The LuaJIT FFI function type for this selector must be created once and reused.
 Constructing the same string-declared ctype on every render eventually exhausts
 LuaJIT's ctype table, causing automatic page selection to fail with `table

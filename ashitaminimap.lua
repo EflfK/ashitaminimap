@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.16';
+addon.version   = '1.23.17';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -2214,6 +2214,15 @@ local function fallback_page(zone_id, player)
     local manual_page = tonumber(state.settings.map_pages[zone_id]);
     local page_id = manual_page;
     local stock = stock_minimap_info();
+    local authored = state.maps[zone_id];
+    local prefer_authored_page = type(authored) == 'table'
+        and authored.prefer_authored_page_selection == true;
+    if (page_id == nil and prefer_authored_page) then
+        local authored_page = authored_page_for_player(zone_id, player);
+        if (authored_page ~= nil and zone.pages[authored_page] ~= nil) then
+            page_id = authored_page;
+        end
+    end
     if (page_id == nil) then
         local native_page, selector_warning = stock_page_id_for_position(player);
         if (state.settings.developer_mode == true
