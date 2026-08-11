@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.13';
+addon.version   = '1.23.14';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3657,7 +3657,7 @@ local WORLD_TRAVEL_MENU_GROUPS = {
     { name = 'Elshimo Uplands', zones = { 124, 159, 160, 205 } },
     { name = 'Tu\'Lia', zones = { 130, 178 } },
     { name = 'Movalpolos', zones = { 11, 12 } },
-    { name = 'Tavnazian Archipelago', zones = { 24, 25, 27, 28, 29, 30 } },
+    { name = 'Tavnazian Archipelago', zones = { 24, 25, 26, 27, 28, 29, 30 } },
     { name = 'Lumoria', zones = { 33, 34, 35 } },
     { name = 'West Aht Urhgan', zones = { 52 } },
     { name = 'Mamool Ja Savagelands', zones = { 51, 65, 68 } },
