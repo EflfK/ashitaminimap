@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.12';
+addon.version   = '1.23.13';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -4282,8 +4282,10 @@ local function draw_map_layer(
     end
 end
 
-local function draw_map_backdrop(draw_list, left, top, size)
-    local opacity = clamp(state.settings.backdrop_opacity, 0, 0.75);
+local function draw_map_backdrop(draw_list, left, top, size, hovered)
+    local opacity = hovered == true
+        and 1
+        or clamp(state.settings.backdrop_opacity, 0, 0.75);
     if (opacity <= 0) then
         return;
     end
@@ -4617,7 +4619,7 @@ local function render_minimap()
 
     if (imgui.Begin('##ashitaminimap_overlay', true, window_flags)) then
         local left, top = imgui.GetCursorScreenPos();
-        handle_map_input(left, top, size, map);
+        local hovered = handle_map_input(left, top, size, map);
         minimum_zoom = zoom_minimum_for_map(map, size);
         scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
         if (state.settings.pixels_per_yalm ~= scale) then
@@ -4637,7 +4639,7 @@ local function render_minimap()
         local entity_visual_scale = visual_scale
             * clamp(state.settings.marker_size, 0.25, 2.00);
         local draw_list = imgui.GetWindowDrawList();
-        draw_map_backdrop(draw_list, left, top, size);
+        draw_map_backdrop(draw_list, left, top, size, hovered);
         if (vanilla_texture ~= nil) then
             draw_map_layer(
                 draw_list,
@@ -4648,7 +4650,7 @@ local function render_minimap()
                 map,
                 vanilla_texture,
                 scale,
-                state.settings.vanilla_opacity,
+                hovered and 1 or state.settings.vanilla_opacity,
                 1);
         end
         for _, layer in ipairs(structure_layers) do
@@ -4669,7 +4671,7 @@ local function render_minimap()
                 map,
                 layer.texture,
                 scale,
-                layer.opacity * zoom_opacity,
+                hovered and 1 or (layer.opacity * zoom_opacity),
                 visibility_boost);
         end
         -- NM ranges sit immediately above the vanilla and authored pathing
