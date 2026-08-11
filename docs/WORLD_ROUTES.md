@@ -46,9 +46,11 @@ For a destination in another zone, the router:
 7. runs Dijkstra across the combined walking and travel graph.
 
 Only the current-zone walking leg is drawn. After zoning, the route is rebuilt
-from the player's actual arrival position. A route is withheld when any
-required walking leg lacks an authored graph or an endpoint cannot snap
-truthfully.
+from the player's actual arrival position. When the destination cannot be
+reached because of a later graph gap, the router may draw only a fully authored
+handoff into the destination zone. The footer labels that result `PARTIAL
+ROUTE` and warns that the destination remains marker-only after zoning. A route
+is still withheld when the current endpoint or handoff cannot snap truthfully.
 
 The footer names the endpoint of the current cyan walking leg and the exact
 action to take there. Home Point and Survival Guide instructions use the

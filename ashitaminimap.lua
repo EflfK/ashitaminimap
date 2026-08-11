@@ -1605,14 +1605,43 @@ state.ensure_world_path = function (player, destination)
             end
         end
     end
+    local route_target_index = target_index;
+    local partial = false;
     if (costs[target_index] == nil) then
-        state.world_path.route = nil;
-        state.world_path.last_error = 'no fully authored cross-zone route';
-        return nil;
+        -- A downstream graph gap should not suppress an already-authored
+        -- current-zone handoff. Prefer the reachable arrival in the
+        -- destination zone that leaves the smallest remaining straight-line
+        -- gap, then rebuild normally after zoning. The destination marker
+        -- remains marker-only until a complete local graph is available.
+        local best_partial_score = nil;
+        for _, index in ipairs(zone_indexes(destination.zone_id)) do
+            local node = nodes[index];
+            local arrival = previous_edge[index];
+            if index ~= target_index
+                    and costs[index] ~= nil
+                    and node ~= nil
+                    and arrival ~= nil
+                    and arrival.kind ~= 'walk' then
+                local delta_x = node.x - destination.x;
+                local delta_y = node.y - destination.y;
+                local score = costs[index]
+                    + math.sqrt((delta_x * delta_x) + (delta_y * delta_y));
+                if best_partial_score == nil or score < best_partial_score then
+                    best_partial_score = score;
+                    route_target_index = index;
+                end
+            end
+        end
+        if best_partial_score == nil then
+            state.world_path.route = nil;
+            state.world_path.last_error = 'no authored cross-zone handoff';
+            return nil;
+        end
+        partial = true;
     end
 
     local steps = {};
-    local cursor = target_index;
+    local cursor = route_target_index;
     while cursor ~= start_index do
         local edge = previous_edge[cursor];
         local parent = previous[cursor];
@@ -1643,7 +1672,8 @@ state.ensure_world_path = function (player, destination)
         destination_z = destination.z,
         destination_source = 'guide',
         world_steps = steps,
-        total_cost = costs[target_index],
+        total_cost = costs[route_target_index],
+        partial = partial,
         points = points,
     };
     if (#points > 1) then
@@ -3777,7 +3807,8 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
                 or first.distance
                 or 0;
             title = string.format(
-                'WORLD ROUTE   %.0fy to %s',
+                '%s   %.0fy to %s',
+                route.partial == true and 'PARTIAL ROUTE' or 'WORLD ROUTE',
                 leg_remaining,
                 target_name);
             local next_instruction = world_action_instruction(action);
@@ -3792,6 +3823,9 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
                 end
             else
                 instruction = 'Follow cyan line to the guide destination';
+            end
+            if route.partial == true and instruction_detail == nil then
+                instruction_detail = 'Destination remains marker-only after zoning';
             end
         elseif (first ~= nil) then
             title = 'WORLD ROUTE   next action';

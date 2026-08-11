@@ -107,6 +107,9 @@ zone-line catalog and the player's read-only Home Point and Survival Guide
 registration masks. It selects a shortest fully authored cross-zone route,
 draws only the current-zone walking leg, names the next transition in the
 status strip, and recalculates from the observed arrival position after zoning.
+When a later destination-zone graph gap prevents an end-to-end route, it still
+draws a truthful current-zone handoff as a clearly labeled partial route and
+leaves the final destination marker-only after zoning.
 Warp is eligible only when its exact authored landing anchor is unambiguous.
 See [Cross-zone world routes](docs/WORLD_ROUTES.md).
 
