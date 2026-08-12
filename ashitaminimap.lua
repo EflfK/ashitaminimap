@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.19';
+addon.version   = '1.23.20';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -32,6 +32,7 @@ local COMBAT_SELECTOR_TOP = 1130;
 local COMBAT_SELECTOR_GUTTER = 16;
 local INVENTORY_PREVIEW_TOP = 1290;
 local INVENTORY_PREVIEW_GUTTER = 16;
+local POSITION_ANIMATION_RESPONSE = 22;
 local HOVER_FADE_IN_SECONDS = 0.30;
 local HOVER_FADE_OUT_SECONDS = 0.45;
 local SHOW_MAP_CALIBRATION = false;
@@ -130,6 +131,8 @@ local state = {
     drag_offset_y = 0,
     hover_focus = 0,
     hover_focus_updated_at = 0,
+    window_y = nil,
+    window_y_updated_at = 0,
     origin_editor = {
         zone_id = nil,
         page_key = nil,
@@ -4389,6 +4392,25 @@ local function update_hover_focus(hovered)
     return state.hover_focus;
 end
 
+local function animated_window_y(target)
+    target = tonumber(target) or DEFAULTS.y;
+    local now = os.clock();
+    if (state.settings.locked ~= true or state.window_y == nil) then
+        state.window_y = target;
+        state.window_y_updated_at = now;
+        return target;
+    end
+
+    local elapsed = clamp(now - state.window_y_updated_at, 0, 0.10);
+    state.window_y_updated_at = now;
+    local blend = 1 - math.exp(-POSITION_ANIMATION_RESPONSE * elapsed);
+    state.window_y = state.window_y + ((target - state.window_y) * blend);
+    if (math.abs(target - state.window_y) < 0.5) then
+        state.window_y = target;
+    end
+    return state.window_y;
+end
+
 local function draw_map_backdrop(draw_list, left, top, size, focus)
     local opacity = focused_opacity(
         clamp(state.settings.backdrop_opacity, 0, 0.75),
@@ -4727,6 +4749,7 @@ local function render_minimap()
             tonumber(state.settings.x) or 10,
             COMBAT_SELECTOR_TOP - COMBAT_SELECTOR_GUTTER - (size + 16));
     end
+    window_y = animated_window_y(window_y);
     imgui.SetNextWindowPos({ window_x, window_y }, 0);
     -- The Ashita ImGui binding applies 8 px of default window padding. Account
     -- for it so the requested map square is not clipped on the right or bottom.

@@ -81,6 +81,10 @@ While the native inventory is open, the minimap moves only far enough upward
 to remain above the item-description preview, then returns to its configured
 position when inventory closes.
 
+Temporary vertical layout changes animate with a short, non-overshooting
+ease-out. If the target position changes mid-motion, the minimap redirects from
+its current position instead of jumping or restarting.
+
 The **Developer** tab is display-only and disabled by default. Enable
 **Developer mode**, then **Show all pathing**, to draw every node and connection
 from the active page's navigation graph. Connections on the player's current
