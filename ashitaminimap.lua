@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.24.0';
+addon.version   = '1.24.1';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -670,15 +670,12 @@ state.poll_guide_markers = function (force)
         local name = tostring(value.marker_reference.name or '')
             :gsub('^%s+', '')
             :gsub('%s+$', '');
-        local style = tostring(value.marker_reference.style or ''):lower();
         if (kind == 'nm_spawn_range'
                 and name ~= ''
-                and #name <= 96
-                and style == 'damselfly') then
+                and #name <= 96) then
             normalized.marker_reference = {
                 kind = kind,
                 name = name,
-                style = style,
             };
         end
     end
@@ -696,6 +693,9 @@ state.poll_guide_markers = function (force)
                 z = type(marker) == 'table' and tonumber(marker.z) or nil,
                 map_id = map_id ~= nil and math.floor(map_id) or nil,
                 approximate = marker.approximate == true,
+                style = tostring(marker.style or ''):lower() == 'damselfly'
+                    and 'damselfly'
+                    or '',
             };
         end
     end
@@ -739,7 +739,7 @@ state.active_guide_nm_reference = function (player, map)
         if (type(reference) == 'table'
                 and tostring(reference.name or ''):lower() == requested_name
                 and (reference_page == nil or reference_page == current_page)) then
-            return reference, requested.style;
+            return reference;
         end
     end
     return nil;
@@ -4066,46 +4066,6 @@ state.draw_guide_markers = function (
     local maximum_y = top + size - 10;
     local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local pulse = 0.82 + ((math.sin(os.clock() * 5) + 1) * 0.09);
-    local selected_reference, marker_style = state.active_guide_nm_reference(player, map);
-    local reference_hover = nil;
-    if (selected_reference ~= nil
-            and marker_style == 'damselfly'
-            and type(selected_reference.points) == 'table') then
-        local floor_opacity = shares_authored_floor(
-            map,
-            player.z,
-            selected_reference.z)
-            and 1
-            or state.settings.inactive_floor_opacity;
-        local mouse_x, mouse_y = imgui.GetMousePos();
-        for _, point in ipairs(selected_reference.points) do
-            local point_x = type(point) == 'table' and tonumber(point.x) or nil;
-            local point_y = type(point) == 'table' and tonumber(point.y) or nil;
-            if (point_x ~= nil and point_y ~= nil) then
-                local screen_x = center_x + ((point_x - camera.x) * scale);
-                local screen_y = center_y - ((point_y - camera.y) * scale);
-                if (screen_x >= left - 10
-                        and screen_x <= left + size + 10
-                        and screen_y >= top - 10
-                        and screen_y <= top + size + 10) then
-                    draw_damselfly_marker(
-                        draw_list,
-                        screen_x,
-                        screen_y,
-                        floor_opacity);
-                    local dx = mouse_x - screen_x;
-                    local dy = mouse_y - screen_y;
-                    if ((dx * dx) + (dy * dy)) <= 64 then
-                        reference_hover = {
-                            x = screen_x,
-                            y = screen_y,
-                            reference = selected_reference,
-                        };
-                    end
-                end
-            end
-        end
-    end
     for _, marker in ipairs(state.active_guide_markers(player)) do
         local marker_on_player_floor = marker.z == nil
             or player.z == nil
@@ -4124,7 +4084,9 @@ state.draw_guide_markers = function (
             local fill = distance <= 2.5
                 and color('player', { 0.18, 0.88, 0.90, 1.00 })
                 or imgui.GetColorU32({ 1.00, 0.71, 0.20, pulse });
-            if (marker.approximate == true) then
+            if (marker.style == 'damselfly') then
+                draw_damselfly_marker(draw_list, clamped_x, clamped_y, 1);
+            elseif (marker.approximate == true) then
                 local radius = offscreen and 9.0 or 8.0;
                 draw_list:AddLine(
                     { clamped_x, clamped_y - radius },
@@ -4186,7 +4148,6 @@ state.draw_guide_markers = function (
             end
         end
     end
-    return reference_hover;
 end
 
 local VANA_WEEKDAYS = {
@@ -5002,7 +4963,7 @@ local function render_minimap()
             map,
             scale);
         draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
-        local guide_nm_hover = state.draw_guide_markers(
+        state.draw_guide_markers(
             draw_list,
             left,
             top,
@@ -5034,16 +4995,15 @@ local function render_minimap()
             camera,
             map,
             scale);
-        local active_nm_hover = guide_nm_hover or nm_spawn_hover;
-        if (active_nm_hover ~= nil) then
+        if (nm_spawn_hover ~= nil) then
             draw_nm_spawn_range_card(
                 draw_list,
                 left,
                 top,
                 size,
-                active_nm_hover.x,
-                active_nm_hover.y,
-                active_nm_hover.reference,
+                nm_spawn_hover.x,
+                nm_spawn_hover.y,
+                nm_spawn_hover.reference,
                 1);
         end
         draw_badge(draw_list, left, top, player, map);

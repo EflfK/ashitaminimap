@@ -131,11 +131,12 @@ leaves the final destination marker-only after zoning.
 Warp is eligible only when its exact authored landing anchor is unambiguous.
 See [Cross-zone world routes](docs/WORLD_ROUTES.md).
 
-Version 3 can also reference an exact map-owned NM spawn-range name and request
-a validated marker style. A marker-only NM step can disable pathing and render
-small damselfly icons at the cataloged points instead of gold guide dots. The
-reference does not add, alter, or infer coordinates; AshitaMiniMap remains the
-owner of the verified spawn catalog.
+Version 3 can apply a validated style to explicit guide markers. A marker-only
+NM step can disable pathing and render small damselfly icons at verified
+placeholder coordinates instead of gold guide dots. It can also name the NM's
+general relocation range so AshitaMiniMap suppresses that separate reference
+while the placeholder guide is active. Placeholder coordinates are never
+inferred from the NM relocation catalog.
 
 The handoff contains no commands, routes, or player actions. AshitaGuide
 remains the source of guide state and supplies only destination coordinates.
