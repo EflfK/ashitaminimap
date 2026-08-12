@@ -77,6 +77,10 @@ native player, magic, or ability command menu is open, including while the
 player is not engaged. It returns to the configured position when the menu
 closes.
 
+While the native inventory is open, the minimap moves only far enough upward
+to remain above the item-description preview, then returns to its configured
+position when inventory closes.
+
 The **Developer** tab is display-only and disabled by default. Enable
 **Developer mode**, then **Show all pathing**, to draw every node and connection
 from the active page's navigation graph. Connections on the player's current

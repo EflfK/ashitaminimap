@@ -38,4 +38,8 @@ function M.is_command_menu()
         or name:find('ability', 1, true) ~= nil;
 end
 
+function M.is_inventory()
+    return M.menu_name:lower():find('inventor', 1, true) ~= nil;
+end
+
 return M;

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.18';
+addon.version   = '1.23.19';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -30,6 +30,8 @@ local DECISION_SELECTOR_TOP = 1230;
 local DECISION_SELECTOR_GUTTER = 16;
 local COMBAT_SELECTOR_TOP = 1130;
 local COMBAT_SELECTOR_GUTTER = 16;
+local INVENTORY_PREVIEW_TOP = 1290;
+local INVENTORY_PREVIEW_GUTTER = 16;
 local HOVER_FADE_IN_SECONDS = 0.30;
 local HOVER_FADE_OUT_SECONDS = 0.45;
 local SHOW_MAP_CALIBRATION = false;
@@ -4714,6 +4716,12 @@ local function render_minimap()
         window_y = math.max(
             tonumber(state.settings.x) or 10,
             DECISION_SELECTOR_TOP - DECISION_SELECTOR_GUTTER - (size + 16));
+    elseif (spectralfocus_modal.is_inventory()) then
+        window_y = math.min(
+            window_y,
+            math.max(
+                tonumber(state.settings.x) or 10,
+                INVENTORY_PREVIEW_TOP - INVENTORY_PREVIEW_GUTTER - (size + 16)));
     elseif (player_is_engaged(player) or spectralfocus_modal.is_command_menu()) then
         window_y = math.max(
             tonumber(state.settings.x) or 10,
