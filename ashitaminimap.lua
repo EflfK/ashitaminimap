@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.21';
+addon.version   = '1.23.22';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3292,12 +3292,16 @@ local function draw_nm_spawn_ranges(
                 or state.settings.inactive_floor_opacity;
             local fill = color_with_opacity(
                 'nm_spawn_range',
-                { 0.690, 0.145, 0.190, 0.075 },
+                { 0.820, 0.080, 0.130, 0.280 },
+                floor_opacity);
+            local border = color_with_opacity(
+                'nm_spawn_range_border',
+                { 1.000, 0.300, 0.340, 0.900 },
                 floor_opacity);
             local radius = clamp(
                 (tonumber(reference.radius_yalms) or 4.5) * scale,
-                3.0,
-                14.0);
+                5.0,
+                18.0);
             local hovered = false;
             local hover_x = nil;
             local hover_y = nil;
@@ -3319,6 +3323,12 @@ local function draw_nm_spawn_ranges(
                             radius,
                             fill,
                             20);
+                        draw_list:AddCircle(
+                            { screen_x, screen_y },
+                            radius,
+                            border,
+                            20,
+                            1.5);
                         local dx = mouse_x - screen_x;
                         local dy = mouse_y - screen_y;
                         if ((dx * dx) + (dy * dy)) <= (radius * radius) then
