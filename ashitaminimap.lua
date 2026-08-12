@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.26.0';
+addon.version   = '1.27.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -645,7 +645,7 @@ state.poll_guide_markers = function (force)
     local ok, value = pcall(chunk);
     local version = type(value) == 'table' and tonumber(value.version) or nil;
     if (not ok or type(value) ~= 'table'
-            or (version ~= 1 and version ~= 2 and version ~= 3)
+            or (version ~= 1 and version ~= 2 and version ~= 3 and version ~= 4)
             or value.source ~= 'ashitaguide') then
         state.guide_markers.last_error = 'invalid marker handoff';
         return;
@@ -665,6 +665,28 @@ state.poll_guide_markers = function (force)
         path_enabled = version < 3 or value.path_enabled ~= false,
         markers = {},
     };
+    if (version >= 4 and type(value.nm_hunt) == 'table') then
+        local hunt_zone_id = tonumber(value.nm_hunt.zone_id);
+        local hidden = {};
+        local hidden_count = 0;
+        for name, is_hidden in pairs(
+                type(value.nm_hunt.hidden) == 'table' and value.nm_hunt.hidden or {}) do
+            local clean_name = type(name) == 'string'
+                and name:gsub('^%s+', ''):gsub('%s+$', '')
+                or '';
+            if (is_hidden == true and clean_name ~= '' and #clean_name <= 96 and hidden_count < 64) then
+                hidden[clean_name:lower()] = true;
+                hidden_count = hidden_count + 1;
+            end
+        end
+        if (hunt_zone_id ~= nil and hunt_zone_id >= 0 and hunt_zone_id <= 999) then
+            normalized.nm_hunt = {
+                zone_id = math.floor(hunt_zone_id),
+                visible = value.nm_hunt.visible == true,
+                hidden = hidden,
+            };
+        end
+    end
     if (version >= 3 and type(value.marker_reference) == 'table') then
         local kind = tostring(value.marker_reference.kind or '');
         local name = tostring(value.marker_reference.name or '')
@@ -743,6 +765,18 @@ state.active_guide_nm_reference = function (player, map)
         end
     end
     return nil;
+end
+
+state.nm_hunt_reference_visible = function (player, reference)
+    local payload = state.active_guide_payload();
+    local hunt = payload ~= nil and payload.nm_hunt or nil;
+    if (hunt == nil or hunt.zone_id ~= player.zone_id) then
+        return true;
+    end
+    if (hunt.visible ~= true) then
+        return false;
+    end
+    return hunt.hidden[tostring(reference.name or ''):lower()] ~= true;
 end
 
 state.active_custom_waypoint = function (player, map)
@@ -3440,6 +3474,7 @@ local function draw_nm_spawn_ranges(
             and reference.points
             or nil;
         if (type(points) == 'table'
+                and state.nm_hunt_reference_visible(player, reference)
                 and (reference_page == nil or reference_page == active_page)) then
             local floor_opacity = shares_authored_floor(
                 map,

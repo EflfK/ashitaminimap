@@ -78,9 +78,11 @@ circle per point. Single-position encounters remain point markers. This affects
 only the static NM reference layer; AshitaGuide's explicit `14A` placeholder
 remains a separate damselfly icon.
 
-Authored NM records may also carry an official CatsEyeXI monster-page URL for
-future per-NM details controls. URLs are static display metadata; the addon does
-not launch a browser or send a command.
+Authored NM records may also carry an official CatsEyeXI monster-page URL.
+AshitaGuide's attached NM Hunt drawer exposes those fixed links and sends
+display-only per-NM visibility choices through handoff version 4. AshitaMiniMap
+does not fetch URLs, run timers, issue gameplay commands, or inspect live NM
+state.
 
 The minimap temporarily uses its battle-safe vertical position while the
 native player, magic, or ability command menu is open, including while the
@@ -143,10 +145,14 @@ See [Cross-zone world routes](docs/WORLD_ROUTES.md).
 
 Version 3 can apply a validated style to explicit guide markers. A marker-only
 NM step can disable pathing and render small damselfly icons at verified
-placeholder coordinates instead of gold guide dots. It can also name the NM's
-general relocation range so AshitaMiniMap suppresses that separate reference
-while the placeholder guide is active. Placeholder coordinates are never
-inferred from the NM relocation catalog.
+placeholder coordinates instead of gold guide dots. The separate static NM
+relocation blob remains visible. Placeholder coordinates are never inferred
+from the NM relocation catalog.
+
+Version 4 adds a bounded, display-only NM visibility section. AshitaMiniMap
+uses it to show or hide authored NM references selected in AshitaGuide's
+attached drawer; commands, timers, links, and hunt state remain outside this
+display-only addon.
 
 The handoff contains no commands, routes, or player actions. AshitaGuide
 remains the source of guide state and supplies only destination coordinates.
