@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.22';
+addon.version   = '1.24.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -645,16 +645,16 @@ state.poll_guide_markers = function (force)
     local ok, value = pcall(chunk);
     local version = type(value) == 'table' and tonumber(value.version) or nil;
     if (not ok or type(value) ~= 'table'
-            or (version ~= 1 and version ~= 2)
+            or (version ~= 1 and version ~= 2 and version ~= 3)
             or value.source ~= 'ashitaguide') then
         state.guide_markers.last_error = 'invalid marker handoff';
         return;
     end
 
     local zone_id = tonumber(
-        version == 2 and value.destination_zone_id or value.zone_id);
+        version >= 2 and value.destination_zone_id or value.zone_id);
     local player_zone_id = tonumber(
-        version == 2 and value.player_zone_id or value.zone_id);
+        version >= 2 and value.player_zone_id or value.zone_id);
     local updated_at = tonumber(value.updated_at);
     local normalized = {
         zone_id = zone_id ~= nil and math.floor(zone_id) or nil,
@@ -662,8 +662,26 @@ state.poll_guide_markers = function (force)
             and math.floor(player_zone_id)
             or nil,
         updated_at = updated_at,
+        path_enabled = version < 3 or value.path_enabled ~= false,
         markers = {},
     };
+    if (version >= 3 and type(value.marker_reference) == 'table') then
+        local kind = tostring(value.marker_reference.kind or '');
+        local name = tostring(value.marker_reference.name or '')
+            :gsub('^%s+', '')
+            :gsub('%s+$', '');
+        local style = tostring(value.marker_reference.style or ''):lower();
+        if (kind == 'nm_spawn_range'
+                and name ~= ''
+                and #name <= 96
+                and style == 'damselfly') then
+            normalized.marker_reference = {
+                kind = kind,
+                name = name,
+                style = style,
+            };
+        end
+    end
     for _, marker in ipairs(type(value.markers) == 'table' and value.markers or {}) do
         local x = type(marker) == 'table' and tonumber(marker.x) or nil;
         local y = type(marker) == 'table' and tonumber(marker.y) or nil;
@@ -702,6 +720,29 @@ state.active_guide_markers = function (player)
         return {};
     end
     return payload.markers;
+end
+
+state.active_guide_nm_reference = function (player, map)
+    local payload = state.active_guide_payload();
+    local requested = payload ~= nil and payload.marker_reference or nil;
+    if (requested == nil
+            or payload.zone_id ~= player.zone_id
+            or type(map.nm_spawn_ranges) ~= 'table') then
+        return nil;
+    end
+    local requested_name = requested.name:lower();
+    local current_page = tonumber(map.page_id);
+    for _, reference in ipairs(map.nm_spawn_ranges) do
+        local reference_page = type(reference) == 'table'
+            and tonumber(reference.page_id)
+            or nil;
+        if (type(reference) == 'table'
+                and tostring(reference.name or ''):lower() == requested_name
+                and (reference_page == nil or reference_page == current_page)) then
+            return reference, requested.style;
+        end
+    end
+    return nil;
 end
 
 state.active_custom_waypoint = function (player, map)
@@ -1703,6 +1744,13 @@ state.ensure_guide_path = function (player, map)
     end
     local custom_waypoint = state.active_custom_waypoint(player, map);
     local payload = state.active_guide_payload();
+    if (custom_waypoint == nil
+            and payload ~= nil
+            and payload.path_enabled == false) then
+        state.guide_path.route = nil;
+        state.world_path.route = nil;
+        return nil;
+    end
     local markers = state.active_guide_markers(player);
     local destination = custom_waypoint
         or (payload ~= nil and payload.markers[1] or nil);
@@ -3265,7 +3313,7 @@ local function draw_nm_spawn_ranges(
         camera,
         map,
         scale,
-        player_z)
+        player)
     if (state.settings.show_nm_spawn_ranges ~= true
             or type(map.nm_spawn_ranges) ~= 'table') then
         return;
@@ -3274,6 +3322,7 @@ local function draw_nm_spawn_ranges(
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local active_page = tonumber(map.page_id);
+    local selected_reference = state.active_guide_nm_reference(player, map);
     local mouse_x, mouse_y = imgui.GetMousePos();
     for _, reference in ipairs(map.nm_spawn_ranges) do
         local reference_page = type(reference) == 'table'
@@ -3282,11 +3331,12 @@ local function draw_nm_spawn_ranges(
         local points = type(reference) == 'table'
             and reference.points
             or nil;
-        if (type(points) == 'table'
+        if (reference ~= selected_reference
+                and type(points) == 'table'
                 and (reference_page == nil or reference_page == active_page)) then
             local floor_opacity = shares_authored_floor(
                 map,
-                player_z,
+                player.z,
                 reference.z)
                 and 1
                 or state.settings.inactive_floor_opacity;
@@ -3970,6 +4020,31 @@ state.draw_custom_waypoint = function (
         2.0);
 end
 
+local function draw_damselfly_marker(draw_list, x, y, opacity)
+    local shadow = color_with_opacity(
+        'shadow',
+        { 0.01, 0.02, 0.025, 0.94 },
+        opacity);
+    local wing = imgui.GetColorU32({ 0.52, 0.92, 1.00, 0.82 * opacity });
+    local body = imgui.GetColorU32({ 0.98, 0.67, 0.18, opacity });
+    local wing_tips = {
+        { x - 7.0, y - 5.0 },
+        { x + 7.0, y - 5.0 },
+        { x - 6.0, y + 4.0 },
+        { x + 6.0, y + 4.0 },
+    };
+    for _, tip in ipairs(wing_tips) do
+        local root_y = tip[2] < y and y - 1.5 or y + 1.5;
+        draw_list:AddLine({ x, root_y }, tip, shadow, 4.0);
+        draw_list:AddLine({ x, root_y }, tip, wing, 2.4);
+        draw_list:AddCircleFilled(tip, 1.7, wing, 10);
+    end
+    draw_list:AddLine({ x, y - 5.5 }, { x, y + 6.5 }, shadow, 4.0);
+    draw_list:AddLine({ x, y - 5.5 }, { x, y + 6.5 }, body, 2.2);
+    draw_list:AddCircleFilled({ x, y - 6.2 }, 2.3, shadow, 12);
+    draw_list:AddCircleFilled({ x, y - 6.2 }, 1.5, body, 12);
+end
+
 state.draw_guide_markers = function (
         draw_list,
         left,
@@ -3991,6 +4066,46 @@ state.draw_guide_markers = function (
     local maximum_y = top + size - 10;
     local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local pulse = 0.82 + ((math.sin(os.clock() * 5) + 1) * 0.09);
+    local selected_reference, marker_style = state.active_guide_nm_reference(player, map);
+    local reference_hover = nil;
+    if (selected_reference ~= nil
+            and marker_style == 'damselfly'
+            and type(selected_reference.points) == 'table') then
+        local floor_opacity = shares_authored_floor(
+            map,
+            player.z,
+            selected_reference.z)
+            and 1
+            or state.settings.inactive_floor_opacity;
+        local mouse_x, mouse_y = imgui.GetMousePos();
+        for _, point in ipairs(selected_reference.points) do
+            local point_x = type(point) == 'table' and tonumber(point.x) or nil;
+            local point_y = type(point) == 'table' and tonumber(point.y) or nil;
+            if (point_x ~= nil and point_y ~= nil) then
+                local screen_x = center_x + ((point_x - camera.x) * scale);
+                local screen_y = center_y - ((point_y - camera.y) * scale);
+                if (screen_x >= left - 10
+                        and screen_x <= left + size + 10
+                        and screen_y >= top - 10
+                        and screen_y <= top + size + 10) then
+                    draw_damselfly_marker(
+                        draw_list,
+                        screen_x,
+                        screen_y,
+                        floor_opacity);
+                    local dx = mouse_x - screen_x;
+                    local dy = mouse_y - screen_y;
+                    if ((dx * dx) + (dy * dy)) <= 64 then
+                        reference_hover = {
+                            x = screen_x,
+                            y = screen_y,
+                            reference = selected_reference,
+                        };
+                    end
+                end
+            end
+        end
+    end
     for _, marker in ipairs(state.active_guide_markers(player)) do
         local marker_on_player_floor = marker.z == nil
             or player.z == nil
@@ -4071,6 +4186,7 @@ state.draw_guide_markers = function (
             end
         end
     end
+    return reference_hover;
 end
 
 local VANA_WEEKDAYS = {
@@ -4847,7 +4963,7 @@ local function render_minimap()
             camera,
             map,
             scale,
-            player.z);
+            player);
         state.draw_all_pathing(
             draw_list,
             left,
@@ -4886,7 +5002,7 @@ local function render_minimap()
             map,
             scale);
         draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
-        state.draw_guide_markers(
+        local guide_nm_hover = state.draw_guide_markers(
             draw_list,
             left,
             top,
@@ -4918,15 +5034,16 @@ local function render_minimap()
             camera,
             map,
             scale);
-        if (nm_spawn_hover ~= nil) then
+        local active_nm_hover = guide_nm_hover or nm_spawn_hover;
+        if (active_nm_hover ~= nil) then
             draw_nm_spawn_range_card(
                 draw_list,
                 left,
                 top,
                 size,
-                nm_spawn_hover.x,
-                nm_spawn_hover.y,
-                nm_spawn_hover.reference,
+                active_nm_hover.x,
+                active_nm_hover.y,
+                active_nm_hover.reference,
                 1);
         end
         draw_badge(draw_list, left, top, player, map);

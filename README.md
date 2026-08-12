@@ -131,6 +131,12 @@ leaves the final destination marker-only after zoning.
 Warp is eligible only when its exact authored landing anchor is unambiguous.
 See [Cross-zone world routes](docs/WORLD_ROUTES.md).
 
+Version 3 can also reference an exact map-owned NM spawn-range name and request
+a validated marker style. A marker-only NM step can disable pathing and render
+small damselfly icons at the cataloged points instead of gold guide dots. The
+reference does not add, alter, or infer coordinates; AshitaMiniMap remains the
+owner of the verified spawn catalog.
+
 The handoff contains no commands, routes, or player actions. AshitaGuide
 remains the source of guide state and supplies only destination coordinates.
 AshitaMinimap owns the reusable zone navigation graph, snaps the player and
