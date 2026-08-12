@@ -72,6 +72,12 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
 
+Valkurm Emperor currently prototypes the dense-range presentation: its 50
+server-defined relocation points are summarized by one padded translucent blob
+instead of one circle per point. This affects only the static NM reference
+layer; AshitaGuide's explicit `14A` placeholder remains a separate damselfly
+icon.
+
 The minimap temporarily uses its battle-safe vertical position while the
 native player, magic, or ability command menu is open, including while the
 player is not engaged. It returns to the configured position when the menu

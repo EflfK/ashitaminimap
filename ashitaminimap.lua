@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.24.1';
+addon.version   = '1.25.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3305,6 +3305,115 @@ local function draw_nm_spawn_range_card(
         'Reference only - no live tracking');
 end
 
+state.nm_blob_hull = function (points)
+    local sorted = {};
+    for _, point in ipairs(points or {}) do
+        if (type(point) == 'table'
+                and tonumber(point.x) ~= nil
+                and tonumber(point.y) ~= nil) then
+            sorted[#sorted + 1] = { x = tonumber(point.x), y = tonumber(point.y) };
+        end
+    end
+    table.sort(sorted, function (a, b)
+        return a.x < b.x or (a.x == b.x and a.y < b.y);
+    end);
+    if (#sorted <= 2) then
+        return sorted;
+    end
+    local function cross(origin, a, b)
+        return ((a.x - origin.x) * (b.y - origin.y))
+            - ((a.y - origin.y) * (b.x - origin.x));
+    end
+    local lower = {};
+    for _, point in ipairs(sorted) do
+        while (#lower >= 2
+                and cross(lower[#lower - 1], lower[#lower], point) <= 0) do
+            table.remove(lower);
+        end
+        lower[#lower + 1] = point;
+    end
+    local upper = {};
+    for index = #sorted, 1, -1 do
+        local point = sorted[index];
+        while (#upper >= 2
+                and cross(upper[#upper - 1], upper[#upper], point) <= 0) do
+            table.remove(upper);
+        end
+        upper[#upper + 1] = point;
+    end
+    table.remove(lower);
+    table.remove(upper);
+    for _, point in ipairs(upper) do
+        lower[#lower + 1] = point;
+    end
+    return lower;
+end
+
+state.draw_nm_spawn_blob = function (
+        draw_list,
+        reference,
+        center_x,
+        center_y,
+        camera,
+        scale,
+        fill,
+        border,
+        mouse_x,
+        mouse_y)
+    local hull = state.nm_blob_hull(reference.points);
+    if (#hull < 3) then
+        return nil;
+    end
+    local centroid_x = 0;
+    local centroid_y = 0;
+    for _, point in ipairs(hull) do
+        centroid_x = centroid_x + point.x;
+        centroid_y = centroid_y + point.y;
+    end
+    centroid_x = centroid_x / #hull;
+    centroid_y = centroid_y / #hull;
+    local padding = tonumber(reference.blob_padding_yalms) or 8;
+    local screen_points = {};
+    for _, point in ipairs(hull) do
+        local offset_x = point.x - centroid_x;
+        local offset_y = point.y - centroid_y;
+        local length = math.sqrt((offset_x * offset_x) + (offset_y * offset_y));
+        local expansion = length > 0 and padding / length or 0;
+        local expanded_x = point.x + (offset_x * expansion);
+        local expanded_y = point.y + (offset_y * expansion);
+        screen_points[#screen_points + 1] = {
+            center_x + ((expanded_x - camera.x) * scale),
+            center_y - ((expanded_y - camera.y) * scale),
+        };
+    end
+    local screen_centroid = { 0, 0 };
+    for _, point in ipairs(screen_points) do
+        screen_centroid[1] = screen_centroid[1] + point[1];
+        screen_centroid[2] = screen_centroid[2] + point[2];
+    end
+    screen_centroid[1] = screen_centroid[1] / #screen_points;
+    screen_centroid[2] = screen_centroid[2] / #screen_points;
+    for index, point in ipairs(screen_points) do
+        local next_point = screen_points[(index % #screen_points) + 1];
+        draw_list:AddTriangleFilled(screen_centroid, point, next_point, fill);
+        draw_list:AddLine(point, next_point, border, 2.0);
+    end
+    local inside = false;
+    local previous = #screen_points;
+    for index, point in ipairs(screen_points) do
+        local other = screen_points[previous];
+        if (((point[2] > mouse_y) ~= (other[2] > mouse_y))
+                and mouse_x < ((other[1] - point[1])
+                    * (mouse_y - point[2])
+                    / (other[2] - point[2])
+                    + point[1])) then
+            inside = not inside;
+        end
+        previous = index;
+    end
+    return inside and screen_centroid or nil;
+end
+
 local function draw_nm_spawn_ranges(
         draw_list,
         left,
@@ -3322,7 +3431,6 @@ local function draw_nm_spawn_ranges(
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local active_page = tonumber(map.page_id);
-    local selected_reference = state.active_guide_nm_reference(player, map);
     local mouse_x, mouse_y = imgui.GetMousePos();
     for _, reference in ipairs(map.nm_spawn_ranges) do
         local reference_page = type(reference) == 'table'
@@ -3331,8 +3439,7 @@ local function draw_nm_spawn_ranges(
         local points = type(reference) == 'table'
             and reference.points
             or nil;
-        if (reference ~= selected_reference
-                and type(points) == 'table'
+        if (type(points) == 'table'
                 and (reference_page == nil or reference_page == active_page)) then
             local floor_opacity = shares_authored_floor(
                 map,
@@ -3355,6 +3462,24 @@ local function draw_nm_spawn_ranges(
             local hovered = false;
             local hover_x = nil;
             local hover_y = nil;
+            if (reference.render_mode == 'blob') then
+                local blob_hover = state.draw_nm_spawn_blob(
+                    draw_list,
+                    reference,
+                    center_x,
+                    center_y,
+                    camera,
+                    scale,
+                    fill,
+                    border,
+                    mouse_x,
+                    mouse_y);
+                if (blob_hover ~= nil) then
+                    hovered = true;
+                    hover_x = blob_hover[1];
+                    hover_y = blob_hover[2];
+                end
+            else
             for _, point in ipairs(points) do
                 local x = type(point) == 'table' and tonumber(point.x) or nil;
                 local y = type(point) == 'table' and tonumber(point.y) or nil;
@@ -3388,6 +3513,7 @@ local function draw_nm_spawn_ranges(
                         end
                     end
                 end
+            end
             end
             if (hovered) then
                 return {

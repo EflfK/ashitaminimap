@@ -1530,7 +1530,7 @@ return {
             { name = 'Hippomaritimus', level = '37-38', z = 4.000, floor = 'SURFACE', spawn_type = 'Timed', placeholder_count = 0, points = {
                 { x = 238.000, y = -163.000 }, { x = 289.000, y = -168.000 }, { x = 326.000, y = -171.000 }, { x = 346.000, y = -150.000 }, { x = 351.000, y = -198.000 },
             } },
-            { name = 'Valkurm Emperor', level = '29-30', z = -0.010, floor = 'SURFACE', spawn_type = 'Lottery', placeholder_count = 1, points = {
+            { name = 'Valkurm Emperor', level = '29-30', z = -0.010, floor = 'SURFACE', spawn_type = 'Lottery', placeholder_count = 1, render_mode = 'blob', blob_padding_yalms = 10, points = {
                 { x = -228.957, y = -101.226 }, { x = -264.829, y = -91.306 }, { x = -95.250, y = -49.386 }, { x = -144.284, y = 4.202 }, { x = -270.823, y = -16.349 },
                 { x = -327.000, y = -21.000 }, { x = -173.748, y = -77.374 }, { x = -143.231, y = -67.419 }, { x = -281.184, y = -41.859 }, { x = -205.980, y = -86.736 },
                 { x = -282.016, y = -60.878 }, { x = -246.524, y = -51.146 }, { x = -228.267, y = -36.761 }, { x = -220.278, y = -92.214 }, { x = -225.198, y = -102.791 },
