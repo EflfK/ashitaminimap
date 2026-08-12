@@ -4309,6 +4309,7 @@ return {
     [117] = {
         name = 'Tahrongi Canyon',
         stock_calibration = true,
+        route_elevation_mode = 'continuous_surface',
         travel_references = travel_reference_set({
             { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 32, x = -160.000, y = 648.000, z = 47.000 },
         }),

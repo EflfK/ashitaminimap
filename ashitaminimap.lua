@@ -3466,6 +3466,7 @@ state.draw_guide_path = function (
         return route.world == true and route or nil;
     end
     route.floor_transition_direction = nil;
+    route.elevation_passage_direction = nil;
 
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
@@ -3517,6 +3518,19 @@ state.draw_guide_path = function (
                 route.points[visible_last],
                 route.points[visible_last + 1])) do
         visible_last = visible_last + 1;
+    end
+    local elevation_marker_index = visible_last < #route.points
+        and visible_last
+        or nil;
+    local continuous_surface = map.route_elevation_mode
+        == 'continuous_surface';
+    if (continuous_surface) then
+        -- Outdoor and other explicitly certified single-surface maps use Z
+        -- for truthful snapping and projection, but elevation does not change
+        -- the stock artwork. Keep the complete route visible and retain the
+        -- first elevation-band boundary as a required passage marker.
+        visible_first = 1;
+        visible_last = #route.points;
     end
 
     local projected_point = { x = projection.x, y = projection.y };
@@ -3590,9 +3604,9 @@ state.draw_guide_path = function (
             since_arrow = (since_arrow + distance) % arrow_spacing;
         end
     end
-    if (visible_last < #route.points) then
-        local transition = route.points[visible_last];
-        local next_point = route.points[visible_last + 1];
+    if (elevation_marker_index ~= nil) then
+        local transition = route.points[elevation_marker_index];
+        local next_point = route.points[elevation_marker_index + 1];
         local transition_screen = screen(transition);
         local minimum_x = left + 13;
         local maximum_x = left + size - 13;
@@ -3600,7 +3614,7 @@ state.draw_guide_path = function (
         local maximum_y = top + size - 51;
         local transition_x = clamp(transition_screen[1], minimum_x, maximum_x);
         local transition_y = clamp(transition_screen[2], minimum_y, maximum_y);
-        for index = projection.index, visible_last - 1 do
+        for index = projection.index, elevation_marker_index - 1 do
             local start = index == projection.index
                 and projected_point
                 or route.points[index];
@@ -3638,6 +3652,9 @@ state.draw_guide_path = function (
                 > (tonumber(transition.z) or 0)
             and 'UP'
             or 'DN';
+        local marker_fill = continuous_surface
+            and imgui.GetColorU32({ 1.00, 0.68, 0.05, 1.00 })
+            or active;
         draw_list:AddCircleFilled(
             { transition_x, transition_y },
             10.0,
@@ -3646,13 +3663,17 @@ state.draw_guide_path = function (
         draw_list:AddCircleFilled(
             { transition_x, transition_y },
             8.0,
-            active,
+            marker_fill,
             20);
         draw_list:AddText(
             { transition_x - 7, transition_y - 6 },
             outline,
             direction);
-        route.floor_transition_direction = direction;
+        if (continuous_surface) then
+            route.elevation_passage_direction = direction;
+        else
+            route.floor_transition_direction = direction;
+        end
     end
     return route;
 end
@@ -3852,7 +3873,11 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
         instruction = route.destination_source == 'custom'
             and 'Right-click waypoint to clear'
             or 'Shortest route from map navigation graph';
-        if (route.floor_transition_direction ~= nil) then
+        if (route.elevation_passage_direction ~= nil) then
+            instruction = string.format(
+                'Full route; amber %s point is required',
+                route.elevation_passage_direction);
+        elseif (route.floor_transition_direction ~= nil) then
             instruction = string.format(
                 'Follow cyan route to %s floor change',
                 route.floor_transition_direction);

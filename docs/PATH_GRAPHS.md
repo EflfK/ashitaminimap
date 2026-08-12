@@ -102,6 +102,14 @@ Route projection is also three-dimensional. Walking above or below a route no
 longer counts as remaining on it, and route recalculation cannot silently
 attach the player to a projected path on another floor.
 
+Maps explicitly certified with
+`route_elevation_mode = 'continuous_surface'` retain that three-dimensional
+snapping and projection while drawing the complete route across ordinary
+terrain elevation changes. The first upcoming elevation-band boundary is
+shown as an amber `UP` or `DN` required-passage marker. Do not apply this mode
+solely because a zone has one stock page: a single image can still contain
+overlapping floors that require the normal current-floor route clipping.
+
 ## Deterministic generation
 
 Generate a graph from the pinned Detour `.nav` source:
