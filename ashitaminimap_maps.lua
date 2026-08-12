@@ -1748,7 +1748,7 @@ return {
             { name = 'Carnero', level = '11-12', z = -59.960, floor = 'LOWER PLATEAU', spawn_type = 'Lottery/random start', placeholder_count = 2, points = {
                 { x = 213.010, y = -442.766 }, { x = 211.745, y = -441.313 },
             } },
-            { name = 'Leaping Lizzy', level = '10-11', z = 21.444, floor = 'LOWLAND', spawn_type = 'Lottery/random start', placeholder_count = 1, points = {
+            { name = 'Leaping Lizzy', level = '10-11', z = 21.444, floor = 'LOWLAND', spawn_type = 'Lottery/random start', placeholder_count = 1, official_url = 'https://catseyexi.com/mob/17215868', render_mode = 'blob', blob_padding_yalms = 8, points = {
                 { x = -292.232, y = -413.230 }, { x = -270.019, y = -389.970 }, { x = -283.056, y = -398.952 }, { x = -259.746, y = -412.237 },
                 { x = -290.946, y = -321.456 }, { x = -275.636, y = -420.625 }, { x = -289.261, y = -328.841 }, { x = -260.427, y = -405.967 },
                 { x = -297.822, y = -318.877 }, { x = -288.541, y = -330.873 }, { x = -264.865, y = -336.617 }, { x = -284.635, y = -386.643 },
@@ -1759,7 +1759,7 @@ return {
                 { x = -232.903, y = -410.558 }, { x = -248.527, y = -437.438 }, { x = -275.682, y = -438.592 }, { x = -280.685, y = -392.479 },
                 { x = -296.685, y = -318.141 },
             } },
-            { name = 'Leaping Lizzy', level = '10-11', z = 29.731, floor = 'NORTHWEST UPLAND', spawn_type = 'Lottery/random start', placeholder_count = 1, points = {
+            { name = 'Leaping Lizzy', level = '10-11', z = 29.731, floor = 'NORTHWEST UPLAND', spawn_type = 'Lottery/random start', placeholder_count = 1, official_url = 'https://catseyexi.com/mob/17215888', render_mode = 'blob', blob_padding_yalms = 8, points = {
                 { x = -364.189, y = -442.720 }, { x = -303.720, y = -320.710 }, { x = -307.972, y = -367.421 }, { x = -357.308, y = -422.769 },
                 { x = -321.379, y = -322.494 }, { x = -360.824, y = -454.615 }, { x = -332.532, y = -381.882 }, { x = -339.668, y = -388.642 },
                 { x = -321.228, y = -382.849 }, { x = -333.047, y = -325.419 }, { x = -302.158, y = -350.053 }, { x = -315.889, y = -318.021 },

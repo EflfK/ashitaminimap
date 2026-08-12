@@ -78,6 +78,11 @@ circle per point. Single-position encounters remain point markers. This affects
 only the static NM reference layer; AshitaGuide's explicit `14A` placeholder
 remains a separate damselfly icon.
 
+South Gustaberg uses separate padded blobs for Leaping Lizzy's lowland and
+northwest-upland relocation regions. AshitaGuide's hunt handoff adds one small
+lizard marker at each exact Rock Lizard placeholder; floor-aware rendering
+keeps the disconnected elevations distinct.
+
 Authored NM records may also carry an official CatsEyeXI monster-page URL.
 AshitaGuide's attached NM Hunt drawer exposes those fixed links and sends
 display-only per-NM visibility choices through handoff version 4. AshitaMiniMap

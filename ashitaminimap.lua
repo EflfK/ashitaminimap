@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.27.0';
+addon.version   = '1.28.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -684,7 +684,25 @@ state.poll_guide_markers = function (force)
                 zone_id = math.floor(hunt_zone_id),
                 visible = value.nm_hunt.visible == true,
                 hidden = hidden,
+                markers = {},
             };
+            for _, marker in ipairs(type(value.nm_hunt.markers) == 'table'
+                    and value.nm_hunt.markers or {}) do
+                local x = type(marker) == 'table' and tonumber(marker.x) or nil;
+                local y = type(marker) == 'table' and tonumber(marker.y) or nil;
+                local style = type(marker) == 'table' and tostring(marker.style or ''):lower() or '';
+                if (x ~= nil and y ~= nil
+                        and math.abs(x) <= 100000 and math.abs(y) <= 100000
+                        and (style == 'damselfly' or style == 'lizard')
+                        and #normalized.nm_hunt.markers < 20) then
+                    normalized.nm_hunt.markers[#normalized.nm_hunt.markers + 1] = {
+                        x = x,
+                        y = y,
+                        z = tonumber(marker.z),
+                        style = style,
+                    };
+                end
+            end
         end
     end
     if (version >= 3 and type(value.marker_reference) == 'table') then
@@ -777,6 +795,15 @@ state.nm_hunt_reference_visible = function (player, reference)
         return false;
     end
     return hunt.hidden[tostring(reference.name or ''):lower()] ~= true;
+end
+
+state.active_nm_hunt_markers = function (player)
+    local payload = state.active_guide_payload();
+    local hunt = payload ~= nil and payload.nm_hunt or nil;
+    if (hunt == nil or hunt.zone_id ~= player.zone_id or hunt.visible ~= true) then
+        return {};
+    end
+    return hunt.markers or {};
 end
 
 state.active_custom_waypoint = function (player, map)
@@ -4206,6 +4233,21 @@ local function draw_damselfly_marker(draw_list, x, y, opacity)
     draw_list:AddCircleFilled({ x, y - 6.2 }, 1.5, body, 12);
 end
 
+local function draw_lizard_marker(draw_list, x, y, opacity)
+    local shadow = color_with_opacity('shadow', { 0.01, 0.02, 0.025, 0.94 }, opacity);
+    local body = imgui.GetColorU32({ 0.96, 0.68, 0.20, opacity });
+    local accent = imgui.GetColorU32({ 0.25, 0.88, 0.84, opacity });
+    draw_list:AddCircleFilled({ x - 1, y }, 5.0, shadow, 16);
+    draw_list:AddCircleFilled({ x - 1, y }, 3.8, body, 16);
+    draw_list:AddCircleFilled({ x + 4, y - 2 }, 3.2, shadow, 12);
+    draw_list:AddCircleFilled({ x + 4, y - 2 }, 2.2, body, 12);
+    draw_list:AddLine({ x - 4, y + 1 }, { x - 9, y + 6 }, shadow, 4.0);
+    draw_list:AddLine({ x - 4, y + 1 }, { x - 9, y + 6 }, accent, 2.0);
+    draw_list:AddLine({ x - 2, y + 3 }, { x - 5, y + 7 }, body, 1.8);
+    draw_list:AddLine({ x + 1, y + 3 }, { x + 5, y + 6 }, body, 1.8);
+    draw_list:AddCircleFilled({ x + 5, y - 3 }, 0.8, shadow, 6);
+end
+
 state.draw_guide_markers = function (
         draw_list,
         left,
@@ -4215,9 +4257,7 @@ state.draw_guide_markers = function (
         camera,
         map,
         scale)
-    if (state.active_custom_waypoint(player, map) ~= nil) then
-        return;
-    end
+    local custom_waypoint_active = state.active_custom_waypoint(player, map) ~= nil;
     local current_page = tonumber(map.page_id);
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
@@ -4227,7 +4267,16 @@ state.draw_guide_markers = function (
     local maximum_y = top + size - 10;
     local outline = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
     local pulse = 0.82 + ((math.sin(os.clock() * 5) + 1) * 0.09);
-    for _, marker in ipairs(state.active_guide_markers(player)) do
+    local display_markers = {};
+    if (not custom_waypoint_active) then
+        for _, marker in ipairs(state.active_guide_markers(player)) do
+            display_markers[#display_markers + 1] = marker;
+        end
+    end
+    for _, marker in ipairs(state.active_nm_hunt_markers(player)) do
+        display_markers[#display_markers + 1] = marker;
+    end
+    for _, marker in ipairs(display_markers) do
         local marker_on_player_floor = marker.z == nil
             or player.z == nil
             or math.abs(marker.z - player.z) <= PATH_FLOOR_TOLERANCE;
@@ -4247,6 +4296,8 @@ state.draw_guide_markers = function (
                 or imgui.GetColorU32({ 1.00, 0.71, 0.20, pulse });
             if (marker.style == 'damselfly') then
                 draw_damselfly_marker(draw_list, clamped_x, clamped_y, 1);
+            elseif (marker.style == 'lizard') then
+                draw_lizard_marker(draw_list, clamped_x, clamped_y, 1);
             elseif (marker.approximate == true) then
                 local radius = offscreen and 9.0 or 8.0;
                 draw_list:AddLine(
