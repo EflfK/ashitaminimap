@@ -1523,14 +1523,14 @@ return {
         }),
         treasure_spawns = {},
         nm_spawn_ranges = {
-            { name = 'Metal Shears', level = '22', z = -15.000, floor = 'SURFACE', spawn_type = 'Timed', placeholder_count = 0, points = {
+            { name = 'Metal Shears', level = '22', z = -15.000, floor = 'SURFACE', spawn_type = 'Timed', placeholder_count = 0, official_url = 'https://catseyexi.com/mob/17199161', render_mode = 'blob', blob_padding_yalms = 8, points = {
                 { x = 480.000, y = 313.000 }, { x = 490.000, y = 359.000 }, { x = 534.000, y = 358.000 }, { x = 564.000, y = 339.000 },
                 { x = 545.000, y = 298.000 }, { x = 545.000, y = 298.000 }, { x = 509.000, y = 293.000 },
             } },
-            { name = 'Hippomaritimus', level = '37-38', z = 4.000, floor = 'SURFACE', spawn_type = 'Timed', placeholder_count = 0, points = {
+            { name = 'Hippomaritimus', level = '37-38', z = 4.000, floor = 'SURFACE', spawn_type = 'Timed', placeholder_count = 0, official_url = 'https://catseyexi.com/mob/17199351', render_mode = 'blob', blob_padding_yalms = 8, points = {
                 { x = 238.000, y = -163.000 }, { x = 289.000, y = -168.000 }, { x = 326.000, y = -171.000 }, { x = 346.000, y = -150.000 }, { x = 351.000, y = -198.000 },
             } },
-            { name = 'Valkurm Emperor', level = '29-30', z = -0.010, floor = 'SURFACE', spawn_type = 'Lottery', placeholder_count = 1, render_mode = 'blob', blob_padding_yalms = 10, points = {
+            { name = 'Valkurm Emperor', level = '29-30', z = -0.010, floor = 'SURFACE', spawn_type = 'Lottery', placeholder_count = 1, official_url = 'https://catseyexi.com/mob/17199438', render_mode = 'blob', blob_padding_yalms = 10, points = {
                 { x = -228.957, y = -101.226 }, { x = -264.829, y = -91.306 }, { x = -95.250, y = -49.386 }, { x = -144.284, y = 4.202 }, { x = -270.823, y = -16.349 },
                 { x = -327.000, y = -21.000 }, { x = -173.748, y = -77.374 }, { x = -143.231, y = -67.419 }, { x = -281.184, y = -41.859 }, { x = -205.980, y = -86.736 },
                 { x = -282.016, y = -60.878 }, { x = -246.524, y = -51.146 }, { x = -228.267, y = -36.761 }, { x = -220.278, y = -92.214 }, { x = -225.198, y = -102.791 },
@@ -1542,17 +1542,17 @@ return {
                 { x = -291.247, y = 5.381 }, { x = -221.531, y = -108.070 }, { x = -284.165, y = -58.260 }, { x = -170.882, y = -35.825 }, { x = -257.265, y = -57.143 },
                 { x = -212.513, y = -105.390 }, { x = -215.818, y = -43.917 }, { x = -297.203, y = -9.745 }, { x = -308.615, y = -44.649 }, { x = -264.390, y = 29.689 },
             } },
-            { name = 'Golden Bat', level = '26-27', z = -8.270, floor = 'SURFACE', spawn_type = 'Lottery', placeholder_count = 3, points = {
+            { name = 'Golden Bat', level = '26-27', z = -8.270, floor = 'SURFACE', spawn_type = 'Lottery', placeholder_count = 3, official_url = 'https://catseyexi.com/mob/17199564', render_mode = 'blob', blob_padding_yalms = 7, points = {
                 { x = -804.502, y = 22.082 }, { x = -798.674, y = 19.204 }, { x = -778.844, y = 25.860 }, { x = -807.523, y = 23.607 }, { x = -772.254, y = 20.874 },
                 { x = -787.206, y = 20.903 }, { x = -774.324, y = 20.253 }, { x = -776.624, y = 24.271 }, { x = -798.915, y = 17.802 }, { x = -779.336, y = 21.866 },
                 { x = -785.714, y = 21.917 }, { x = -785.475, y = 20.912 }, { x = -801.056, y = 19.913 }, { x = -775.578, y = 21.065 }, { x = -811.618, y = 28.638 },
                 { x = -796.484, y = 19.190 }, { x = -798.394, y = 21.387 }, { x = -806.759, y = 23.825 }, { x = -780.327, y = 23.170 }, { x = -785.197, y = 22.135 },
                 { x = -798.992, y = 20.315 }, { x = -805.583, y = 21.835 },
             } },
-            { name = 'Goblin Swindler', level = '35', z = -7.864, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, points = { { x = 146.000, y = 99.000 } } },
-            { name = 'Houu the Shoalwader', level = '24', z = 3.967, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, points = { { x = -164.304, y = -133.407 } } },
-            { name = 'Beach Monk', level = '23', z = 3.702, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, points = { { x = -163.806, y = -132.222 } } },
-            { name = 'Heike Crab', level = '22', z = 4.118, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, points = { { x = -162.553, y = -132.584 } } },
+            { name = 'Goblin Swindler', level = '35', z = -7.864, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, official_url = 'https://catseyexi.com/mob/17199601', points = { { x = 146.000, y = 99.000 } } },
+            { name = 'Houu the Shoalwader', level = '24', z = 3.967, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, official_url = 'https://catseyexi.com/mob/17199602', points = { { x = -164.304, y = -133.407 } } },
+            { name = 'Beach Monk', level = '23', z = 3.702, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, official_url = 'https://catseyexi.com/mob/17199603', points = { { x = -163.806, y = -132.222 } } },
+            { name = 'Heike Crab', level = '22', z = 4.118, floor = 'SURFACE', spawn_type = 'Triggered', placeholder_count = 0, official_url = 'https://catseyexi.com/mob/17199604', points = { { x = -162.553, y = -132.584 } } },
         },
     },
     [104] = {

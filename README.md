@@ -72,11 +72,15 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
 
-Valkurm Emperor currently prototypes the dense-range presentation: its 50
-server-defined relocation points are summarized by one padded translucent blob
-instead of one circle per point. This affects only the static NM reference
-layer; AshitaGuide's explicit `14A` placeholder remains a separate damselfly
-icon.
+Valkurm Dunes uses the dense-range presentation for every NM with multiple
+server-defined positions: one padded translucent blob is drawn instead of one
+circle per point. Single-position encounters remain point markers. This affects
+only the static NM reference layer; AshitaGuide's explicit `14A` placeholder
+remains a separate damselfly icon.
+
+Authored NM records may also carry an official CatsEyeXI monster-page URL for
+future per-NM details controls. URLs are static display metadata; the addon does
+not launch a browser or send a command.
 
 The minimap temporarily uses its battle-safe vertical position while the
 native player, magic, or ability command menu is open, including while the
