@@ -2666,6 +2666,9 @@ return {
         image = 'assets/maps/236.png',
         width = 768,
         height = 768,
+        -- Override the generated 512 px stock-page bounds. This legacy
+        -- authored layer uses its full 768 px canvas for camera clamping.
+        view_bounds = { left = 0, top = 0, right = 768, bottom = 768 },
         origin_x = 384,
         origin_y = 384,
         grid_yalms = 40,
