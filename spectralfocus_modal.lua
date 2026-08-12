@@ -31,4 +31,11 @@ function M.is_decision()
     return M.menu_name:lower():find('query', 1, true) ~= nil;
 end
 
+function M.is_command_menu()
+    local name = M.menu_name:lower();
+    return name:find('playermo', 1, true) ~= nil
+        or name:find('magic', 1, true) ~= nil
+        or name:find('ability', 1, true) ~= nil;
+end
+
 return M;

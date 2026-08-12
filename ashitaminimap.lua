@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.17';
+addon.version   = '1.23.18';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -28,6 +28,8 @@ local PATH_FLOOR_TOLERANCE = 4.0;
 local MAP_CORNER_RADIUS = 7.0;
 local DECISION_SELECTOR_TOP = 1230;
 local DECISION_SELECTOR_GUTTER = 16;
+local COMBAT_SELECTOR_TOP = 1130;
+local COMBAT_SELECTOR_GUTTER = 16;
 local HOVER_FADE_IN_SECONDS = 0.30;
 local HOVER_FADE_OUT_SECONDS = 0.45;
 local SHOW_MAP_CALIBRATION = false;
@@ -1905,6 +1907,15 @@ local function current_player()
         entity = entity,
         memory = memory,
     };
+end
+
+local function player_is_engaged(player)
+    return player ~= nil
+        and player.entity ~= nil
+        and (tonumber(player.index) or 0) > 0
+        and tonumber(safe_read(function ()
+            return player.entity:GetStatus(player.index);
+        end, 0)) == 1;
 end
 
 local letters = {
@@ -4703,6 +4714,10 @@ local function render_minimap()
         window_y = math.max(
             tonumber(state.settings.x) or 10,
             DECISION_SELECTOR_TOP - DECISION_SELECTOR_GUTTER - (size + 16));
+    elseif (player_is_engaged(player) or spectralfocus_modal.is_command_menu()) then
+        window_y = math.max(
+            tonumber(state.settings.x) or 10,
+            COMBAT_SELECTOR_TOP - COMBAT_SELECTOR_GUTTER - (size + 16));
     end
     imgui.SetNextWindowPos({ window_x, window_y }, 0);
     -- The Ashita ImGui binding applies 8 px of default window padding. Account

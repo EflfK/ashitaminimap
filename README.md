@@ -72,6 +72,11 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
 
+The minimap temporarily uses its battle-safe vertical position while the
+native player, magic, or ability command menu is open, including while the
+player is not engaged. It returns to the configured position when the menu
+closes.
+
 The **Developer** tab is display-only and disabled by default. Enable
 **Developer mode**, then **Show all pathing**, to draw every node and connection
 from the active page's navigation graph. Connections on the player's current
