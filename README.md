@@ -81,6 +81,11 @@ While the native inventory is open, the minimap moves only far enough upward
 to remain above the item-description preview, then returns to its configured
 position when inventory closes.
 
+The minimap also reads the current top edge of the vanilla chat frame and
+temporarily shifts upward when its visible square would overlap the chat. The
+position follows changes to the native chat height automatically and returns to
+the configured position when there is enough room.
+
 Temporary vertical layout changes animate with a short, non-overshooting
 ease-out. If the target position changes mid-motion, the minimap redirects from
 its current position instead of jumping or restarting.

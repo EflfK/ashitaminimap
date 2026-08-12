@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.23.20';
+addon.version   = '1.23.21';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -98,6 +98,7 @@ local DEFAULTS = {
 
 local state = {
     settings = DEFAULTS,
+    native_chat = require('native_chat'),
     maps = {},
     path_catalog = {},
     path_graphs = {},
@@ -4748,6 +4749,16 @@ local function render_minimap()
         window_y = math.max(
             tonumber(state.settings.x) or 10,
             COMBAT_SELECTOR_TOP - COMBAT_SELECTOR_GUTTER - (size + 16));
+    end
+    local display_size = safe_read(function () return imgui.GetIO().DisplaySize; end, nil);
+    local display_height = display_size ~= nil and tonumber(display_size.y) or nil;
+    local native_chat_top = safe_read(function ()
+        return state.native_chat.top_screen_y(display_height);
+    end, nil);
+    if (native_chat_top ~= nil) then
+        window_y = math.max(
+            10,
+            math.min(window_y, native_chat_top - 8 - (size + 8)));
     end
     window_y = animated_window_y(window_y);
     imgui.SetNextWindowPos({ window_x, window_y }, 0);
