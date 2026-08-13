@@ -11,7 +11,7 @@ The first prototype includes:
 
 - a transparent PNG map layer;
 - a Lua-rendered player arrow;
-- visible player, NPC, monster, and current-target dots;
+- visible player, NPC, monster, current-target, and tracked Wide Scan markers;
 - a north-up, zone-calibrated coordinate grid with edge labels;
 - a live `H-8`-style coordinate badge;
 - a compact Vana'diel environment card with time, elemental day, moon phase,
@@ -64,6 +64,9 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - possible Treasure Chest or Coffer spawn references for authored zones;
 - static NM spawn-range references for authored zones that provide them;
 - player, NPC, and monster dot markers;
+- a violet crosshair for the entity the player actively tracks through the
+  native Wide Scan interface, including an edge-clamped direction marker when
+  it is outside the current viewport;
 - current AshitaGuide step destinations, including page filtering and
   edge-clamped off-map markers;
 - optional map-owned shortest paths from the player to AshitaGuide's current
@@ -123,9 +126,11 @@ structure textures and exposes no structure controls.
 Dynamic entities are intentionally anonymous. AshitaMinimap does not render
 entity-name labels and must not recover names solely for minimap display. That
 capability was deliberately removed; dots, target styling, and the player
-arrow are the supported dynamic representations. On imported multi-page maps,
-the game's native coordinate selector also filters live dots and unassigned
-static references to the active stock page.
+arrow are the supported dynamic representations. The tracked Wide Scan marker
+reads only the native tracking updates already received by the game; it does
+not search for entities, start tracking, target, claim, or interact. On
+imported multi-page maps, the game's native coordinate selector also filters
+live dots and unassigned static references to the active stock page.
 
 ## AshitaGuide marker handoff
 

@@ -39,6 +39,8 @@ return {
     show_players = true,
     show_npcs = true,
     show_monsters = true,
+    -- Highlight only the entity actively tracked through native Wide Scan.
+    show_widescan_target = true,
     scale_markers_with_zoom = true,
     -- Scales entity dots and target rings independently of map zoom.
     marker_size = 1.00,
@@ -54,6 +56,7 @@ return {
         npc = { 0.000, 0.784, 0.176, 0.96 },
         monster = { 1.000, 0.275, 0.275, 0.96 },
         target = { 1.00, 0.71, 0.20, 1.00 },
+        widescan_target = { 0.82, 0.48, 1.00, 1.00 },
         shadow = { 0.01, 0.02, 0.025, 0.94 },
         badge = { 0.025, 0.055, 0.070, 0.88 },
         backdrop = { 0.010, 0.030, 0.040, 1.00 },

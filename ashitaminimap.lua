@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.28.1';
+addon.version   = '1.29.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -71,6 +71,7 @@ local DEFAULTS = {
     show_players = true,
     show_npcs = true,
     show_monsters = true,
+    show_widescan_target = true,
     scale_markers_with_zoom = true,
     marker_size = 1.00,
     map_pages = {},
@@ -90,6 +91,7 @@ local DEFAULTS = {
         npc = { 0.000, 0.784, 0.176, 0.96 },
         monster = { 1.000, 0.275, 0.275, 0.96 },
         target = { 1.00, 0.71, 0.20, 1.00 },
+        widescan_target = { 0.82, 0.48, 1.00, 1.00 },
         shadow = { 0.01, 0.02, 0.025, 0.94 },
         badge = { 0.025, 0.055, 0.070, 0.88 },
         backdrop = { 0.010, 0.030, 0.040, 1.00 },
@@ -118,6 +120,7 @@ local state = {
     stock_page_by_zone = {},
     stock_position_pages = {},
     stock_page_selector_warning = nil,
+    widescan_target = nil,
     environment = {
         time_signature_address = 0,
         weather_signature_address = 0,
@@ -358,6 +361,9 @@ local function config_text()
         string.format('    show_players = %s,', bool_text(settings.show_players)),
         string.format('    show_npcs = %s,', bool_text(settings.show_npcs)),
         string.format('    show_monsters = %s,', bool_text(settings.show_monsters)),
+        string.format(
+            '    show_widescan_target = %s,',
+            bool_text(settings.show_widescan_target)),
         string.format('    scale_markers_with_zoom = %s,', bool_text(settings.scale_markers_with_zoom)),
         string.format('    marker_size = %.2f,', clamp(settings.marker_size, 0.25, 2.00)),
         string.format('    map_pages = %s,', number_map_text(settings.map_pages)),
@@ -382,6 +388,9 @@ local function config_text()
         string.format('        npc = %s,', color_text(colors.npc, DEFAULTS.colors.npc)),
         string.format('        monster = %s,', color_text(colors.monster, DEFAULTS.colors.monster)),
         string.format('        target = %s,', color_text(colors.target, DEFAULTS.colors.target)),
+        string.format(
+            '        widescan_target = %s,',
+            color_text(colors.widescan_target, DEFAULTS.colors.widescan_target)),
         string.format('        shadow = %s,', color_text(colors.shadow, DEFAULTS.colors.shadow)),
         string.format('        badge = %s,', color_text(colors.badge, DEFAULTS.colors.badge)),
         string.format('        backdrop = %s,', color_text(colors.backdrop, DEFAULTS.colors.backdrop)),
@@ -2842,6 +2851,94 @@ local function current_target_index(memory)
     return sub_active and sub or primary;
 end
 
+local function widescan_target_position()
+    return state.widescan_target;
+end
+
+local function draw_widescan_target(
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale,
+        visual_scale)
+    if (state.settings.show_widescan_target ~= true) then
+        return;
+    end
+    local tracked = widescan_target_position();
+    if (tracked == nil) then
+        return;
+    end
+    local same_floor = tracked.z == nil
+        or player.z == nil
+        or math.abs(tracked.z - player.z) <= ENTITY_FLOOR_TOLERANCE;
+    if (not same_floor
+            or not position_matches_active_stock_page(player.zone_id, map, tracked)) then
+        return;
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local screen_x = center_x + ((tracked.x - camera.x) * scale);
+    local screen_y = center_y - ((tracked.y - camera.y) * scale);
+    local margin = math.max(12, 11 * visual_scale);
+    local marker_x = clamp(screen_x, left + margin, left + size - margin);
+    local marker_y = clamp(screen_y, top + margin, top + size - margin);
+    local offscreen = marker_x ~= screen_x or marker_y ~= screen_y;
+    local marker_color = color(
+        'widescan_target',
+        { 0.82, 0.48, 1.00, 1.00 });
+    local shadow = color('shadow', { 0.01, 0.02, 0.025, 0.94 });
+    local radius = (offscreen and 9.0 or 8.0) * visual_scale;
+    local line_width = math.max(1.5, 1.8 * visual_scale);
+
+    draw_list:AddCircleFilled(
+        { marker_x, marker_y },
+        3.2 * visual_scale,
+        shadow,
+        16);
+    draw_list:AddCircleFilled(
+        { marker_x, marker_y },
+        2.0 * visual_scale,
+        marker_color,
+        16);
+    draw_list:AddCircle(
+        { marker_x, marker_y },
+        radius,
+        shadow,
+        20,
+        math.max(3.0, 3.0 * visual_scale));
+    draw_list:AddCircle(
+        { marker_x, marker_y },
+        radius,
+        marker_color,
+        20,
+        line_width);
+    draw_list:AddLine(
+        { marker_x - (radius + 3), marker_y },
+        { marker_x - (radius - 2), marker_y },
+        marker_color,
+        line_width);
+    draw_list:AddLine(
+        { marker_x + (radius - 2), marker_y },
+        { marker_x + (radius + 3), marker_y },
+        marker_color,
+        line_width);
+    draw_list:AddLine(
+        { marker_x, marker_y - (radius + 3) },
+        { marker_x, marker_y - (radius - 2) },
+        marker_color,
+        line_width);
+    draw_list:AddLine(
+        { marker_x, marker_y + (radius - 2) },
+        { marker_x, marker_y + (radius + 3) },
+        marker_color,
+        line_width);
+end
+
 local function entity_kind(entity, index)
     local spawn_flags = tonumber(safe_read(function () return entity:GetSpawnFlags(index); end, 0)) or 0;
     local entity_type = tonumber(safe_read(function () return entity:GetType(index); end, -1)) or -1;
@@ -5280,6 +5377,16 @@ local function render_minimap()
             map,
             scale,
             entity_visual_scale);
+        draw_widescan_target(
+            draw_list,
+            left,
+            top,
+            size,
+            player,
+            camera,
+            map,
+            scale,
+            entity_visual_scale);
         state.draw_guide_markers(
             draw_list,
             left,
@@ -5558,6 +5665,9 @@ local function render_config_window()
         config_checkbox('NPCs##ashitaminimap_npcs', 'show_npcs');
         config_checkbox('Monsters##ashitaminimap_monsters', 'show_monsters');
         config_checkbox(
+            'Tracked Wide Scan target##ashitaminimap_widescan_target',
+            'show_widescan_target');
+        config_checkbox(
             'Scale dynamic markers with zoom##ashitaminimap_scale_markers',
             'scale_markers_with_zoom');
         local marker_size_buffer = {
@@ -5822,6 +5932,60 @@ local function handle_command(e)
     end
 end
 
+local function packet_value(format, data, offset)
+    if (type(data) ~= 'string' or #data < offset) then
+        return nil;
+    end
+    return tonumber(safe_read(function ()
+        return struct.unpack(format, data, offset + 1);
+    end, nil));
+end
+
+local function handle_widescan_packet_in(e)
+    if (e.id == 0x000A) then
+        state.widescan_target = nil;
+        return;
+    end
+    if (e.id ~= 0x00F5) then
+        return;
+    end
+    local data = e.data_modified or e.data;
+    local status = packet_value('L', data, 0x14);
+    if (status ~= 1) then
+        state.widescan_target = nil;
+        return;
+    end
+
+    -- Native 0x0F5 Wide Scan updates use client map order: X, Z, Y.
+    local x = packet_value('f', data, 0x04);
+    local z = packet_value('f', data, 0x08);
+    local y = packet_value('f', data, 0x0C);
+    local index = packet_value('H', data, 0x12);
+    local valid = x ~= nil and y ~= nil and z ~= nil
+        and x == x and y == y and z == z
+        and math.abs(x) < 100000
+        and math.abs(y) < 100000
+        and math.abs(z) < 100000;
+    if (not valid) then
+        state.widescan_target = nil;
+        return;
+    end
+    state.widescan_target = {
+        x = x,
+        y = y,
+        z = z,
+        index = index,
+    };
+end
+
+local function handle_widescan_packet_out(e)
+    if (e.id == 0x00F5 or e.id == 0x00F6) then
+        -- Clear immediately while the client starts or cancels tracking. The
+        -- next native server update repopulates the marker if tracking starts.
+        state.widescan_target = nil;
+    end
+end
+
 ashita.events.register('load', 'load_cb', function ()
     load_configuration();
     state.poll_guide_markers(true);
@@ -5838,6 +6002,7 @@ ashita.events.register('unload', 'unload_cb', function ()
     state.world_catalog = {};
     state.world_topology = nil;
     state.custom_waypoint = nil;
+    state.widescan_target = nil;
     state.environment.time_signature_address = 0;
     state.environment.weather_signature_address = 0;
     state.environment.checked_at = 0;
@@ -5849,6 +6014,14 @@ end);
 
 ashita.events.register('command', 'command_cb', function (e)
     handle_command(e);
+end);
+
+ashita.events.register('packet_in', 'packet_in_cb', function (e)
+    handle_widescan_packet_in(e);
+end);
+
+ashita.events.register('packet_out', 'packet_out_cb', function (e)
+    handle_widescan_packet_out(e);
 end);
 
 ashita.events.register('d3d_present', 'present_cb', function ()
