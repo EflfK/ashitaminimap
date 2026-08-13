@@ -123,7 +123,9 @@ structure textures and exposes no structure controls.
 Dynamic entities are intentionally anonymous. AshitaMinimap does not render
 entity-name labels and must not recover names solely for minimap display. That
 capability was deliberately removed; dots, target styling, and the player
-arrow are the supported dynamic representations.
+arrow are the supported dynamic representations. On imported multi-page maps,
+the game's native coordinate selector also filters live dots and unassigned
+static references to the active stock page.
 
 ## AshitaGuide marker handoff
 

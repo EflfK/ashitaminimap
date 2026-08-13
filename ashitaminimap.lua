@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.28.0';
+addon.version   = '1.28.1';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -116,6 +116,7 @@ local state = {
     stock_page_context_pointer_address = 0,
     stock_page_selector_checked_at = 0,
     stock_page_by_zone = {},
+    stock_position_pages = {},
     stock_page_selector_warning = nil,
     environment = {
         time_signature_address = 0,
@@ -2256,6 +2257,63 @@ local function stock_page_id_for_position(player)
     return math.floor(page_id), nil;
 end
 
+local function position_matches_active_stock_page(
+        zone_id,
+        map,
+        position,
+        explicit_page,
+        cache_position)
+    local active_page = type(map) == 'table' and tonumber(map.page_id) or nil;
+    explicit_page = tonumber(explicit_page);
+    if (explicit_page ~= nil) then
+        return active_page == explicit_page;
+    end
+
+    local zone = state.vanilla_maps[zone_id];
+    if (active_page == nil
+            or type(zone) ~= 'table'
+            or type(zone.pages) ~= 'table'
+            or type(position) ~= 'table') then
+        return true;
+    end
+
+    local page_count = 0;
+    for _ in pairs(zone.pages) do
+        page_count = page_count + 1;
+        if (page_count > 1) then
+            break;
+        end
+    end
+    if (page_count <= 1
+            or tonumber(position.x) == nil
+            or tonumber(position.y) == nil
+            or tonumber(position.z) == nil) then
+        return true;
+    end
+
+    local cache_key = nil;
+    if (cache_position == true) then
+        cache_key = string.format(
+            '%d:%s:%s:%s',
+            tonumber(zone_id) or -1,
+            tostring(position.x),
+            tostring(position.y),
+            tostring(position.z));
+    end
+    local resolved_page = cache_key ~= nil
+        and state.stock_position_pages[cache_key]
+        or nil;
+    if (resolved_page == nil) then
+        resolved_page = stock_page_id_for_position(position);
+        if (cache_key ~= nil and resolved_page ~= nil) then
+            state.stock_position_pages[cache_key] = resolved_page;
+        end
+    end
+    -- Fail open when the native selector is unavailable or reports no page.
+    -- Exact page membership is still preferred whenever FFXiMain provides it.
+    return resolved_page == nil or resolved_page == active_page;
+end
+
 local function zone_name(zone_id)
     local resources = safe_read(function ()
         return AshitaCore:GetResourceManager();
@@ -2803,7 +2861,16 @@ local function marker_zoom_scale(world_scale)
     return clamp(world_scale / MARKER_REFERENCE_ZOOM, 0.50, 2.50);
 end
 
-local function draw_entities(draw_list, left, top, size, player, camera, scale, visual_scale)
+local function draw_entities(
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale,
+        visual_scale)
     local entity = player.entity;
     local count = math.min(tonumber(safe_read(function () return entity:GetEntityMapSize(); end, 0)) or 0, 0x8FF);
     local center_x = left + (size / 2);
@@ -2820,7 +2887,11 @@ local function draw_entities(draw_list, left, top, size, player, camera, scale, 
                 local z = tonumber(safe_read(function () return entity:GetLocalPositionZ(index); end, nil));
                 local same_floor = z ~= nil
                     and math.abs(z - player.z) <= ENTITY_FLOOR_TOLERANCE;
-                if (x ~= nil and y ~= nil and same_floor) then
+                local same_page = position_matches_active_stock_page(
+                    player.zone_id,
+                    map,
+                    { x = x, y = y, z = z });
+                if (x ~= nil and y ~= nil and same_floor and same_page) then
                     local kind = entity_kind(entity, index);
                     local enabled = (kind == 'player' and state.settings.show_players == true)
                         or (kind == 'npc' and state.settings.show_npcs == true)
@@ -2917,7 +2988,8 @@ local function draw_treasure_spawns(
         camera,
         map,
         scale,
-        player_z)
+        player_z,
+        zone_id)
     local marker_sets = {
         {
             markers = map.treasure_spawns,
@@ -2936,7 +3008,6 @@ local function draw_treasure_spawns(
 
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
-    local active_page = tonumber(map.page_id);
     for _, marker_set in ipairs(marker_sets) do
         for _, marker in ipairs(
                 type(marker_set.markers) == 'table'
@@ -2953,7 +3024,12 @@ local function draw_treasure_spawns(
         local y = type(marker) == 'table' and tonumber(marker.y) or nil;
         if ((marker_kind == 'chest' or marker_kind == 'coffer')
                 and x ~= nil and y ~= nil
-                and (marker_page == nil or marker_page == active_page)) then
+                and position_matches_active_stock_page(
+                    zone_id,
+                    map,
+                    marker,
+                    marker_page,
+                    true)) then
             local screen_x = center_x + ((x - camera.x) * scale);
             local screen_y = center_y - ((y - camera.y) * scale);
             if (screen_x >= left + 8 and screen_x <= left + size - 8
@@ -3064,7 +3140,8 @@ local function draw_travel_references(
         camera,
         map,
         scale,
-        player_z)
+        player_z,
+        zone_id)
     if (state.settings.show_travel_references ~= true
             or type(map.travel_references) ~= 'table') then
         return;
@@ -3072,7 +3149,6 @@ local function draw_travel_references(
 
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
-    local active_page = tonumber(map.page_id);
     local player = safe_read(function ()
         return AshitaCore:GetMemoryManager():GetPlayer();
     end, nil);
@@ -3193,7 +3269,12 @@ local function draw_travel_references(
         local y = type(marker) == 'table' and tonumber(marker.y) or nil;
         if ((kind == 'home_point' or kind == 'survival_guide')
                 and x ~= nil and y ~= nil
-                and (marker_page == nil or marker_page == active_page)) then
+                and position_matches_active_stock_page(
+                    zone_id,
+                    map,
+                    marker,
+                    marker_page,
+                    true)) then
             local screen_x = center_x + ((x - camera.x) * scale);
             local screen_y = center_y - ((y - camera.y) * scale);
             if (screen_x >= left + 9 and screen_x <= left + size - 9
@@ -3491,7 +3572,6 @@ local function draw_nm_spawn_ranges(
 
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
-    local active_page = tonumber(map.page_id);
     local mouse_x, mouse_y = imgui.GetMousePos();
     for _, reference in ipairs(map.nm_spawn_ranges) do
         local reference_page = type(reference) == 'table'
@@ -3500,9 +3580,20 @@ local function draw_nm_spawn_ranges(
         local points = type(reference) == 'table'
             and reference.points
             or nil;
+        local first_point = type(points) == 'table' and points[1] or nil;
+        local reference_position = {
+            x = type(first_point) == 'table' and first_point.x or nil,
+            y = type(first_point) == 'table' and first_point.y or nil,
+            z = type(reference) == 'table' and reference.z or nil,
+        };
         if (type(points) == 'table'
                 and state.nm_hunt_reference_visible(player, reference)
-                and (reference_page == nil or reference_page == active_page)) then
+                and position_matches_active_stock_page(
+                    player.zone_id,
+                    map,
+                    reference_position,
+                    reference_page,
+                    true)) then
             local floor_opacity = shares_authored_floor(
                 map,
                 player.z,
@@ -4258,7 +4349,6 @@ state.draw_guide_markers = function (
         map,
         scale)
     local custom_waypoint_active = state.active_custom_waypoint(player, map) ~= nil;
-    local current_page = tonumber(map.page_id);
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local minimum_x = left + 10;
@@ -4280,7 +4370,11 @@ state.draw_guide_markers = function (
         local marker_on_player_floor = marker.z == nil
             or player.z == nil
             or math.abs(marker.z - player.z) <= PATH_FLOOR_TOLERANCE;
-        if ((marker.map_id == nil or current_page == marker.map_id)
+        if (position_matches_active_stock_page(
+                    player.zone_id,
+                    map,
+                    marker,
+                    marker.map_id)
                 and marker_on_player_floor) then
             local screen_x = center_x + ((marker.x - camera.x) * scale);
             local screen_y = center_y - ((marker.y - camera.y) * scale);
@@ -5155,7 +5249,8 @@ local function render_minimap()
             camera,
             map,
             scale,
-            player.z);
+            player.z,
+            player.zone_id);
         draw_travel_references(
             draw_list,
             left,
@@ -5164,7 +5259,8 @@ local function render_minimap()
             camera,
             map,
             scale,
-            player.z);
+            player.z,
+            player.zone_id);
         local guide_route = state.draw_guide_path(
             draw_list,
             left,
@@ -5174,7 +5270,16 @@ local function render_minimap()
             camera,
             map,
             scale);
-        draw_entities(draw_list, left, top, size, player, camera, scale, entity_visual_scale);
+        draw_entities(
+            draw_list,
+            left,
+            top,
+            size,
+            player,
+            camera,
+            map,
+            scale,
+            entity_visual_scale);
         state.draw_guide_markers(
             draw_list,
             left,

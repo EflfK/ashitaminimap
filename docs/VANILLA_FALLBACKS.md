@@ -152,10 +152,12 @@ available for every imported stock page, including maps that have no authored
 layers.
 
 The stock renderer also rejects entities assigned to a different active map
-page. AshitaMinimap applies a zone-independent elevation tolerance before
-drawing live entities so monsters loaded from floors above or below do not
-pollute the current page. This same filter is used for every authored and
-fallback map; it is not a Castle-specific correction.
+page. On imported multi-page zones, AshitaMinimap asks that same read-only
+native selector to resolve live entities and static references without
+authored page metadata. It also applies a zone-independent elevation tolerance
+before drawing live entities so monsters loaded from floors above or below do
+not pollute the current page. These filters are used for every authored and
+fallback map; they are not Castle-specific corrections.
 
 The former warning against using the signed offsets was based on the obsolete
 reciprocal scale formula. The offsets were correct; the scale paired with them
