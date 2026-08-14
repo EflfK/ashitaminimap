@@ -64,7 +64,7 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
 - coordinate grid and coordinate badge visibility, with optional live numeric
   X/Y/Z values in the badge;
 - Vana'diel time, elemental day, moon phase/illumination, and weather card
-  visibility;
+  visibility, plus an independently visible compact weather badge;
 - possible Treasure Chest or Coffer spawn references for authored zones;
 - static NM spawn-range references for authored zones that provide them;
 - player, NPC, and monster dot markers;

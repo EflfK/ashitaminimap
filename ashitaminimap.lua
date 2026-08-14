@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.1';
+addon.version   = '1.30.2';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -62,6 +62,7 @@ local DEFAULTS = {
     show_coordinate = true,
     show_numeric_coordinates = false,
     show_environment_clock = true,
+    show_weather_badge = true,
     show_coffer_spawns = true,
     show_travel_references = true,
     show_nm_spawn_ranges = true,
@@ -368,6 +369,9 @@ local function config_text()
         string.format(
             '    show_environment_clock = %s,',
             bool_text(settings.show_environment_clock)),
+        string.format(
+            '    show_weather_badge = %s,',
+            bool_text(settings.show_weather_badge)),
         string.format('    show_coffer_spawns = %s,', bool_text(settings.show_coffer_spawns)),
         string.format('    show_travel_references = %s,', bool_text(settings.show_travel_references)),
         string.format('    show_nm_spawn_ranges = %s,', bool_text(settings.show_nm_spawn_ranges)),
@@ -4689,6 +4693,52 @@ local WEATHER_NAMES = {
     [19] = 'Darkness',
 };
 
+local WEATHER_COLORS = {
+    [0] = { 0.86, 0.84, 0.70, 1.00 },
+    [1] = { 1.00, 0.86, 0.42, 1.00 },
+    [2] = { 0.68, 0.72, 0.76, 1.00 },
+    [3] = { 0.72, 0.76, 0.80, 1.00 },
+    [4] = { 0.95, 0.38, 0.18, 1.00 },
+    [5] = { 1.00, 0.28, 0.10, 1.00 },
+    [6] = { 0.30, 0.58, 0.96, 1.00 },
+    [7] = { 0.20, 0.48, 0.92, 1.00 },
+    [8] = { 0.72, 0.54, 0.27, 1.00 },
+    [9] = { 0.84, 0.62, 0.28, 1.00 },
+    [10] = { 0.38, 0.82, 0.48, 1.00 },
+    [11] = { 0.26, 0.72, 0.36, 1.00 },
+    [12] = { 0.62, 0.88, 1.00, 1.00 },
+    [13] = { 0.48, 0.80, 1.00, 1.00 },
+    [14] = { 0.78, 0.52, 1.00, 1.00 },
+    [15] = { 0.66, 0.38, 0.96, 1.00 },
+    [16] = { 1.00, 0.96, 0.62, 1.00 },
+    [17] = { 0.96, 0.88, 0.48, 1.00 },
+    [18] = { 0.48, 0.38, 0.62, 1.00 },
+    [19] = { 0.34, 0.26, 0.48, 1.00 },
+};
+
+local WEATHER_SHORT_NAMES = {
+    [0] = 'Clear',
+    [1] = 'Sun',
+    [2] = 'Clouds',
+    [3] = 'Fog',
+    [4] = 'Hot',
+    [5] = 'Heat',
+    [6] = 'Rain',
+    [7] = 'Squalls',
+    [8] = 'Dust',
+    [9] = 'Sand',
+    [10] = 'Wind',
+    [11] = 'Gales',
+    [12] = 'Snow',
+    [13] = 'Blizzard',
+    [14] = 'Thunder',
+    [15] = 'Storm',
+    [16] = 'Aurora',
+    [17] = 'Glare',
+    [18] = 'Gloom',
+    [19] = 'Dark',
+};
+
 local function ensure_environment_addresses()
     local environment = state.environment;
     local now = os.clock();
@@ -4789,6 +4839,7 @@ local function current_environment()
         weekday = weekday,
         moon_name = moon_name,
         moon_percent = moon_percent,
+        weather_id = weather_id,
         weather = WEATHER_NAMES[weather_id] or 'Weather unknown',
     };
     environment.snapshot = snapshot;
@@ -4853,6 +4904,60 @@ local function draw_environment_clock(draw_list, left, top, size)
         { panel_left + 8, panel_top + 22 },
         text_color,
         detail_label);
+end
+
+local function compact_weather_visible(size)
+    return state.settings.show_weather_badge == true;
+end
+
+local function draw_weather_badge(draw_list, left, top, size)
+    if (not compact_weather_visible(size)) then
+        return;
+    end
+    local environment = current_environment();
+    if (environment == nil) then
+        return;
+    end
+    local label = size < 180
+        and (WEATHER_SHORT_NAMES[environment.weather_id] or 'Unknown')
+        or environment.weather;
+    local text_width = select(1, imgui.CalcTextSize(label));
+    local width = math.min(size - 12, math.max(64, text_width + 30));
+    local height = 20;
+    local x = left + size - width - 6;
+    local y = top + (state.settings.show_environment_clock == true
+            and size >= 260
+        and 52
+        or 6);
+    local badge_color = color('badge', { 0.025, 0.055, 0.070, 0.88 });
+    local border = color('border', { 0.67, 0.47, 0.22, 0.90 });
+    local text_color = color('grid_text', { 0.82, 0.71, 0.51, 0.88 });
+    local weather_color = WEATHER_COLORS[environment.weather_id]
+        or { 0.70, 0.74, 0.78, 1.00 };
+    draw_list:AddRectFilled(
+        { x, y },
+        { x + width, y + height },
+        badge_color,
+        3.0);
+    draw_list:AddRect(
+        { x, y },
+        { x + width, y + height },
+        border,
+        3.0,
+        0,
+        1.0);
+    draw_list:AddCircleFilled(
+        { x + 10, y + 10 },
+        4.0,
+        imgui.GetColorU32(weather_color),
+        14);
+    draw_list:AddCircle(
+        { x + 10, y + 10 },
+        4.0,
+        color('shadow', { 0.01, 0.02, 0.025, 0.94 }),
+        14,
+        1.0);
+    draw_list:AddText({ x + 19, y + 2 }, text_color, label);
 end
 
 local function draw_badge(draw_list, left, top, player, map)
@@ -5067,7 +5172,12 @@ local function atlas_toggle_bounds(left, top, size)
     local width = 46;
     local height = 20;
     local x = left + size - width - 6;
-    local y = top + (size >= 260 and 52 or 6);
+    local full_environment_card = state.settings.show_environment_clock == true
+        and size >= 260;
+    local y_offset = full_environment_card
+        and (compact_weather_visible(size) and 78 or 52)
+        or (compact_weather_visible(size) and 32 or 6);
+    local y = top + y_offset;
     return x, y, width, height;
 end
 
@@ -5628,6 +5738,7 @@ local function render_minimap()
         end
         draw_badge(draw_list, left, top, player, map);
         draw_environment_clock(draw_list, left, top, size);
+        draw_weather_badge(draw_list, left, top, size);
         draw_unlocked_hint(draw_list, left, top, size);
         draw_atlas_toggle_button(
             draw_list,
@@ -5851,6 +5962,9 @@ local function render_config_window()
         config_checkbox(
             'Vana time, day, moon, and weather##ashitaminimap_environment_clock',
             'show_environment_clock');
+        config_checkbox(
+            'Compact weather badge##ashitaminimap_weather_badge',
+            'show_weather_badge');
         config_checkbox(
             'Possible treasure spawns##ashitaminimap_coffer_spawns',
             'show_coffer_spawns');
