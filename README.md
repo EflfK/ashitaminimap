@@ -185,6 +185,43 @@ destination. Right-click the custom waypoint again to remove it; when a guide
 is active, its destination marker and path immediately regain priority. The
 custom waypoint is session-only and remains display-only.
 
+## AI / MCP waypoints
+
+`AshitaMiniMap.Mcp` exposes the same temporary custom-waypoint state without
+requiring a complete AshitaGuide guide:
+
+- `set_minimap_waypoint` accepts an exact zone id and world X/Y coordinates,
+  plus an optional map id and Z coordinate;
+- `clear_minimap_waypoint` restores AshitaGuide routing; and
+- `minimap_waypoint_status` reports whether the addon accepted a routed,
+  marker-only, cleared, expired, or rejected request.
+
+Remote destinations require `mapId`. When Z is omitted, AshitaMiniMap resolves
+it only when the authored path graph identifies one truthful floor; otherwise
+the waypoint remains marker-only. MCP waypoints use the same cyan marker,
+route priority, floor handling, and session-only lifecycle as a right-clicked
+waypoint.
+
+The MCP process atomically replaces
+`config/addons/ashitaminimap/mcp_waypoint_request.lua`. AshitaMiniMap validates
+and consumes each request id once, ignores requests more than 60 seconds old,
+and writes its display-only acknowledgment to `mcp_waypoint_status.json`.
+Neither file can contain commands, routes, input instructions, or destination
+paths. The addon never moves, targets, interacts, injects packets, or sends a
+game command.
+
+Build the stdio server before configuring an MCP client:
+
+```powershell
+dotnet build .\src\AshitaMiniMap.Mcp\AshitaMiniMap.Mcp.csproj
+```
+
+Configure the client to launch the built executable or DLL. The default Ashita
+root is `C:\Games\CatsEyeXI\catseyexi-client\Ashita`. Set
+`ASHITAMINIMAP_CONFIG_DIR` to the full persistent config directory or
+`ASHITA_ROOT` to another Ashita installation when necessary. Neither value can
+be supplied through an MCP tool.
+
 ## Atlas and remote waypoints
 
 Use the small **ATLAS** button on the minimap, `/aminimap atlas`, or **Open

@@ -2,6 +2,8 @@ __pycache__/
 *.py[cod]
 *.bak
 *.tmp
+bin/
+obj/
 Thumbs.db
 .DS_Store
 

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.9';
+addon.version   = '1.31.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -151,6 +151,12 @@ local state = {
     guide_markers = {
         payload = nil,
         last_poll = 0,
+        last_error = nil,
+    },
+    mcp_waypoint = {
+        pending = nil,
+        last_poll = 0,
+        last_request_id = nil,
         last_error = nil,
     },
     guide_path = {
@@ -785,6 +791,150 @@ state.poll_guide_markers = function (force)
     end
     state.guide_markers.payload = normalized;
     state.guide_markers.last_error = nil;
+end
+
+state.mcp_waypoint_file_path = function (filename)
+    local install_path = tostring(safe_read(function ()
+        return AshitaCore:GetInstallPath();
+    end, '') or '');
+    if (install_path == '') then
+        return nil;
+    end
+    local last = install_path:sub(#install_path);
+    if (last ~= '\\' and last ~= '/') then
+        install_path = install_path .. '\\';
+    end
+    return install_path
+        .. 'config\\addons\\ashitaminimap\\'
+        .. tostring(filename or '');
+end
+
+local function json_quoted(value)
+    local text = tostring(value or '')
+        :gsub('\\', '\\\\')
+        :gsub('"', '\\"')
+        :gsub('\r', '\\r')
+        :gsub('\n', '\\n')
+        :gsub('\t', '\\t');
+    return '"' .. text .. '"';
+end
+
+state.write_mcp_waypoint_status = function (
+        request_id,
+        status,
+        message,
+        waypoint,
+        acknowledged)
+    local path = state.mcp_waypoint_file_path('mcp_waypoint_status.json');
+    if (path == nil) then
+        return;
+    end
+    local parts = {
+        '"ok":true',
+        '"acknowledged":' .. bool_text(acknowledged == true),
+        '"requestId":' .. json_quoted(request_id),
+        '"state":' .. json_quoted(status),
+        '"message":' .. json_quoted(message),
+        '"updatedAt":' .. tostring(os.time()),
+        '"active":' .. bool_text(type(waypoint) == 'table'),
+    };
+    if (type(waypoint) == 'table') then
+        parts[#parts + 1] = '"zoneId":' .. tostring(waypoint.zone_id);
+        parts[#parts + 1] = '"mapId":'
+            .. (waypoint.map_id ~= nil and tostring(waypoint.map_id) or 'null');
+        parts[#parts + 1] = '"x":' .. string.format('%.6f', waypoint.x);
+        parts[#parts + 1] = '"y":' .. string.format('%.6f', waypoint.y);
+        parts[#parts + 1] = '"z":'
+            .. (waypoint.z ~= nil and string.format('%.6f', waypoint.z) or 'null');
+        parts[#parts + 1] = '"floorAmbiguous":'
+            .. bool_text(waypoint.floor_ambiguous == true);
+    end
+    local file = io.open(path, 'w');
+    if (file ~= nil) then
+        file:write('{' .. table.concat(parts, ',') .. '}');
+        file:close();
+    end
+end
+
+state.note_manual_waypoint_change = function (active)
+    state.write_mcp_waypoint_status(
+        state.mcp_waypoint.last_request_id or '',
+        active == true and 'manual_waypoint' or 'cleared_manually',
+        active == true
+            and 'The player replaced the MCP waypoint by right-clicking the map.'
+            or 'The player cleared the waypoint manually.',
+        active == true and state.custom_waypoint or nil,
+        state.mcp_waypoint.last_request_id ~= nil);
+end
+
+state.poll_mcp_waypoint = function (force)
+    local now_clock = os.clock();
+    if (force ~= true and now_clock - state.mcp_waypoint.last_poll < 0.25) then
+        return;
+    end
+    state.mcp_waypoint.last_poll = now_clock;
+
+    local path = state.mcp_waypoint_file_path('mcp_waypoint_request.lua');
+    local chunk = path ~= nil and loadfile(path) or nil;
+    if (chunk == nil) then
+        return;
+    end
+    local ok, value = pcall(chunk);
+    local request_id = type(value) == 'table'
+        and tostring(value.request_id or '')
+        or '';
+    if (not ok
+            or type(value) ~= 'table'
+            or tonumber(value.version) ~= 1
+            or value.source ~= 'ashitaminimap_mcp'
+            or request_id == ''
+            or #request_id > 64
+            or request_id:match('^[%w%-]+$') == nil) then
+        state.mcp_waypoint.last_error = 'invalid MCP waypoint request';
+        return;
+    end
+    if (state.mcp_waypoint.last_request_id == request_id) then
+        return;
+    end
+    state.mcp_waypoint.last_request_id = request_id;
+
+    local issued_at = tonumber(value.issued_at);
+    local expires_at = tonumber(value.expires_at);
+    local now = os.time();
+    if (issued_at == nil
+            or expires_at == nil
+            or expires_at < issued_at
+            or expires_at - issued_at > 120
+            or now < issued_at - 5
+            or now > expires_at) then
+        state.mcp_waypoint.last_error = 'expired MCP waypoint request';
+        state.write_mcp_waypoint_status(
+            request_id,
+            'expired',
+            'The waypoint request expired before AshitaMiniMap could consume it.',
+            nil,
+            true);
+        return;
+    end
+
+    local action = tostring(value.action or ''):lower();
+    if (action ~= 'set' and action ~= 'clear') then
+        state.mcp_waypoint.last_error = 'invalid MCP waypoint action';
+        state.write_mcp_waypoint_status(
+            request_id,
+            'rejected',
+            'The waypoint action must be set or clear.',
+            nil,
+            true);
+        return;
+    end
+    state.mcp_waypoint.pending = {
+        request_id = request_id,
+        action = action,
+        waypoint = value.waypoint,
+        expires_at = expires_at,
+    };
+    state.mcp_waypoint.last_error = nil;
 end
 
 state.active_guide_payload = function ()
@@ -2751,6 +2901,183 @@ local function map_for_catalog_page(zone_id, page_id)
             nil,
             math.floor(page_id),
             false));
+end
+
+state.apply_mcp_waypoint = function ()
+    local request = state.mcp_waypoint.pending;
+    if (type(request) ~= 'table') then
+        return;
+    end
+    if (tonumber(request.expires_at) ~= nil
+            and os.time() > tonumber(request.expires_at)) then
+        state.mcp_waypoint.pending = nil;
+        state.write_mcp_waypoint_status(
+            request.request_id,
+            'expired',
+            'The waypoint request expired before player map state became available.',
+            nil,
+            true);
+        return;
+    end
+    state.mcp_waypoint.pending = nil;
+
+    if (request.action == 'clear') then
+        state.custom_waypoint = nil;
+        state.guide_path.route = nil;
+        state.guide_path.last_attempt = 0;
+        state.world_path.route = nil;
+        state.world_path.last_attempt = 0;
+        state.write_mcp_waypoint_status(
+            request.request_id,
+            'cleared',
+            'The custom waypoint is clear and AshitaGuide routing is restored.',
+            nil,
+            true);
+        log('MCP waypoint cleared; AshitaGuide routing restored.');
+        return;
+    end
+
+    local source = type(request.waypoint) == 'table'
+        and request.waypoint
+        or {};
+    local zone_id = tonumber(source.zone_id);
+    local map_id = tonumber(source.map_id);
+    local x = tonumber(source.x);
+    local y = tonumber(source.y);
+    local z = tonumber(source.z);
+    local function finite_coordinate(value)
+        return value ~= nil
+            and value == value
+            and math.abs(value) <= 100000;
+    end
+    local valid = zone_id ~= nil
+        and zone_id >= 0
+        and zone_id <= 999
+        and zone_id == math.floor(zone_id)
+        and finite_coordinate(x)
+        and finite_coordinate(y)
+        and (map_id == nil
+            or (map_id >= 0
+                and map_id <= 255
+                and map_id == math.floor(map_id)))
+        and (z == nil or finite_coordinate(z));
+    if (not valid) then
+        state.mcp_waypoint.last_error = 'invalid MCP waypoint coordinates';
+        state.write_mcp_waypoint_status(
+            request.request_id,
+            'rejected',
+            'The waypoint coordinates or identifiers are outside the supported bounds.',
+            nil,
+            true);
+        return;
+    end
+
+    zone_id = math.floor(zone_id);
+    map_id = map_id ~= nil and math.floor(map_id) or nil;
+    local player = current_player();
+    local live_map = player ~= nil and map_for_player(player) or nil;
+    if (map_id == nil) then
+        if (player == nil or live_map == nil) then
+            state.mcp_waypoint.pending = request;
+            return;
+        end
+        if (player.zone_id ~= zone_id) then
+            state.mcp_waypoint.last_error = 'remote MCP waypoint missing map id';
+            state.write_mcp_waypoint_status(
+                request.request_id,
+                'rejected',
+                'mapId is required when the waypoint is outside the current zone.',
+                nil,
+                true);
+            return;
+        end
+        map_id = tonumber(live_map.page_id);
+    end
+
+    local destination_map = map_for_catalog_page(zone_id, map_id);
+    if (destination_map == nil) then
+        state.mcp_waypoint.last_error = 'MCP waypoint map unavailable';
+        state.write_mcp_waypoint_status(
+            request.request_id,
+            'rejected',
+            'AshitaMiniMap has no map record for the requested zone and mapId.',
+            nil,
+            true);
+        return;
+    end
+    if ((player == nil or player.zone_id ~= zone_id)
+            and destination_map.waypoint_calibrated ~= true) then
+        state.mcp_waypoint.last_error = 'remote MCP waypoint map uncalibrated';
+        state.write_mcp_waypoint_status(
+            request.request_id,
+            'rejected',
+            'The remote map does not have exact waypoint calibration.',
+            nil,
+            true);
+        return;
+    end
+
+    local graph = state.path_graph_for(zone_id, map_id);
+    local floor_ambiguous = false;
+    if (z == nil) then
+        local player_on_destination_page = player ~= nil
+            and player.zone_id == zone_id
+            and live_map ~= nil
+            and tonumber(live_map.page_id) == map_id;
+        z, floor_ambiguous = state.path_waypoint_z(
+            graph,
+            x,
+            y,
+            player_on_destination_page and player.x or nil,
+            player_on_destination_page and player.y or nil,
+            player_on_destination_page and player.z or nil,
+            not player_on_destination_page);
+    end
+
+    state.custom_waypoint = {
+        zone_id = zone_id,
+        page_id = map_id,
+        map_id = map_id,
+        x = x,
+        y = y,
+        z = z,
+        floor_ambiguous = floor_ambiguous,
+        source = 'custom',
+        origin = 'mcp',
+    };
+    state.guide_path.route = nil;
+    state.guide_path.last_attempt = 0;
+    state.world_path.route = nil;
+    state.world_path.last_attempt = 0;
+
+    local route = player ~= nil and live_map ~= nil
+        and state.ensure_guide_path(player, live_map)
+        or nil;
+    local status = route ~= nil and 'routed' or 'marker_only';
+    local reason = floor_ambiguous
+        and 'The waypoint is active, but overlapping floors are ambiguous.'
+        or route ~= nil
+            and 'The waypoint is active with a display-only route.'
+            or state.world_path.last_error ~= nil
+                and ('The waypoint is active without a route: '
+                    .. tostring(state.world_path.last_error) .. '.')
+                or state.guide_path.last_error ~= nil
+                    and ('The waypoint is active without a route: '
+                        .. tostring(state.guide_path.last_error) .. '.')
+                    or 'The waypoint is active as a marker; no route is currently available.';
+    state.write_mcp_waypoint_status(
+        request.request_id,
+        status,
+        reason,
+        state.custom_waypoint,
+        true);
+    log(string.format(
+        'MCP waypoint set at %.1f, %.1f in zone %d page %d (%s).',
+        x,
+        y,
+        zone_id,
+        map_id,
+        status));
 end
 
 local function map_grid_yalms(map)
@@ -5416,6 +5743,7 @@ local function handle_custom_waypoint_input(
             state.guide_path.last_attempt = 0;
             state.world_path.route = nil;
             state.world_path.last_attempt = 0;
+            state.note_manual_waypoint_change(false);
             log('Custom waypoint cleared; AshitaGuide routing restored.');
             return;
         end
@@ -5447,6 +5775,7 @@ local function handle_custom_waypoint_input(
     state.guide_path.last_attempt = 0;
     state.world_path.route = nil;
     state.world_path.last_attempt = 0;
+    state.note_manual_waypoint_change(true);
     log(string.format(
         floor_ambiguous
             and 'Custom waypoint set at %.1f, %.1f; overlapping floors are ambiguous, so no path will be drawn.'
@@ -6522,6 +6851,7 @@ local function atlas_set_waypoint(map, x, y)
     state.guide_path.last_attempt = 0;
     state.world_path.route = nil;
     state.world_path.last_attempt = 0;
+    state.note_manual_waypoint_change(true);
     log(string.format(
         floor_ambiguous
             and 'Atlas waypoint set in %s at %.1f, %.1f; the floor is ambiguous, so it remains marker-only.'
@@ -6700,6 +7030,7 @@ local function render_atlas_window()
                 state.guide_path.last_attempt = 0;
                 state.world_path.route = nil;
                 state.world_path.last_attempt = 0;
+                state.note_manual_waypoint_change(false);
                 log('Custom waypoint cleared; AshitaGuide routing restored.');
             end
         end
@@ -7070,6 +7401,8 @@ end
 ashita.events.register('load', 'load_cb', function ()
     load_configuration();
     state.poll_guide_markers(true);
+    state.poll_mcp_waypoint(true);
+    state.apply_mcp_waypoint();
     log('Loaded. Use /aminimap help for commands.');
 end);
 
@@ -7077,6 +7410,7 @@ ashita.events.register('unload', 'unload_cb', function ()
     save_configuration_if_due(true);
     state.textures = {};
     state.guide_markers.payload = nil;
+    state.mcp_waypoint.pending = nil;
     state.guide_path.route = nil;
     state.world_path.route = nil;
     state.path_graphs = {};
@@ -7108,6 +7442,8 @@ end);
 
 ashita.events.register('d3d_present', 'present_cb', function ()
     state.poll_guide_markers(false);
+    state.poll_mcp_waypoint(false);
+    state.apply_mcp_waypoint();
     render_minimap();
     render_atlas_window();
     render_config_window();
