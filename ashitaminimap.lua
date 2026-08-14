@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.5';
+addon.version   = '1.30.6';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -6537,9 +6537,14 @@ local function render_atlas_window()
         return;
     end
 
-    local first_use = rawget(_G, 'ImGuiCond_FirstUseEver') or 0;
-    local canvas_size = 600;
-    imgui.SetNextWindowSize({ canvas_size + 32, canvas_size + 170 }, first_use);
+    local display_size = safe_read(function ()
+        return imgui.GetIO().DisplaySize;
+    end, nil);
+    local display_height = display_size ~= nil
+        and tonumber(display_size.y)
+        or 850;
+    local canvas_size = clamp(math.floor(display_height - 250), 420, 600);
+    imgui.SetNextWindowSize({ canvas_size + 32, canvas_size + 190 }, 0);
     local flags = bit.bor(
         bit.lshift(1, 1),  -- NoResize
         bit.lshift(1, 5)); -- NoCollapse
@@ -6549,10 +6554,10 @@ local function render_atlas_window()
             flags)) then
         atlas.window_x, atlas.window_y = imgui.GetWindowPos();
         atlas.window_width, atlas.window_height = imgui.GetWindowSize();
-        imgui.Text('Find map');
+        imgui.Text('Find');
         imgui.SameLine(0, 6);
         if (type(imgui.SetNextItemWidth) == 'function') then
-            imgui.SetNextItemWidth(250);
+            imgui.SetNextItemWidth(canvas_size - 190);
         end
         if (type(imgui.InputText) == 'function') then
             imgui.InputText(
@@ -6560,36 +6565,36 @@ local function render_atlas_window()
                 atlas.search,
                 64);
         end
-        imgui.SameLine(0, 8);
+        imgui.SameLine(0, 6);
         local player = current_player();
-        if (imgui.Button('Current zone##ashitaminimap_atlas_current', { 94, 0 })
+        if (imgui.Button('Current##ashitaminimap_atlas_current')
                 and player ~= nil) then
             atlas_clear_filters();
             atlas_select_zone(player.zone_id);
         end
-        imgui.SameLine(0, 8);
-        if (imgui.Button('Clear filters##ashitaminimap_atlas_clear_filters', { 88, 0 })) then
+        imgui.SameLine(0, 6);
+        if (imgui.Button('Clear##ashitaminimap_atlas_clear_filters')) then
             atlas_clear_filters();
         end
 
         atlas_filter_checkbox(
-            'Waypoint ready##ashitaminimap_atlas_filter_waypoint',
+            'Waypoint-ready##ashitaminimap_atlas_filter_waypoint',
             'waypoint_ready');
-        imgui.SameLine(0, 14);
+        imgui.SameLine(0, 12);
         atlas_filter_checkbox(
-            'Has pathing##ashitaminimap_atlas_filter_pathing',
+            'Pathing##ashitaminimap_atlas_filter_pathing',
             'has_pathing');
-        imgui.SameLine(0, 14);
+        imgui.SameLine(0, 12);
         atlas_filter_checkbox(
-            'Multiple pages##ashitaminimap_atlas_filter_pages',
+            'Multi-page##ashitaminimap_atlas_filter_pages',
             'multiple_pages');
 
         local all_zones = available_zone_ids();
         local zones = atlas_filtered_zone_ids();
-        imgui.SameLine(0, 18);
-        imgui.Text(string.format('%d of %d maps', #zones, #all_zones));
+        imgui.SameLine(0, 14);
+        imgui.Text(string.format('%d / %d maps', #zones, #all_zones));
 
-        if (imgui.Button('<##ashitaminimap_atlas_zone_prev', { 28, 0 })) then
+        if (imgui.Button('<##ashitaminimap_atlas_zone_prev', { 30, 0 })) then
             local selected = atlas_step_selection(
                 zones,
                 atlas.zone_id,
@@ -6603,9 +6608,12 @@ local function render_atlas_window()
             '%s (%d)',
             zone_name(atlas.zone_id),
             atlas.zone_id);
+        if (type(imgui.SetNextItemWidth) == 'function') then
+            imgui.SetNextItemWidth(canvas_size - 72);
+        end
         if (type(imgui.BeginCombo) == 'function'
                 and imgui.BeginCombo(
-                    'Zone##ashitaminimap_atlas_zone',
+                    '##ashitaminimap_atlas_zone',
                     zone_label)) then
             for _, zone_id in ipairs(zones) do
                 local selected = zone_id == atlas.zone_id;
@@ -6633,7 +6641,7 @@ local function render_atlas_window()
             imgui.Text(zone_label);
         end
         imgui.SameLine(0, 6);
-        if (imgui.Button('>##ashitaminimap_atlas_zone_next', { 28, 0 })) then
+        if (imgui.Button('>##ashitaminimap_atlas_zone_next', { 30, 0 })) then
             local selected = atlas_step_selection(
                 zones,
                 atlas.zone_id,
@@ -6644,7 +6652,7 @@ local function render_atlas_window()
         end
 
         local page_ids = available_page_ids(atlas.zone_id);
-        if (imgui.Button('< Page##ashitaminimap_atlas_page_prev', { 66, 0 })) then
+        if (imgui.Button('<##ashitaminimap_atlas_page_prev', { 30, 0 })) then
             atlas_select_page(atlas_step_selection(
                 page_ids,
                 atlas.page_id,
@@ -6652,25 +6660,24 @@ local function render_atlas_window()
         end
         imgui.SameLine(0, 6);
         imgui.Text(string.format(
-            'Page %d (%d pages)',
+            'Page %d of %d',
             atlas.page_id,
             #page_ids));
         imgui.SameLine(0, 6);
-        if (imgui.Button('Page >##ashitaminimap_atlas_page_next', { 66, 0 })) then
+        if (imgui.Button('>##ashitaminimap_atlas_page_next', { 30, 0 })) then
             atlas_select_page(atlas_step_selection(
                 page_ids,
                 atlas.page_id,
                 1));
         end
-        imgui.SameLine(0, 14);
-        if (imgui.Button('Reset view##ashitaminimap_atlas_reset', { 82, 0 })) then
+        imgui.SameLine(0, 18);
+        if (imgui.Button('Reset view##ashitaminimap_atlas_reset')) then
             atlas.camera_x = nil;
         end
         if (state.custom_waypoint ~= nil) then
             imgui.SameLine(0, 6);
             if (imgui.Button(
-                    'Clear waypoint##ashitaminimap_atlas_clear',
-                    { 104, 0 })) then
+                    'Clear waypoint##ashitaminimap_atlas_clear')) then
                 state.custom_waypoint = nil;
                 state.guide_path.route = nil;
                 state.guide_path.last_attempt = 0;
@@ -6842,7 +6849,7 @@ local function render_atlas_window()
                     hover_x,
                     hover_y));
             else
-                imgui.Text('Drag to pan, use the mouse wheel to zoom, and right-click to set a waypoint.');
+                imgui.Text('Drag: pan   Wheel: zoom   Right-click: waypoint');
             end
         else
             imgui.TextColored(
