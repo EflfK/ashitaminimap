@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.7';
+addon.version   = '1.30.8';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -187,6 +187,7 @@ local state = {
         dragging = false,
         drag_mouse_x = 0,
         drag_mouse_y = 0,
+        show_nm_spawn_ranges = true,
         search = { '' },
         filters = {
             waypoint_ready = false,
@@ -3751,9 +3752,9 @@ local function draw_nm_spawn_ranges(
         camera,
         map,
         scale,
-        player)
-    if (state.settings.show_nm_spawn_ranges ~= true
-            or type(map.nm_spawn_ranges) ~= 'table') then
+        player,
+        visible)
+    if (visible ~= true or type(map.nm_spawn_ranges) ~= 'table') then
         return;
     end
 
@@ -5749,7 +5750,8 @@ local function render_minimap()
             camera,
             map,
             scale,
-            player);
+            player,
+            state.settings.show_nm_spawn_ranges);
         state.draw_all_pathing(
             draw_list,
             left,
@@ -6698,6 +6700,12 @@ local function render_atlas_window()
                 log('Custom waypoint cleared; AshitaGuide routing restored.');
             end
         end
+        local show_nm_spawn_ranges = atlas.show_nm_spawn_ranges == true;
+        if (imgui.Checkbox(
+                'NM spawns##ashitaminimap_atlas_nm_spawns',
+                { show_nm_spawn_ranges })) then
+            atlas.show_nm_spawn_ranges = not show_nm_spawn_ranges;
+        end
 
         local map = map_for_catalog_page(atlas.zone_id, atlas.page_id);
         if (map ~= nil) then
@@ -6792,6 +6800,20 @@ local function render_atlas_window()
                     focused_opacity(state.settings.vanilla_opacity, 1),
                     state.settings.vanilla_visibility_boost);
             end
+            local atlas_player = player ~= nil
+                and player.zone_id == atlas.zone_id
+                and player
+                or { zone_id = atlas.zone_id };
+            local nm_spawn_hover = draw_nm_spawn_ranges(
+                draw_list,
+                left,
+                top,
+                canvas_size,
+                camera,
+                map,
+                atlas.pixels_per_yalm,
+                atlas_player,
+                atlas.show_nm_spawn_ranges);
             draw_grid(
                 draw_list,
                 left,
@@ -6835,6 +6857,17 @@ local function render_atlas_window()
                         player.yaw,
                         marker_zoom_scale(atlas.pixels_per_yalm));
                 end
+            end
+            if (nm_spawn_hover ~= nil) then
+                draw_nm_spawn_range_card(
+                    draw_list,
+                    left,
+                    top,
+                    canvas_size,
+                    nm_spawn_hover.x,
+                    nm_spawn_hover.y,
+                    nm_spawn_hover.reference,
+                    1);
             end
             draw_list:AddRect(
                 { left, top },

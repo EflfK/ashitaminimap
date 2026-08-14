@@ -193,7 +193,9 @@ leaving the current zone. Search by zone name or ID, or narrow the catalog to
 maps that support waypoint placement, have authored pathing, or contain
 multiple pages. Filters can be combined, and the previous/next buttons move
 through the alphabetized filtered results. Choose a page independently, drag
-to pan, and use the mouse wheel to zoom. `/aminimap atlas <zone-id>` opens a
+to pan, use the mouse wheel to zoom, and toggle **NM spawns** to show or hide
+the selected map's authored notorious-monster spawn ranges. Hover a visible
+range for its name and spawn details. `/aminimap atlas <zone-id>` opens a
 zone directly, and `/aminimap atlas hide` closes the window. The minimap button
 highlights while Atlas is open.
 
