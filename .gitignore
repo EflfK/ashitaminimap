@@ -11,3 +11,5 @@ Thumbs.db
 # assets are deployed with the addon but are not redistributed by this repo.
 assets/vanilla/
 ashitaminimap_vanilla_maps.lua
+assets/custom/
+ashitaminimap_custom_maps.lua

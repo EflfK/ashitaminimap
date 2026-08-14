@@ -14,6 +14,9 @@ return {
 
     -- Vanilla reference map. Structure settings below are retained only for
     -- forward compatibility while structure rendering is dormant.
+    -- 'custom' uses a locally imported guide-map/Pivot catalog when the active
+    -- page has one; the minimap button toggles this value at runtime.
+    map_source = 'vanilla',
     show_map_vanilla = true,
     show_map_structure = false,
     vanilla_opacity = 0.35,

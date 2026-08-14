@@ -21,6 +21,8 @@ The first prototype includes:
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
 - a searchable Atlas for browsing other zones and setting attended waypoints;
+- an in-minimap artwork toggle between locally imported vanilla and custom
+  guide maps;
 - calibrated vanilla-map rendering with dormant retained structure support;
 - deterministic world-coordinate-to-image calibration;
 - routing-first map definitions for the Windurst cities and surrounding
@@ -45,6 +47,8 @@ The first prototype includes:
 /aminimap page next
 /aminimap page prev
 /aminimap page 2
+/aminimap map vanilla
+/aminimap map guide
 /aminimap atlas
 /aminimap atlas 126
 /aminimap atlas hide
@@ -59,7 +63,7 @@ The first prototype includes:
 Run `/aminimap config` to open the in-game configuration window. It controls:
 
 - map visibility, position lock, size, and zoom;
-- vanilla-map visibility and opacity;
+- vanilla/custom guide-map selection, visibility, and opacity;
 - an optional dark translucent backdrop for bright game environments;
 - coordinate grid and coordinate badge visibility, with optional live numeric
   X/Y/Z values in the badge;
@@ -362,6 +366,23 @@ stock formats, and writes `assets/vanilla/*.png` plus
 `ashitaminimap_vanilla_maps.lua`. These generated files are installed locally
 but intentionally ignored by Git; the repository does not redistribute the
 game's stock artwork.
+
+To add an installed Pivot map pack as the optional guide-map source, run the
+same importer against that overlay and give it a separate output catalog:
+
+```text
+python tools/import_vanilla_maps.py "<Ashita>/polplugins/DATs/<overlay>" \
+  --output assets/custom \
+  --catalog ashitaminimap_custom_maps.lua \
+  --asset-prefix assets/custom \
+  --source-label "locally installed Pivot map overlay"
+```
+
+The **VANILLA / GUIDE** button inside the minimap switches artwork for the
+active page without changing calibration, markers, guide routing, or zoom.
+The button is disabled when the custom catalog has no safe stock-calibrated
+image for that page. Custom PNGs and their generated catalog remain local and
+Git-ignored for the same reason as the stock artwork.
 
 An authored entry in `ashitaminimap_maps.lua` takes precedence. Missing fields
 are filled from the matching stock page, so Port Jeuno can pair its authored

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.1';
+addon.version   = '1.31.2';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -54,6 +54,7 @@ local DEFAULTS = {
     y = 128,
     size = 330,
     pixels_per_yalm = 4.41,
+    map_source = 'vanilla',
     show_map_vanilla = true,
     show_map_structure = false,
     vanilla_opacity = 0.35,
@@ -110,6 +111,7 @@ local state = {
     path_graphs = {},
     world_catalog = {},
     vanilla_maps = {},
+    custom_maps = {},
     textures = {},
     device = nil,
     warned_zones = {},
@@ -210,6 +212,7 @@ local state = {
         toggle_width = nil,
         toggle_height = nil,
     },
+    map_source_toggle = {},
 };
 
 local function safe_read(callback, fallback)
@@ -369,6 +372,9 @@ local function config_text()
         string.format('    pixels_per_yalm = %.4f,', clamp(settings.pixels_per_yalm, ZOOM_MIN, ZOOM_MAX)),
         '',
         '    -- Independently composited map layers.',
+        string.format("    map_source = '%s',", settings.map_source == 'custom'
+            and 'custom'
+            or 'vanilla'),
         string.format('    show_map_vanilla = %s,', bool_text(settings.show_map_vanilla)),
         string.format('    show_map_structure = %s,', bool_text(settings.show_map_structure)),
         string.format('    vanilla_opacity = %.3f,', clamp(settings.vanilla_opacity, 0, 1)),
@@ -574,6 +580,9 @@ local function load_configuration()
     state.settings.size = clamp(state.settings.size, 120, 700);
     local loaded_zoom = tonumber(state.settings.pixels_per_yalm) or DEFAULTS.pixels_per_yalm;
     state.settings.pixels_per_yalm = clamp(loaded_zoom, ZOOM_MIN, ZOOM_MAX);
+    state.settings.map_source = state.settings.map_source == 'custom'
+        and 'custom'
+        or 'vanilla';
     state.settings.vanilla_opacity = clamp(state.settings.vanilla_opacity, 0, 1);
     state.settings.structure_opacity = clamp(state.settings.structure_opacity, 0, 1);
     state.settings.inactive_floor_opacity =
@@ -639,6 +648,9 @@ local function load_configuration()
     if (vanilla_error ~= nil) then
         log('Vanilla fallback catalog unavailable; run tools/import_vanilla_maps.py.');
     end
+
+    local custom_maps = load_module_file('ashitaminimap_custom_maps.lua');
+    state.custom_maps = type(custom_maps) == 'table' and custom_maps or {};
 end
 
 local function color(name, fallback)
@@ -2901,6 +2913,52 @@ local function map_for_catalog_page(zone_id, page_id)
             nil,
             math.floor(page_id),
             false));
+end
+
+local function custom_image_for(zone_id, map)
+    zone_id = tonumber(zone_id);
+    local page_id = map ~= nil and tonumber(map.page_id) or nil;
+    if (zone_id == nil or page_id == nil) then
+        return nil;
+    end
+    zone_id = math.floor(zone_id);
+    page_id = math.floor(page_id);
+    local authored = state.maps[zone_id];
+    local authored_source_calibration = type(authored) == 'table'
+        and authored.stock_calibration ~= true
+        and (authored.vanilla_image ~= nil
+            or authored.origin_x ~= nil
+            or authored.origin_y ~= nil
+            or authored.image_pixels_per_yalm ~= nil
+            or authored.page_calibrations ~= nil);
+    if (authored_source_calibration) then
+        return nil;
+    end
+    local zone = state.custom_maps[zone_id];
+    local image = type(zone) == 'table'
+        and type(zone.pages) == 'table'
+        and zone.pages[page_id]
+        or nil;
+    if (type(image) ~= 'string' or image == '') then
+        return nil;
+    end
+    local path = string.format('%s%s', addon.path, image);
+    return ashita.fs.exists(path) and image or nil;
+end
+
+local function map_source_image(zone_id, map)
+    local custom_image = custom_image_for(zone_id, map);
+    if (state.settings.map_source == 'custom' and custom_image ~= nil) then
+        return custom_image, true;
+    end
+    return map ~= nil and map.vanilla_image or nil, false;
+end
+
+local function toggle_map_source()
+    state.settings.map_source = state.settings.map_source == 'custom'
+        and 'vanilla'
+        or 'custom';
+    mark_configuration_changed();
 end
 
 state.apply_mcp_waypoint = function ()
@@ -5271,6 +5329,13 @@ local function atlas_toggle_width()
     return math.max(68, math.ceil(text_width + 31));
 end
 
+local function map_source_toggle_width()
+    local vanilla_width = select(1, imgui.CalcTextSize('VANILLA'));
+    local guide_width = select(1, imgui.CalcTextSize('GUIDE'));
+    local text_width = math.max(vanilla_width, guide_width);
+    return math.max(82, math.ceil(text_width + 31));
+end
+
 local function weather_badge_layout(left, top, size)
     if (not compact_weather_visible(size)) then
         return nil;
@@ -5284,9 +5349,11 @@ local function weather_badge_layout(left, top, size)
         or environment.weather;
     local text_width = select(1, imgui.CalcTextSize(label));
     local atlas_width = atlas_toggle_width();
+    local map_source_width = map_source_toggle_width();
     local available_width = math.max(
         0,
-        size - (HUD_INSET * 2) - atlas_width - HUD_CONTROL_GAP);
+        size - (HUD_INSET * 2) - atlas_width - map_source_width
+            - (HUD_CONTROL_GAP * 2));
     local width = math.min(available_width, math.max(64, text_width + 30));
     if (width < 64) then
         label = nil;
@@ -5295,7 +5362,8 @@ local function weather_badge_layout(left, top, size)
     if (width <= 0) then
         return nil;
     end
-    local x = left + size - HUD_INSET - atlas_width - HUD_CONTROL_GAP - width;
+    local x = left + size - HUD_INSET - atlas_width - map_source_width
+        - (HUD_CONTROL_GAP * 2) - width;
     local y = hud_toolbar_top(top, size);
     return {
         environment = environment,
@@ -5566,6 +5634,34 @@ local function atlas_toggle_bounds(left, top, size)
     return x, y, width, height;
 end
 
+local function map_source_toggle_bounds(left, top, size)
+    local atlas_x = select(1, atlas_toggle_bounds(left, top, size));
+    local width = map_source_toggle_width();
+    local height = HUD_CONTROL_HEIGHT;
+    local x = atlas_x - HUD_CONTROL_GAP - width;
+    local y = hud_toolbar_top(top, size);
+    return x, y, width, height;
+end
+
+local function update_map_source_toggle_hover(left, top, size, available)
+    local x, y, width, height = map_source_toggle_bounds(left, top, size);
+    local toggle = state.map_source_toggle;
+    toggle.x = x;
+    toggle.y = y;
+    toggle.width = width;
+    toggle.height = height;
+    toggle.available = available == true;
+    local mouse_x, mouse_y = imgui.GetMousePos();
+    mouse_x = tonumber(mouse_x);
+    mouse_y = tonumber(mouse_y);
+    return mouse_x ~= nil
+        and mouse_y ~= nil
+        and mouse_x >= x
+        and mouse_x <= x + width
+        and mouse_y >= y
+        and mouse_y <= y + height;
+end
+
 local function update_atlas_toggle_hover(left, top, size)
     local x, y, width, height = atlas_toggle_bounds(left, top, size);
     state.atlas.toggle_x = x;
@@ -5643,6 +5739,57 @@ local function render_atlas_toggle_capture()
     imgui.End();
 end
 
+local function render_map_source_toggle_capture()
+    local toggle = state.map_source_toggle;
+    local x = tonumber(toggle.x);
+    local y = tonumber(toggle.y);
+    local width = tonumber(toggle.width);
+    local height = tonumber(toggle.height);
+    if (x == nil or y == nil or width == nil or height == nil) then
+        return;
+    end
+    local atlas = state.atlas;
+    if (atlas.visible[1] == true
+            and atlas.window_x ~= nil
+            and x < atlas.window_x + atlas.window_width
+            and x + width > atlas.window_x
+            and y < atlas.window_y + atlas.window_height
+            and y + height > atlas.window_y) then
+        return;
+    end
+
+    local flags = bit.bor(
+        bit.lshift(1, 0),  -- NoTitleBar
+        bit.lshift(1, 1),  -- NoResize
+        bit.lshift(1, 2),  -- NoMove
+        bit.lshift(1, 3),  -- NoScrollbar
+        bit.lshift(1, 7),  -- NoBackground
+        bit.lshift(1, 8),  -- NoSavedSettings
+        bit.lshift(1, 12), -- NoFocusOnAppearing
+        bit.lshift(1, 13), -- NoBringToFrontOnFocus
+        bit.lshift(1, 18), -- NoNavInputs
+        bit.lshift(1, 19));-- NoNavFocus
+    imgui.SetNextWindowPos({ x, y }, 0);
+    imgui.SetNextWindowSize({ width, height }, 0);
+    if (type(imgui.SetNextWindowBgAlpha) == 'function') then
+        imgui.SetNextWindowBgAlpha(0.0);
+    end
+    if (imgui.Begin(
+            '##ashitaminimap_map_source_toggle_capture',
+            true,
+            flags)) then
+        imgui.SetCursorScreenPos({ x, y });
+        if (imgui.InvisibleButton(
+                '##ashitaminimap_map_source_toggle_button',
+                { width, height })
+                and toggle.available == true) then
+            toggle_map_source();
+            state.dragging = false;
+        end
+    end
+    imgui.End();
+end
+
 local function draw_atlas_toggle_button(draw_list, left, top, size, hovered)
     local x, y, width, height = atlas_toggle_bounds(left, top, size);
     local active = state.atlas.visible[1] == true;
@@ -5689,6 +5836,60 @@ local function draw_atlas_toggle_button(draw_list, left, top, size, hovered)
         { x + 24, y + 3 },
         icon_color,
         'ATLAS');
+end
+
+local function draw_map_source_toggle_button(
+        draw_list,
+        left,
+        top,
+        size,
+        hovered,
+        available,
+        custom_active)
+    local x, y, width, height = map_source_toggle_bounds(left, top, size);
+    local active = available == true and custom_active == true;
+    local fill = active
+        and imgui.GetColorU32({ 0.06, 0.48, 0.58, hovered and 1.00 or 0.92 })
+        or imgui.GetColorU32({
+            0.025,
+            0.055,
+            0.070,
+            available == true and (hovered and 0.98 or 0.88) or 0.52,
+        });
+    local border = active
+        and imgui.GetColorU32({ 0.10, 0.86, 1.00, 1.00 })
+        or color('border', { 0.67, 0.47, 0.22, 0.90 });
+    draw_list:AddRectFilled({ x, y }, { x + width, y + height }, fill, 3.0);
+    draw_list:AddRect(
+        { x, y },
+        { x + width, y + height },
+        border,
+        3.0,
+        0,
+        1.0);
+    local icon_color = available == true
+        and (active
+            and imgui.GetColorU32({ 0.92, 1.00, 1.00, 1.00 })
+            or color('grid_text', { 0.82, 0.71, 0.51, 0.88 }))
+        or imgui.GetColorU32({ 0.48, 0.50, 0.52, 0.72 });
+    local icon_x = x + 12;
+    local icon_y = y + (height / 2);
+    draw_list:AddRect(
+        { icon_x - 6, icon_y - 5 },
+        { icon_x + 6, icon_y + 5 },
+        icon_color,
+        1.0,
+        0,
+        1.0);
+    draw_list:AddLine(
+        { icon_x, icon_y - 5 },
+        { icon_x, icon_y + 5 },
+        icon_color,
+        1.0);
+    draw_list:AddText(
+        { x + 24, y + 3 },
+        icon_color,
+        active and 'GUIDE' or 'VANILLA');
 end
 
 state.custom_waypoint_screen = function (
@@ -5880,10 +6081,17 @@ local function render_minimap()
         end
         return;
     end
-    local vanilla_image = map.vanilla_image;
-    local vanilla_texture = state.settings.show_map_vanilla == true
-        and texture_for(vanilla_image)
+    local map_image, custom_map_active = map_source_image(player.zone_id, map);
+    local map_texture = state.settings.show_map_vanilla == true
+        and texture_for(map_image)
         or nil;
+    if (custom_map_active and map_texture == nil) then
+        custom_map_active = false;
+        map_texture = state.settings.show_map_vanilla == true
+            and texture_for(map.vanilla_image)
+            or nil;
+    end
+    local custom_map_available = custom_image_for(player.zone_id, map) ~= nil;
     local structure_layers = {};
     local force_structure_overlay = map.force_structure_overlay == true;
     local draw_structure = force_structure_overlay
@@ -6009,12 +6217,19 @@ local function render_minimap()
             left,
             top,
             size);
+        local map_source_toggle_hovered = update_map_source_toggle_hover(
+            left,
+            top,
+            size,
+            custom_map_available);
+        local toolbar_hovered = atlas_toggle_hovered
+            or map_source_toggle_hovered;
         local hovered = handle_map_input(
             left,
             top,
             size,
             map,
-            atlas_toggle_hovered);
+            toolbar_hovered);
         local hover_focus = update_hover_focus(hovered);
         minimum_zoom = zoom_minimum_for_map(map, size);
         scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
@@ -6031,13 +6246,13 @@ local function render_minimap()
             map,
             camera,
             scale,
-            atlas_toggle_hovered);
+            toolbar_hovered);
         local visual_scale = marker_zoom_scale(scale);
         local entity_visual_scale = visual_scale
             * clamp(state.settings.marker_size, 0.25, 2.00);
         local draw_list = imgui.GetWindowDrawList();
         draw_map_backdrop(draw_list, left, top, size, hover_focus);
-        if (vanilla_texture ~= nil) then
+        if (map_texture ~= nil) then
             draw_map_layer(
                 draw_list,
                 left,
@@ -6045,7 +6260,7 @@ local function render_minimap()
                 size,
                 camera,
                 map,
-                vanilla_texture,
+                map_texture,
                 scale,
                 focused_opacity(state.settings.vanilla_opacity, hover_focus),
                 1);
@@ -6196,6 +6411,14 @@ local function render_minimap()
             top,
             size,
             atlas_toggle_hovered);
+        draw_map_source_toggle_button(
+            draw_list,
+            left,
+            top,
+            size,
+            map_source_toggle_hovered,
+            custom_map_available,
+            custom_map_active);
         draw_list:AddRect(
             { left, top },
             { left + size, top + size },
@@ -6207,6 +6430,7 @@ local function render_minimap()
     end
     imgui.End();
     render_atlas_toggle_capture();
+    render_map_source_toggle_capture();
 end
 
 local function config_checkbox(label, key)
@@ -6291,6 +6515,23 @@ local function render_config_window()
         end
         if (imgui.Button('Open Atlas##ashitaminimap_open_atlas', { 104, 0 })) then
             state.atlas.visible[1] = true;
+        end
+        imgui.SameLine(0, 6);
+        local config_custom_available = config_player ~= nil
+            and config_map ~= nil
+            and custom_image_for(config_player.zone_id, config_map) ~= nil;
+        if (imgui.Button(
+                state.settings.map_source == 'custom'
+                    and 'Use vanilla map##ashitaminimap_map_source'
+                    or 'Use guide map##ashitaminimap_map_source',
+                { 132, 0 })
+                and config_custom_available) then
+            toggle_map_source();
+        end
+        if (not config_custom_available) then
+            imgui.TextColored(
+                { 0.65, 0.68, 0.70, 1.00 },
+                'No guide-map artwork is installed for the active page.');
         end
 
         if (SHOW_MAP_CALIBRATION and config_player ~= nil and config_map ~= nil) then
@@ -7247,6 +7488,7 @@ local function print_help()
     log('/aminimap lock | unlock | save');
     log('/aminimap zoomin | zoomout');
     log('/aminimap page [auto | next | prev | number]');
+    log('/aminimap map [vanilla | guide | toggle]');
     log('/aminimap atlas [show | hide | toggle | zone-id]');
     log('/aminimap grid | reload');
     log('Right-click the map to set a custom waypoint; right-click it to clear.');
@@ -7313,6 +7555,19 @@ local function handle_command(e)
         mark_configuration_changed();
     elseif (action == 'page') then
         select_map_page(args[3] and args[3]:lower() or 'next');
+    elseif (action == 'map') then
+        local mode = args[3] and args[3]:lower() or 'toggle';
+        if (mode == 'vanilla' or mode == 'stock') then
+            state.settings.map_source = 'vanilla';
+            mark_configuration_changed();
+        elseif (mode == 'guide' or mode == 'custom') then
+            state.settings.map_source = 'custom';
+            mark_configuration_changed();
+        elseif (mode == 'toggle') then
+            toggle_map_source();
+        else
+            log('Usage: /aminimap map [vanilla | guide | toggle]');
+        end
     elseif (action == 'atlas') then
         local mode = args[3] and args[3]:lower() or 'toggle';
         local requested_zone = tonumber(mode);
