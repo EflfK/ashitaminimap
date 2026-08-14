@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.2';
+addon.version   = '1.30.4';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -26,6 +26,9 @@ local MARKER_REFERENCE_ZOOM = 4.41;
 local ENTITY_FLOOR_TOLERANCE = 8.0;
 local PATH_FLOOR_TOLERANCE = 4.0;
 local MAP_CORNER_RADIUS = 7.0;
+local HUD_INSET = 6;
+local HUD_CONTROL_GAP = 4;
+local HUD_CONTROL_HEIGHT = 22;
 local DECISION_SELECTOR_TOP = 1230;
 local DECISION_SELECTOR_GUTTER = 16;
 local COMBAT_SELECTOR_TOP = 1130;
@@ -189,6 +192,10 @@ local state = {
         window_y = nil,
         window_width = nil,
         window_height = nil,
+        toggle_x = nil,
+        toggle_y = nil,
+        toggle_width = nil,
+        toggle_height = nil,
     },
 };
 
@@ -4860,16 +4867,23 @@ local function draw_environment_clock(draw_list, left, top, size)
         environment.time,
         environment.weekday.name);
     local detail_label = string.format(
-        '%s %d%%  |  %s',
+        '%s %d%%',
         environment.moon_name,
-        environment.moon_percent,
-        environment.weather);
+        environment.moon_percent);
+    if (state.settings.show_weather_badge ~= true) then
+        detail_label = string.format(
+            '%s  |  %s',
+            detail_label,
+            environment.weather);
+    end
     local time_width = select(1, imgui.CalcTextSize(time_label));
     local detail_width = select(1, imgui.CalcTextSize(detail_label));
-    local panel_width = math.max(time_width + 36, detail_width + 16, 150);
+    local panel_width = math.min(
+        size - (HUD_INSET * 2),
+        math.max(time_width + 36, detail_width + 16, 150));
     local panel_height = 41;
-    local panel_left = left + size - panel_width - 6;
-    local panel_top = top + 6;
+    local panel_left = left + size - panel_width - HUD_INSET;
+    local panel_top = top + HUD_INSET;
     local badge_color = color('badge', { 0.025, 0.055, 0.070, 0.88 });
     local border = color('border', { 0.67, 0.47, 0.22, 0.90 });
     local text_color = color('grid_text', { 0.82, 0.71, 0.51, 0.88 });
@@ -4910,25 +4924,63 @@ local function compact_weather_visible(size)
     return state.settings.show_weather_badge == true;
 end
 
-local function draw_weather_badge(draw_list, left, top, size)
+local function hud_toolbar_top(top, size)
+    local full_environment_card = state.settings.show_environment_clock == true
+        and size >= 260;
+    return top + (full_environment_card and 52 or HUD_INSET);
+end
+
+local function atlas_toggle_width()
+    local text_width = select(1, imgui.CalcTextSize('ATLAS'));
+    return math.max(68, math.ceil(text_width + 31));
+end
+
+local function weather_badge_layout(left, top, size)
     if (not compact_weather_visible(size)) then
-        return;
+        return nil;
     end
     local environment = current_environment();
     if (environment == nil) then
-        return;
+        return nil;
     end
     local label = size < 180
         and (WEATHER_SHORT_NAMES[environment.weather_id] or 'Unknown')
         or environment.weather;
     local text_width = select(1, imgui.CalcTextSize(label));
-    local width = math.min(size - 12, math.max(64, text_width + 30));
-    local height = 20;
-    local x = left + size - width - 6;
-    local y = top + (state.settings.show_environment_clock == true
-            and size >= 260
-        and 52
-        or 6);
+    local atlas_width = atlas_toggle_width();
+    local available_width = math.max(
+        0,
+        size - (HUD_INSET * 2) - atlas_width - HUD_CONTROL_GAP);
+    local width = math.min(available_width, math.max(64, text_width + 30));
+    if (width < 64) then
+        label = nil;
+        width = math.min(available_width, HUD_CONTROL_HEIGHT);
+    end
+    if (width <= 0) then
+        return nil;
+    end
+    local x = left + size - HUD_INSET - atlas_width - HUD_CONTROL_GAP - width;
+    local y = hud_toolbar_top(top, size);
+    return {
+        environment = environment,
+        label = label,
+        x = x,
+        y = y,
+        width = width,
+        height = HUD_CONTROL_HEIGHT,
+    };
+end
+
+local function draw_weather_badge(draw_list, left, top, size)
+    local layout = weather_badge_layout(left, top, size);
+    if (layout == nil) then
+        return;
+    end
+    local environment = layout.environment;
+    local x = layout.x;
+    local y = layout.y;
+    local width = layout.width;
+    local height = layout.height;
     local badge_color = color('badge', { 0.025, 0.055, 0.070, 0.88 });
     local border = color('border', { 0.67, 0.47, 0.22, 0.90 });
     local text_color = color('grid_text', { 0.82, 0.71, 0.51, 0.88 });
@@ -4947,17 +4999,19 @@ local function draw_weather_badge(draw_list, left, top, size)
         0,
         1.0);
     draw_list:AddCircleFilled(
-        { x + 10, y + 10 },
+        { x + 11, y + (height / 2) },
         4.0,
         imgui.GetColorU32(weather_color),
         14);
     draw_list:AddCircle(
-        { x + 10, y + 10 },
+        { x + 11, y + (height / 2) },
         4.0,
         color('shadow', { 0.01, 0.02, 0.025, 0.94 }),
         14,
         1.0);
-    draw_list:AddText({ x + 19, y + 2 }, text_color, label);
+    if (layout.label ~= nil) then
+        draw_list:AddText({ x + 21, y + 3 }, text_color, layout.label);
+    end
 end
 
 local function draw_badge(draw_list, left, top, player, map)
@@ -5169,20 +5223,19 @@ local function mouse_over_map(left, top, size)
 end
 
 local function atlas_toggle_bounds(left, top, size)
-    local width = 46;
-    local height = 20;
-    local x = left + size - width - 6;
-    local full_environment_card = state.settings.show_environment_clock == true
-        and size >= 260;
-    local y_offset = full_environment_card
-        and (compact_weather_visible(size) and 78 or 52)
-        or (compact_weather_visible(size) and 32 or 6);
-    local y = top + y_offset;
+    local width = atlas_toggle_width();
+    local height = HUD_CONTROL_HEIGHT;
+    local x = left + size - width - HUD_INSET;
+    local y = hud_toolbar_top(top, size);
     return x, y, width, height;
 end
 
-local function handle_atlas_toggle_input(left, top, size)
+local function update_atlas_toggle_hover(left, top, size)
     local x, y, width, height = atlas_toggle_bounds(left, top, size);
+    state.atlas.toggle_x = x;
+    state.atlas.toggle_y = y;
+    state.atlas.toggle_width = width;
+    state.atlas.toggle_height = height;
     local mouse_x, mouse_y = imgui.GetMousePos();
     mouse_x = tonumber(mouse_x);
     mouse_y = tonumber(mouse_y);
@@ -5202,13 +5255,56 @@ local function handle_atlas_toggle_input(left, top, size)
             and mouse_y <= atlas.window_y + atlas.window_height) then
         hovered = false;
     end
-    if (hovered and safe_read(function ()
-            return imgui.IsMouseClicked(0);
-        end, false) == true) then
-        state.atlas.visible[1] = not state.atlas.visible[1];
-        state.dragging = false;
-    end
     return hovered;
+end
+
+local function render_atlas_toggle_capture()
+    local atlas = state.atlas;
+    local x = tonumber(atlas.toggle_x);
+    local y = tonumber(atlas.toggle_y);
+    local width = tonumber(atlas.toggle_width);
+    local height = tonumber(atlas.toggle_height);
+    if (x == nil or y == nil or width == nil or height == nil) then
+        return;
+    end
+    if (atlas.visible[1] == true
+            and atlas.window_x ~= nil
+            and x < atlas.window_x + atlas.window_width
+            and x + width > atlas.window_x
+            and y < atlas.window_y + atlas.window_height
+            and y + height > atlas.window_y) then
+        return;
+    end
+
+    local flags = bit.bor(
+        bit.lshift(1, 0),  -- NoTitleBar
+        bit.lshift(1, 1),  -- NoResize
+        bit.lshift(1, 2),  -- NoMove
+        bit.lshift(1, 3),  -- NoScrollbar
+        bit.lshift(1, 7),  -- NoBackground
+        bit.lshift(1, 8),  -- NoSavedSettings
+        bit.lshift(1, 12), -- NoFocusOnAppearing
+        bit.lshift(1, 13), -- NoBringToFrontOnFocus
+        bit.lshift(1, 18), -- NoNavInputs
+        bit.lshift(1, 19));-- NoNavFocus
+    imgui.SetNextWindowPos({ x, y }, 0);
+    imgui.SetNextWindowSize({ width, height }, 0);
+    if (type(imgui.SetNextWindowBgAlpha) == 'function') then
+        imgui.SetNextWindowBgAlpha(0.0);
+    end
+    if (imgui.Begin(
+            '##ashitaminimap_atlas_toggle_capture',
+            true,
+            flags)) then
+        imgui.SetCursorScreenPos({ x, y });
+        if (imgui.InvisibleButton(
+                '##ashitaminimap_atlas_toggle_button',
+                { width, height })) then
+            atlas.visible[1] = not atlas.visible[1];
+            state.dragging = false;
+        end
+    end
+    imgui.End();
 end
 
 local function draw_atlas_toggle_button(draw_list, left, top, size, hovered)
@@ -5237,11 +5333,25 @@ local function draw_atlas_toggle_button(draw_list, left, top, size, hovered)
         3.0,
         0,
         1.0);
+    local icon_x = x + 12;
+    local icon_y = y + (height / 2);
+    local icon_color = active
+        and imgui.GetColorU32({ 0.92, 1.00, 1.00, 1.00 })
+        or color('grid_text', { 0.82, 0.71, 0.51, 0.88 });
+    draw_list:AddCircle(
+        { icon_x, icon_y },
+        6.0,
+        icon_color,
+        16,
+        1.0);
+    draw_list:AddTriangleFilled(
+        { icon_x, icon_y - 5 },
+        { icon_x - 2.5, icon_y + 2 },
+        { icon_x + 2.5, icon_y + 2 },
+        icon_color);
     draw_list:AddText(
-        { x + 6, y + 2 },
-        active
-            and imgui.GetColorU32({ 0.92, 1.00, 1.00, 1.00 })
-            or color('grid_text', { 0.82, 0.71, 0.51, 0.88 }),
+        { x + 24, y + 3 },
+        icon_color,
         'ATLAS');
 end
 
@@ -5557,7 +5667,7 @@ local function render_minimap()
 
     if (imgui.Begin('##ashitaminimap_overlay', true, window_flags)) then
         local left, top = imgui.GetCursorScreenPos();
-        local atlas_toggle_hovered = handle_atlas_toggle_input(
+        local atlas_toggle_hovered = update_atlas_toggle_hover(
             left,
             top,
             size);
@@ -5756,6 +5866,7 @@ local function render_minimap()
         imgui.Dummy({ size, size });
     end
     imgui.End();
+    render_atlas_toggle_capture();
 end
 
 local function config_checkbox(label, key)
