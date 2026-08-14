@@ -42,4 +42,8 @@ function M.is_inventory()
     return M.menu_name:lower():find('inventor', 1, true) ~= nil;
 end
 
+function M.is_equipment()
+    return M.menu_name:lower():find('equip', 1, true) ~= nil;
+end
+
 return M;

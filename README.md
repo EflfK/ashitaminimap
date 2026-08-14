@@ -105,6 +105,9 @@ While the native inventory is open, the minimap moves only far enough upward
 to remain above the item-description preview, then returns to its configured
 position when inventory closes.
 
+While the native equipment window is open, the minimap is hidden completely
+and returns when the equipment window closes.
+
 The minimap also reads the current top edge of the vanilla chat frame and
 temporarily shifts upward when its visible square would overlap the chat. The
 position follows changes to the native chat height automatically and returns to
