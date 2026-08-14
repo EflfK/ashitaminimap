@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.29.0';
+addon.version   = '1.30.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -173,6 +173,18 @@ local state = {
         [246] = 2,
     },
     custom_waypoint = nil,
+    atlas = {
+        visible = { false },
+        zone_id = nil,
+        page_id = nil,
+        camera_x = nil,
+        camera_y = nil,
+        pixels_per_yalm = nil,
+        dragging = false,
+        drag_mouse_x = 0,
+        drag_mouse_y = 0,
+        search = { '' },
+    },
 };
 
 local function safe_read(callback, fallback)
@@ -1507,9 +1519,14 @@ end
 state.ensure_world_path = function (player, destination)
     local now = os.clock();
     local cached = state.world_path.route;
+    local destination_source = destination.source == 'custom'
+        and 'custom'
+        or 'guide';
     local same_destination = cached ~= nil
         and cached.start_zone == player.zone_id
         and cached.destination_zone == destination.zone_id
+        and cached.destination_page == tonumber(destination.map_id)
+        and cached.destination_source == destination_source
         and math.abs(cached.destination_x - destination.x) < 0.1
         and math.abs(cached.destination_y - destination.y) < 0.1
         and ((cached.destination_z == nil and destination.z == nil)
@@ -1787,10 +1804,11 @@ state.ensure_world_path = function (player, destination)
         world = true,
         start_zone = player.zone_id,
         destination_zone = destination.zone_id,
+        destination_page = tonumber(destination.map_id),
         destination_x = destination.x,
         destination_y = destination.y,
         destination_z = destination.z,
-        destination_source = 'guide',
+        destination_source = destination_source,
         world_steps = steps,
         total_cost = costs[route_target_index],
         partial = partial,
@@ -1813,19 +1831,31 @@ state.ensure_guide_path = function (player, map)
         state.guide_path.route = nil;
         return nil;
     end
+    local custom_destination = type(state.custom_waypoint) == 'table'
+        and state.custom_waypoint
+        or nil;
     local custom_waypoint = state.active_custom_waypoint(player, map);
     local payload = state.active_guide_payload();
-    if (custom_waypoint == nil
+    if (custom_destination ~= nil
+            and custom_destination.floor_ambiguous == true) then
+        state.guide_path.route = nil;
+        state.world_path.route = nil;
+        return nil;
+    end
+    if (custom_destination == nil
             and payload ~= nil
             and payload.path_enabled == false) then
         state.guide_path.route = nil;
         state.world_path.route = nil;
         return nil;
     end
+    if (custom_destination ~= nil and custom_waypoint == nil) then
+        return state.ensure_world_path(player, custom_destination);
+    end
     local markers = state.active_guide_markers(player);
     local destination = custom_waypoint
         or (payload ~= nil and payload.markers[1] or nil);
-    if (custom_waypoint == nil
+    if (custom_destination == nil
             and payload ~= nil
             and payload.zone_id ~= player.zone_id
             and destination ~= nil) then
@@ -2429,14 +2459,19 @@ local function authored_page_for_player(zone_id, player)
     return tonumber(page_id) ~= nil and math.floor(page_id) or nil;
 end
 
-local function fallback_page(zone_id, player)
+local function fallback_page(
+        zone_id,
+        player,
+        requested_page_id,
+        allow_runtime_stock)
     local zone = state.vanilla_maps[zone_id];
     if (type(zone) ~= 'table' or type(zone.pages) ~= 'table') then
         return nil;
     end
-    local manual_page = tonumber(state.settings.map_pages[zone_id]);
+    local manual_page = tonumber(requested_page_id)
+        or tonumber(state.settings.map_pages[zone_id]);
     local page_id = manual_page;
-    local stock = stock_minimap_info();
+    local stock = allow_runtime_stock ~= false and stock_minimap_info() or nil;
     local authored = state.maps[zone_id];
     local prefer_authored_page = type(authored) == 'table'
         and authored.prefer_authored_page_selection == true;
@@ -2547,6 +2582,7 @@ local function fallback_page(zone_id, player)
         stock_offset_x = record ~= nil and record.offset_x or nil,
         stock_offset_y = record ~= nil and record.offset_y or nil,
         stock_record_origin = record_origin,
+        waypoint_calibrated = record_origin,
     };
 end
 
@@ -2591,17 +2627,13 @@ local function apply_origin_adjustment(map, zone_id)
     return map;
 end
 
-local function map_for_player(player)
-    if (player == nil) then
-        return nil;
-    end
-    local authored = state.maps[player.zone_id];
-    local fallback = fallback_page(player.zone_id, player);
+local function merge_authored_map(zone_id, fallback)
+    local authored = state.maps[zone_id];
     if (authored == nil) then
-        return apply_origin_adjustment(fallback, player.zone_id);
+        return apply_origin_adjustment(fallback, zone_id);
     end
     if (fallback == nil) then
-        return apply_origin_adjustment(copy_table(authored), player.zone_id);
+        return apply_origin_adjustment(copy_table(authored), zone_id);
     end
     local merged = merge_table(copy_table(fallback), authored);
     if (authored.stock_calibration == true
@@ -2649,6 +2681,19 @@ local function map_for_player(player)
         merged.grid_origin_y = tonumber(page_calibration.grid_origin_y)
             or merged.grid_origin_y;
     end
+    local authored_base_calibration = authored.stock_calibration ~= true
+        and tonumber(authored.origin_x) ~= nil
+        and tonumber(authored.origin_y) ~= nil
+        and (tonumber(authored.image_pixels_per_yalm) ~= nil
+            or tonumber(authored.grid_yalms) ~= nil);
+    local authored_page_calibration = type(page_calibration) == 'table'
+        and tonumber(page_calibration.origin_x) ~= nil
+        and tonumber(page_calibration.origin_y) ~= nil
+        and (tonumber(page_calibration.image_pixels_per_yalm) ~= nil
+            or tonumber(page_calibration.grid_yalms) ~= nil);
+    merged.waypoint_calibrated = merged.waypoint_calibrated == true
+        or authored_base_calibration
+        or authored_page_calibration;
     if (type(authored.structure_pages) == 'table') then
         local page_structure = authored.structure_pages[map_page_key(merged)];
         if (type(page_structure) == 'table') then
@@ -2659,7 +2704,31 @@ local function map_for_player(player)
             merged.structure_layers = nil;
         end
     end
-    return apply_origin_adjustment(merged, player.zone_id);
+    return apply_origin_adjustment(merged, zone_id);
+end
+
+local function map_for_player(player)
+    if (player == nil) then
+        return nil;
+    end
+    return merge_authored_map(
+        player.zone_id,
+        fallback_page(player.zone_id, player, nil, true));
+end
+
+local function map_for_catalog_page(zone_id, page_id)
+    zone_id = tonumber(zone_id);
+    page_id = tonumber(page_id);
+    if (zone_id == nil or page_id == nil) then
+        return nil;
+    end
+    return merge_authored_map(
+        math.floor(zone_id),
+        fallback_page(
+            math.floor(zone_id),
+            nil,
+            math.floor(page_id),
+            false));
 end
 
 local function map_grid_yalms(map)
@@ -4282,7 +4351,11 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
                 or 0;
             title = string.format(
                 '%s   %.0fy to %s',
-                route.partial == true and 'PARTIAL ROUTE' or 'WORLD ROUTE',
+                route.partial == true
+                    and 'PARTIAL ROUTE'
+                    or (route.destination_source == 'custom'
+                        and 'ATLAS WAYPOINT'
+                        or 'WORLD ROUTE'),
                 leg_remaining,
                 target_name);
             local next_instruction = world_action_instruction(action);
@@ -4296,13 +4369,17 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
                     instruction = capitalize_instruction(next_instruction);
                 end
             else
-                instruction = 'Follow cyan line to the guide destination';
+                instruction = route.destination_source == 'custom'
+                    and 'Follow cyan line toward the custom waypoint'
+                    or 'Follow cyan line to the guide destination';
             end
             if route.partial == true and instruction_detail == nil then
                 instruction_detail = 'Destination remains marker-only after zoning';
             end
         elseif (first ~= nil) then
-            title = 'WORLD ROUTE   next action';
+            title = route.destination_source == 'custom'
+                and 'ATLAS WAYPOINT   next action'
+                or 'WORLD ROUTE   next action';
             local menu_group = world_action_menu_group(first);
             if (menu_group ~= nil) then
                 instruction = 'Region: ' .. menu_group;
@@ -4313,8 +4390,12 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
                     world_action_instruction(first));
             end
         else
-            title = 'WORLD ROUTE';
-            instruction = 'Guide destination reached';
+            title = route.destination_source == 'custom'
+                and 'ATLAS WAYPOINT'
+                or 'WORLD ROUTE';
+            instruction = route.destination_source == 'custom'
+                and 'Custom waypoint reached'
+                or 'Guide destination reached';
         end
     else
         title = string.format(
@@ -4358,19 +4439,14 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
     end
 end
 
-state.draw_custom_waypoint = function (
+local function draw_waypoint_marker(
         draw_list,
         left,
         top,
         size,
-        player,
         camera,
-        map,
-        scale)
-    local waypoint = state.active_custom_waypoint(player, map);
-    if (waypoint == nil) then
-        return;
-    end
+        scale,
+        waypoint)
     local marker_x, marker_y, offscreen = state.custom_waypoint_screen(
         left,
         top,
@@ -4394,6 +4470,28 @@ state.draw_custom_waypoint = function (
         { marker_x, marker_y + 4 },
         outline,
         2.0);
+end
+
+state.draw_custom_waypoint = function (
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale)
+    local waypoint = state.active_custom_waypoint(player, map);
+    if (waypoint ~= nil) then
+        draw_waypoint_marker(
+            draw_list,
+            left,
+            top,
+            size,
+            camera,
+            scale,
+            waypoint);
+    end
 end
 
 local function draw_damselfly_marker(draw_list, x, y, opacity)
@@ -4445,7 +4543,7 @@ state.draw_guide_markers = function (
         camera,
         map,
         scale)
-    local custom_waypoint_active = state.active_custom_waypoint(player, map) ~= nil;
+    local custom_waypoint_active = type(state.custom_waypoint) == 'table';
     local center_x = left + (size / 2);
     local center_y = top + (size / 2);
     local minimum_x = left + 10;
@@ -5009,6 +5107,8 @@ local function handle_custom_waypoint_input(
             state.custom_waypoint = nil;
             state.guide_path.route = nil;
             state.guide_path.last_attempt = 0;
+            state.world_path.route = nil;
+            state.world_path.last_attempt = 0;
             log('Custom waypoint cleared; AshitaGuide routing restored.');
             return;
         end
@@ -5029,13 +5129,17 @@ local function handle_custom_waypoint_input(
     state.custom_waypoint = {
         zone_id = player.zone_id,
         page_id = tonumber(map.page_id),
+        map_id = tonumber(map.page_id),
         x = waypoint_x,
         y = waypoint_y,
         z = waypoint_z,
         floor_ambiguous = floor_ambiguous,
+        source = 'custom',
     };
     state.guide_path.route = nil;
     state.guide_path.last_attempt = 0;
+    state.world_path.route = nil;
+    state.world_path.last_attempt = 0;
     log(string.format(
         floor_ambiguous
             and 'Custom waypoint set at %.1f, %.1f; overlapping floors are ambiguous, so no path will be drawn.'
@@ -5525,6 +5629,9 @@ local function render_config_window()
                     config_map.page_id,
                     manual_page ~= nil and 'manual' or 'automatic'));
         end
+        if (imgui.Button('Open Atlas##ashitaminimap_open_atlas', { 104, 0 })) then
+            state.atlas.visible[1] = true;
+        end
 
         if (SHOW_MAP_CALIBRATION and config_player ~= nil and config_map ~= nil) then
             local page_key = map_page_key(config_map);
@@ -5848,6 +5955,437 @@ local function select_map_page(mode)
         zone_name(player.zone_id)));
 end
 
+local function available_zone_ids()
+    local result = {};
+    for zone_id, zone in pairs(state.vanilla_maps) do
+        if (tonumber(zone_id) ~= nil
+                and type(zone) == 'table'
+                and type(zone.pages) == 'table') then
+            result[#result + 1] = math.floor(tonumber(zone_id));
+        end
+    end
+    table.sort(result);
+    return result;
+end
+
+local function atlas_select_page(page_id)
+    local atlas = state.atlas;
+    local page_ids = available_page_ids(atlas.zone_id);
+    if (#page_ids == 0) then
+        atlas.page_id = nil;
+        return;
+    end
+    local zone = state.vanilla_maps[atlas.zone_id];
+    page_id = tonumber(page_id)
+        or (type(zone) == 'table' and tonumber(zone.default_page) or nil);
+    local selected = page_ids[1];
+    for _, candidate in ipairs(page_ids) do
+        if candidate == page_id then
+            selected = candidate;
+            break;
+        end
+    end
+    atlas.page_id = selected;
+    atlas.camera_x = nil;
+    atlas.camera_y = nil;
+    atlas.pixels_per_yalm = nil;
+    atlas.dragging = false;
+end
+
+local function atlas_select_zone(zone_id)
+    zone_id = tonumber(zone_id);
+    local zone = zone_id ~= nil
+        and state.vanilla_maps[math.floor(zone_id)]
+        or nil;
+    if (type(zone) ~= 'table'
+            or type(zone.pages) ~= 'table'
+            or next(zone.pages) == nil) then
+        return false;
+    end
+    state.atlas.zone_id = math.floor(zone_id);
+    atlas_select_page(nil);
+    return true;
+end
+
+local function atlas_initialize()
+    if (state.atlas.zone_id ~= nil
+            and state.atlas.page_id ~= nil
+            and map_for_catalog_page(
+                state.atlas.zone_id,
+                state.atlas.page_id) ~= nil) then
+        return true;
+    end
+    local player = current_player();
+    if (player ~= nil and atlas_select_zone(player.zone_id)) then
+        local live_map = map_for_player(player);
+        if (live_map ~= nil) then
+            atlas_select_page(live_map.page_id);
+        end
+        return true;
+    end
+    local zones = available_zone_ids();
+    return #zones > 0 and atlas_select_zone(zones[1]) or false;
+end
+
+local function atlas_step_selection(values, current, step)
+    if (#values == 0) then
+        return nil;
+    end
+    local current_index = 1;
+    for index, value in ipairs(values) do
+        if value == current then
+            current_index = index;
+            break;
+        end
+    end
+    return values[((current_index - 1 + step) % #values) + 1];
+end
+
+local function atlas_reset_camera(map, size)
+    local bounds = type(map.view_bounds) == 'table' and map.view_bounds or {};
+    local width = tonumber(map.width) or 512;
+    local height = tonumber(map.height) or 512;
+    local image_scale = tonumber(map.image_pixels_per_yalm) or 0;
+    local left = clamp(bounds.left or 0, 0, width);
+    local top = clamp(bounds.top or 0, 0, height);
+    local right = clamp(bounds.right or width, left, width);
+    local bottom = clamp(bounds.bottom or height, top, height);
+    local center_image_x = (left + right) / 2;
+    local center_image_y = (top + bottom) / 2;
+    state.atlas.camera_x = image_scale > 0
+        and ((center_image_x - (tonumber(map.origin_x) or (width / 2)))
+            / image_scale)
+        or 0;
+    state.atlas.camera_y = image_scale > 0
+        and (((tonumber(map.origin_y) or (height / 2)) - center_image_y)
+            / image_scale)
+        or 0;
+    state.atlas.pixels_per_yalm = zoom_minimum_for_map(map, size);
+end
+
+local function atlas_set_waypoint(map, x, y)
+    if (map.waypoint_calibrated ~= true) then
+        log(string.format(
+            'Cannot set an Atlas waypoint on %s page %s until exact map calibration is available.',
+            zone_name(state.atlas.zone_id),
+            tostring(map.page_id)));
+        return;
+    end
+    local graph = state.path_graph_for(state.atlas.zone_id, map.page_id);
+    local waypoint_z, floor_ambiguous = state.path_waypoint_z(
+        graph,
+        x,
+        y,
+        nil,
+        nil,
+        nil,
+        true);
+    state.custom_waypoint = {
+        zone_id = state.atlas.zone_id,
+        page_id = tonumber(map.page_id),
+        map_id = tonumber(map.page_id),
+        x = x,
+        y = y,
+        z = waypoint_z,
+        floor_ambiguous = floor_ambiguous,
+        source = 'custom',
+    };
+    state.guide_path.route = nil;
+    state.guide_path.last_attempt = 0;
+    state.world_path.route = nil;
+    state.world_path.last_attempt = 0;
+    log(string.format(
+        floor_ambiguous
+            and 'Atlas waypoint set in %s at %.1f, %.1f; the floor is ambiguous, so it remains marker-only.'
+            or 'Atlas waypoint set in %s at %.1f, %.1f (z %s).',
+        zone_name(state.atlas.zone_id),
+        x,
+        y,
+        waypoint_z ~= nil and string.format('%.1f', waypoint_z) or 'unknown'));
+end
+
+local function render_atlas_window()
+    local atlas = state.atlas;
+    if (atlas.visible[1] ~= true or not atlas_initialize()) then
+        return;
+    end
+
+    local first_use = rawget(_G, 'ImGuiCond_FirstUseEver') or 0;
+    local canvas_size = 600;
+    imgui.SetNextWindowSize({ canvas_size + 32, canvas_size + 116 }, first_use);
+    local flags = bit.bor(
+        bit.lshift(1, 1),  -- NoResize
+        bit.lshift(1, 5)); -- NoCollapse
+    if (imgui.Begin(
+            'AshitaMinimap Atlas###AshitaMinimapAtlas',
+            atlas.visible,
+            flags)) then
+        local zones = available_zone_ids();
+        if (imgui.Button('<##ashitaminimap_atlas_zone_prev', { 28, 0 })) then
+            atlas_select_zone(atlas_step_selection(
+                zones,
+                atlas.zone_id,
+                -1));
+        end
+        imgui.SameLine(0, 6);
+        local zone_label = string.format(
+            '%s (%d)',
+            zone_name(atlas.zone_id),
+            atlas.zone_id);
+        if (type(imgui.BeginCombo) == 'function'
+                and imgui.BeginCombo(
+                    'Zone##ashitaminimap_atlas_zone',
+                    zone_label)) then
+            if (type(imgui.InputText) == 'function') then
+                imgui.InputText(
+                    'Search##ashitaminimap_atlas_zone_search',
+                    atlas.search,
+                    64);
+            end
+            local filter = tostring(atlas.search[1] or ''):lower();
+            for _, zone_id in ipairs(zones) do
+                local selected = zone_id == atlas.zone_id;
+                local candidate_label = string.format(
+                    '%s (%d)',
+                    zone_name(zone_id),
+                    zone_id);
+                if (filter == ''
+                        or candidate_label:lower():find(
+                            filter,
+                            1,
+                            true) ~= nil) then
+                    if (imgui.Selectable(candidate_label, selected)) then
+                        atlas_select_zone(zone_id);
+                        atlas.search[1] = '';
+                    end
+                    if (selected
+                            and type(imgui.SetItemDefaultFocus) == 'function') then
+                        imgui.SetItemDefaultFocus();
+                    end
+                end
+            end
+            imgui.EndCombo();
+        elseif (type(imgui.BeginCombo) ~= 'function') then
+            imgui.Text(zone_label);
+        end
+        imgui.SameLine(0, 6);
+        if (imgui.Button('>##ashitaminimap_atlas_zone_next', { 28, 0 })) then
+            atlas_select_zone(atlas_step_selection(
+                zones,
+                atlas.zone_id,
+                1));
+        end
+
+        local page_ids = available_page_ids(atlas.zone_id);
+        if (imgui.Button('< Page##ashitaminimap_atlas_page_prev', { 66, 0 })) then
+            atlas_select_page(atlas_step_selection(
+                page_ids,
+                atlas.page_id,
+                -1));
+        end
+        imgui.SameLine(0, 6);
+        imgui.Text(string.format(
+            'Page %d (%d pages)',
+            atlas.page_id,
+            #page_ids));
+        imgui.SameLine(0, 6);
+        if (imgui.Button('Page >##ashitaminimap_atlas_page_next', { 66, 0 })) then
+            atlas_select_page(atlas_step_selection(
+                page_ids,
+                atlas.page_id,
+                1));
+        end
+        imgui.SameLine(0, 14);
+        if (imgui.Button('Reset view##ashitaminimap_atlas_reset', { 82, 0 })) then
+            atlas.camera_x = nil;
+        end
+        if (state.custom_waypoint ~= nil) then
+            imgui.SameLine(0, 6);
+            if (imgui.Button(
+                    'Clear waypoint##ashitaminimap_atlas_clear',
+                    { 104, 0 })) then
+                state.custom_waypoint = nil;
+                state.guide_path.route = nil;
+                state.guide_path.last_attempt = 0;
+                state.world_path.route = nil;
+                state.world_path.last_attempt = 0;
+                log('Custom waypoint cleared; AshitaGuide routing restored.');
+            end
+        end
+
+        local map = map_for_catalog_page(atlas.zone_id, atlas.page_id);
+        if (map ~= nil) then
+            if (atlas.camera_x == nil
+                    or atlas.camera_y == nil
+                    or atlas.pixels_per_yalm == nil) then
+                atlas_reset_camera(map, canvas_size);
+            end
+            local minimum_zoom = zoom_minimum_for_map(map, canvas_size);
+            atlas.pixels_per_yalm = clamp(
+                atlas.pixels_per_yalm,
+                minimum_zoom,
+                ZOOM_MAX);
+            local left, top = imgui.GetCursorScreenPos();
+            local hovered, mouse_x, mouse_y = mouse_over_map(
+                left,
+                top,
+                canvas_size);
+            hovered = hovered and safe_read(function ()
+                return imgui.IsWindowHovered();
+            end, true) == true;
+            local wheel = hovered
+                and safe_read(function ()
+                    return tonumber(imgui.GetIO().MouseWheel) or 0;
+                end, 0)
+                or 0;
+            if (wheel ~= 0) then
+                local factor = ZOOM_STEP ^ math.abs(wheel);
+                atlas.pixels_per_yalm = clamp(
+                    wheel > 0
+                        and (atlas.pixels_per_yalm * factor)
+                        or (atlas.pixels_per_yalm / factor),
+                    minimum_zoom,
+                    ZOOM_MAX);
+            end
+            if (hovered and safe_read(function ()
+                    return imgui.IsMouseClicked(0);
+                end, false) == true) then
+                atlas.dragging = true;
+                atlas.drag_mouse_x = mouse_x;
+                atlas.drag_mouse_y = mouse_y;
+            end
+            if (atlas.dragging == true) then
+                if (safe_read(function ()
+                        return imgui.IsMouseDown(0);
+                    end, false) == true) then
+                    atlas.camera_x = atlas.camera_x
+                        - ((mouse_x - atlas.drag_mouse_x)
+                            / atlas.pixels_per_yalm);
+                    atlas.camera_y = atlas.camera_y
+                        + ((mouse_y - atlas.drag_mouse_y)
+                            / atlas.pixels_per_yalm);
+                    atlas.drag_mouse_x = mouse_x;
+                    atlas.drag_mouse_y = mouse_y;
+                else
+                    atlas.dragging = false;
+                end
+            end
+            local camera = camera_for_map(
+                { x = atlas.camera_x, y = atlas.camera_y },
+                map,
+                canvas_size,
+                atlas.pixels_per_yalm);
+            atlas.camera_x = camera.x;
+            atlas.camera_y = camera.y;
+            if (hovered and safe_read(function ()
+                    return imgui.IsMouseClicked(1);
+                end, false) == true) then
+                local center_x = left + (canvas_size / 2);
+                local center_y = top + (canvas_size / 2);
+                atlas_set_waypoint(
+                    map,
+                    camera.x + ((mouse_x - center_x)
+                        / atlas.pixels_per_yalm),
+                    camera.y - ((mouse_y - center_y)
+                        / atlas.pixels_per_yalm));
+            end
+
+            local draw_list = imgui.GetWindowDrawList();
+            draw_map_backdrop(draw_list, left, top, canvas_size, 0);
+            local texture = texture_for(map.vanilla_image);
+            if (texture ~= nil) then
+                draw_map_layer(
+                    draw_list,
+                    left,
+                    top,
+                    canvas_size,
+                    camera,
+                    map,
+                    texture,
+                    atlas.pixels_per_yalm,
+                    focused_opacity(state.settings.vanilla_opacity, 1),
+                    state.settings.vanilla_visibility_boost);
+            end
+            draw_grid(
+                draw_list,
+                left,
+                top,
+                canvas_size,
+                camera,
+                map,
+                atlas.pixels_per_yalm);
+            local waypoint = state.custom_waypoint;
+            if (type(waypoint) == 'table'
+                    and waypoint.zone_id == atlas.zone_id
+                    and (waypoint.page_id == nil
+                        or waypoint.page_id == tonumber(map.page_id))) then
+                draw_waypoint_marker(
+                    draw_list,
+                    left,
+                    top,
+                    canvas_size,
+                    camera,
+                    atlas.pixels_per_yalm,
+                    waypoint);
+            end
+            local player = current_player();
+            if (player ~= nil
+                    and player.zone_id == atlas.zone_id
+                    and position_matches_active_stock_page(
+                        atlas.zone_id,
+                        map,
+                        player)) then
+                local player_x = left + (canvas_size / 2)
+                    + ((player.x - camera.x) * atlas.pixels_per_yalm);
+                local player_y = top + (canvas_size / 2)
+                    - ((player.y - camera.y) * atlas.pixels_per_yalm);
+                if (player_x >= left and player_x <= left + canvas_size
+                        and player_y >= top
+                        and player_y <= top + canvas_size) then
+                    draw_player(
+                        draw_list,
+                        player_x,
+                        player_y,
+                        player.yaw,
+                        marker_zoom_scale(atlas.pixels_per_yalm));
+                end
+            end
+            draw_list:AddRect(
+                { left, top },
+                { left + canvas_size, top + canvas_size },
+                color('border', { 0.67, 0.47, 0.22, 0.90 }),
+                MAP_CORNER_RADIUS,
+                ImDrawCornerFlags_All,
+                1.0);
+            imgui.Dummy({ canvas_size, canvas_size });
+            if (map.waypoint_calibrated ~= true) then
+                imgui.TextColored(
+                    { 1.00, 0.71, 0.20, 1.00 },
+                    'Exact calibration is unavailable; waypoint placement is disabled.');
+            elseif (hovered) then
+                local center_x = left + (canvas_size / 2);
+                local center_y = top + (canvas_size / 2);
+                local hover_x = camera.x
+                    + ((mouse_x - center_x) / atlas.pixels_per_yalm);
+                local hover_y = camera.y
+                    - ((mouse_y - center_y) / atlas.pixels_per_yalm);
+                imgui.Text(string.format(
+                    '%s   X %.1f  Y %.1f   Right-click to set waypoint',
+                    grid_coordinate(hover_x, hover_y, map),
+                    hover_x,
+                    hover_y));
+            else
+                imgui.Text('Drag to pan, use the mouse wheel to zoom, and right-click to set a waypoint.');
+            end
+        else
+            imgui.TextColored(
+                { 1.00, 0.45, 0.35, 1.00 },
+                'This imported map page could not be loaded.');
+        end
+    end
+    imgui.End();
+end
+
 local function print_help()
     log('Commands:');
     log('/aminimap show | hide | toggle');
@@ -5855,6 +6393,7 @@ local function print_help()
     log('/aminimap lock | unlock | save');
     log('/aminimap zoomin | zoomout');
     log('/aminimap page [auto | next | prev | number]');
+    log('/aminimap atlas [show | hide | toggle | zone-id]');
     log('/aminimap grid | reload');
     log('Right-click the map to set a custom waypoint; right-click it to clear.');
 end
@@ -5920,6 +6459,25 @@ local function handle_command(e)
         mark_configuration_changed();
     elseif (action == 'page') then
         select_map_page(args[3] and args[3]:lower() or 'next');
+    elseif (action == 'atlas') then
+        local mode = args[3] and args[3]:lower() or 'toggle';
+        local requested_zone = tonumber(mode);
+        if (mode == 'show') then
+            state.atlas.visible[1] = true;
+            atlas_initialize();
+        elseif (mode == 'hide') then
+            state.atlas.visible[1] = false;
+        elseif (mode == 'toggle') then
+            state.atlas.visible[1] = not state.atlas.visible[1];
+            if (state.atlas.visible[1] == true) then
+                atlas_initialize();
+            end
+        elseif requested_zone ~= nil
+                and atlas_select_zone(math.floor(requested_zone)) then
+            state.atlas.visible[1] = true;
+        else
+            log('Usage: /aminimap atlas [show | hide | toggle | zone-id]');
+        end
     elseif (action == 'grid') then
         state.settings.show_grid = not state.settings.show_grid;
         mark_configuration_changed();
@@ -6010,6 +6568,7 @@ ashita.events.register('unload', 'unload_cb', function ()
     state.environment.snapshot_at = 0;
     state.device = nil;
     state.config_visible[1] = false;
+    state.atlas.visible[1] = false;
 end);
 
 ashita.events.register('command', 'command_cb', function (e)
@@ -6027,6 +6586,7 @@ end);
 ashita.events.register('d3d_present', 'present_cb', function ()
     state.poll_guide_markers(false);
     render_minimap();
+    render_atlas_window();
     render_config_window();
     save_configuration_if_due(false);
 end);

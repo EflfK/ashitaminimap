@@ -20,6 +20,7 @@ The first prototype includes:
 - a Developer tab with an optional full navigation-graph web;
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
+- a searchable Atlas for browsing other zones and setting attended waypoints;
 - calibrated vanilla-map rendering with dormant retained structure support;
 - deterministic world-coordinate-to-image calibration;
 - routing-first map definitions for the Windurst cities and surrounding
@@ -44,6 +45,9 @@ The first prototype includes:
 /aminimap page next
 /aminimap page prev
 /aminimap page 2
+/aminimap atlas
+/aminimap atlas 126
+/aminimap atlas hide
 /aminimap grid
 /aminimap reload
 ```
@@ -180,6 +184,27 @@ waypoint. Its shortest path takes priority over the current AshitaGuide
 destination. Right-click the custom waypoint again to remove it; when a guide
 is active, its destination marker and path immediately regain priority. The
 custom waypoint is session-only and remains display-only.
+
+## Atlas and remote waypoints
+
+Use `/aminimap atlas` or **Open Atlas** in the configuration window to browse
+any imported vanilla map without leaving the current zone. Choose a zone from
+the selector or the previous/next buttons, change pages independently, drag to
+pan, and use the mouse wheel to zoom. `/aminimap atlas <zone-id>` opens a zone
+directly, and `/aminimap atlas hide` closes the window.
+
+Right-click the Atlas map to set the same session-only custom waypoint used by
+the live minimap. A remote waypoint takes priority over AshitaGuide and uses the
+existing authored world-route catalog to show the current walking leg and next
+truthful handoff. If the selected zone or destination is not covered by a
+complete graph, the waypoint remains visible without inventing a route. Click
+**Clear waypoint** in Atlas to restore AshitaGuide routing.
+
+Atlas pages use their imported or authored stored calibration. They never use
+the current zone's live map center, and dynamic entities are not projected onto
+remote zones. Overlapping floors must resolve unambiguously on the selected
+page; otherwise the waypoint is retained as marker-only. Placement is disabled
+when an exact stored calibration is not available.
 
 Navigation graphs are deterministic build artifacts generated directly from
 verified Detour topology plus live-verified transition and blocked-link
