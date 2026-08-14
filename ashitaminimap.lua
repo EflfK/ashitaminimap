@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.0';
+addon.version   = '1.30.1';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -184,6 +184,10 @@ local state = {
         drag_mouse_x = 0,
         drag_mouse_y = 0,
         search = { '' },
+        window_x = nil,
+        window_y = nil,
+        window_width = nil,
+        window_height = nil,
     },
 };
 
@@ -5059,6 +5063,78 @@ local function mouse_over_map(left, top, size)
         mouse_y;
 end
 
+local function atlas_toggle_bounds(left, top, size)
+    local width = 46;
+    local height = 20;
+    local x = left + size - width - 6;
+    local y = top + (size >= 260 and 52 or 6);
+    return x, y, width, height;
+end
+
+local function handle_atlas_toggle_input(left, top, size)
+    local x, y, width, height = atlas_toggle_bounds(left, top, size);
+    local mouse_x, mouse_y = imgui.GetMousePos();
+    mouse_x = tonumber(mouse_x);
+    mouse_y = tonumber(mouse_y);
+    local hovered = mouse_x ~= nil
+        and mouse_y ~= nil
+        and mouse_x >= x
+        and mouse_x <= x + width
+        and mouse_y >= y
+        and mouse_y <= y + height;
+    local atlas = state.atlas;
+    if (hovered
+            and atlas.visible[1] == true
+            and atlas.window_x ~= nil
+            and mouse_x >= atlas.window_x
+            and mouse_x <= atlas.window_x + atlas.window_width
+            and mouse_y >= atlas.window_y
+            and mouse_y <= atlas.window_y + atlas.window_height) then
+        hovered = false;
+    end
+    if (hovered and safe_read(function ()
+            return imgui.IsMouseClicked(0);
+        end, false) == true) then
+        state.atlas.visible[1] = not state.atlas.visible[1];
+        state.dragging = false;
+    end
+    return hovered;
+end
+
+local function draw_atlas_toggle_button(draw_list, left, top, size, hovered)
+    local x, y, width, height = atlas_toggle_bounds(left, top, size);
+    local active = state.atlas.visible[1] == true;
+    local fill = active
+        and imgui.GetColorU32({ 0.06, 0.48, 0.58, hovered and 1.00 or 0.92 })
+        or imgui.GetColorU32({
+            0.025,
+            0.055,
+            0.070,
+            hovered and 0.98 or 0.88,
+        });
+    local border = active
+        and imgui.GetColorU32({ 0.10, 0.86, 1.00, 1.00 })
+        or color('border', { 0.67, 0.47, 0.22, 0.90 });
+    draw_list:AddRectFilled(
+        { x, y },
+        { x + width, y + height },
+        fill,
+        3.0);
+    draw_list:AddRect(
+        { x, y },
+        { x + width, y + height },
+        border,
+        3.0,
+        0,
+        1.0);
+    draw_list:AddText(
+        { x + 6, y + 2 },
+        active
+            and imgui.GetColorU32({ 0.92, 1.00, 1.00, 1.00 })
+            or color('grid_text', { 0.82, 0.71, 0.51, 0.88 }),
+        'ATLAS');
+end
+
 state.custom_waypoint_screen = function (
         left,
         top,
@@ -5084,9 +5160,11 @@ local function handle_custom_waypoint_input(
         player,
         map,
         camera,
-        scale)
+        scale,
+        suppress_input)
     local hovered, mouse_x, mouse_y = mouse_over_map(left, top, size);
-    if (not hovered
+    if (suppress_input == true
+            or not hovered
             or safe_read(function () return imgui.IsMouseClicked(1); end, false)
                 ~= true) then
         return;
@@ -5151,9 +5229,9 @@ local function handle_custom_waypoint_input(
             or 'unknown'));
 end
 
-local function handle_map_input(left, top, size, map)
+local function handle_map_input(left, top, size, map, suppress_input)
     local hovered, mouse_x, mouse_y = mouse_over_map(left, top, size);
-    local wheel = hovered
+    local wheel = hovered and suppress_input ~= true
         and safe_read(function () return tonumber(imgui.GetIO().MouseWheel) or 0; end, 0)
         or 0;
     if (wheel ~= 0) then
@@ -5172,7 +5250,11 @@ local function handle_map_input(left, top, size, map)
         return hovered;
     end
 
-    if (hovered and safe_read(function () return imgui.IsMouseClicked(0); end, false) == true) then
+    if (hovered
+            and suppress_input ~= true
+            and safe_read(function ()
+                return imgui.IsMouseClicked(0);
+            end, false) == true) then
         state.dragging = true;
         state.drag_offset_x = mouse_x - (tonumber(state.settings.x) or DEFAULTS.x);
         state.drag_offset_y = mouse_y - (tonumber(state.settings.y) or DEFAULTS.y);
@@ -5365,7 +5447,16 @@ local function render_minimap()
 
     if (imgui.Begin('##ashitaminimap_overlay', true, window_flags)) then
         local left, top = imgui.GetCursorScreenPos();
-        local hovered = handle_map_input(left, top, size, map);
+        local atlas_toggle_hovered = handle_atlas_toggle_input(
+            left,
+            top,
+            size);
+        local hovered = handle_map_input(
+            left,
+            top,
+            size,
+            map,
+            atlas_toggle_hovered);
         local hover_focus = update_hover_focus(hovered);
         minimum_zoom = zoom_minimum_for_map(map, size);
         scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
@@ -5381,7 +5472,8 @@ local function render_minimap()
             player,
             map,
             camera,
-            scale);
+            scale,
+            atlas_toggle_hovered);
         local visual_scale = marker_zoom_scale(scale);
         local entity_visual_scale = visual_scale
             * clamp(state.settings.marker_size, 0.25, 2.00);
@@ -5537,6 +5629,12 @@ local function render_minimap()
         draw_badge(draw_list, left, top, player, map);
         draw_environment_clock(draw_list, left, top, size);
         draw_unlocked_hint(draw_list, left, top, size);
+        draw_atlas_toggle_button(
+            draw_list,
+            left,
+            top,
+            size,
+            atlas_toggle_hovered);
         draw_list:AddRect(
             { left, top },
             { left + size, top + size },
@@ -6107,6 +6205,10 @@ end
 local function render_atlas_window()
     local atlas = state.atlas;
     if (atlas.visible[1] ~= true or not atlas_initialize()) then
+        atlas.window_x = nil;
+        atlas.window_y = nil;
+        atlas.window_width = nil;
+        atlas.window_height = nil;
         return;
     end
 
@@ -6120,6 +6222,8 @@ local function render_atlas_window()
             'AshitaMinimap Atlas###AshitaMinimapAtlas',
             atlas.visible,
             flags)) then
+        atlas.window_x, atlas.window_y = imgui.GetWindowPos();
+        atlas.window_width, atlas.window_height = imgui.GetWindowSize();
         local zones = available_zone_ids();
         if (imgui.Button('<##ashitaminimap_atlas_zone_prev', { 28, 0 })) then
             atlas_select_zone(atlas_step_selection(
