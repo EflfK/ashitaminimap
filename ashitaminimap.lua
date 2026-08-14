@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.6';
+addon.version   = '1.30.7';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -6544,16 +6544,28 @@ local function render_atlas_window()
         and tonumber(display_size.y)
         or 850;
     local canvas_size = clamp(math.floor(display_height - 250), 420, 600);
-    imgui.SetNextWindowSize({ canvas_size + 32, canvas_size + 190 }, 0);
     local flags = bit.bor(
+        bit.lshift(1, 0),  -- NoTitleBar
         bit.lshift(1, 1),  -- NoResize
-        bit.lshift(1, 5)); -- NoCollapse
+        bit.lshift(1, 3),  -- NoScrollbar
+        bit.lshift(1, 5),  -- NoCollapse
+        bit.lshift(1, 6),  -- AlwaysAutoResize
+        bit.lshift(1, 7)); -- NoBackground
     if (imgui.Begin(
             'AshitaMinimap Atlas###AshitaMinimapAtlas',
             atlas.visible,
             flags)) then
         atlas.window_x, atlas.window_y = imgui.GetWindowPos();
         atlas.window_width, atlas.window_height = imgui.GetWindowSize();
+        local atlas_draw_list = imgui.GetWindowDrawList();
+        atlas_draw_list:AddRectFilled(
+            { atlas.window_x, atlas.window_y },
+            {
+                atlas.window_x + atlas.window_width,
+                atlas.window_y + atlas.window_height,
+            },
+            imgui.GetColorU32({ 0.040, 0.052, 0.068, 0.96 }),
+            10.0);
         imgui.Text('Find');
         imgui.SameLine(0, 6);
         if (type(imgui.SetNextItemWidth) == 'function') then
