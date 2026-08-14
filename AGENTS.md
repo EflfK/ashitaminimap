@@ -11,6 +11,45 @@ Keep the addon display-only. Never add movement automation, input simulation,
 gameplay commands, packet injection, timers, unattended loops, multibox
 routing, detection evasion, or any capability that acts on the player's behalf.
 
+## MCP waypoint use
+
+Use the AshitaMiniMap MCP waypoint instead of authoring an AshitaGuide guide
+when the user needs directions to one exact destination and does not need
+ordered instructions, completion tracking, reminders, or multiple guide steps.
+The available tools are:
+
+- `set_minimap_waypoint` to place or replace the session-only custom waypoint;
+- `minimap_waypoint_status` to confirm how the addon handled the latest
+  request; and
+- `clear_minimap_waypoint` to remove it and restore AshitaGuide routing.
+
+Supply an exact zone id and trustworthy world X/Y coordinates. Supply `mapId`
+for every remote-zone destination and whenever a multi-page zone's correct map
+or floor is known. Supply Z when trustworthy elevation evidence is available,
+especially on overlapping floors. When Z is omitted, accept AshitaMiniMap's
+floor resolution; never invent an elevation to force routing. Prefer exact
+coordinates observed through live AshitaMCP `visible_entities` when the player
+is in the relevant zone. Otherwise use verified local destination data or a
+trustworthy source. Never derive world coordinates from a map-grid label.
+
+After setting or clearing a waypoint, call `minimap_waypoint_status`. Treat
+`routed` as a confirmed marker with a display-only path and `marker_only` as a
+truthful destination without an available route. Report `rejected`, `expired`,
+or persistently unacknowledged requests rather than claiming that the waypoint
+is active. A pending acknowledgment may be checked again briefly, but do not
+create an unattended polling loop. If the MCP server is newly installed and
+its tools are unavailable, tell the user to start a new Codex task or restart
+Codex. If the request remains unacknowledged, verify that AshitaMiniMap is
+loaded and reload it through AshitaDevTools when lifecycle work is in scope.
+
+Leave a requested waypoint active while the player is using it. Clear it when
+the user asks, when live read-only position evidence confirms that the intended
+destination has been reached, or after a temporary verification waypoint has
+served its stated purpose. Setting a newer waypoint already replaces the older
+one. Never use MCP waypoints to move the character, simulate input, target or
+interact with an entity, send commands or packets, track hidden state, or build
+timed/state-driven navigation automation.
+
 ## Required reading
 
 Read `docs/MAP_CALIBRATION.md`, `docs/MAP_AUTHORING_PITFALLS.md`,
