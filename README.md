@@ -189,10 +189,13 @@ custom waypoint is session-only and remains display-only.
 
 Use the small **ATLAS** button on the minimap, `/aminimap atlas`, or **Open
 Atlas** in the configuration window to browse any imported vanilla map without
-leaving the current zone. Choose a zone from the selector or the previous/next
-buttons, change pages independently, drag to pan, and use the mouse wheel to
-zoom. `/aminimap atlas <zone-id>` opens a zone directly, and `/aminimap atlas
-hide` closes the window. The minimap button highlights while Atlas is open.
+leaving the current zone. Search by zone name or ID, or narrow the catalog to
+maps that support waypoint placement, have authored pathing, or contain
+multiple pages. Filters can be combined, and the previous/next buttons move
+through the alphabetized filtered results. Choose a page independently, drag
+to pan, and use the mouse wheel to zoom. `/aminimap atlas <zone-id>` opens a
+zone directly, and `/aminimap atlas hide` closes the window. The minimap button
+highlights while Atlas is open.
 
 Right-click the Atlas map to set the same session-only custom waypoint used by
 the live minimap. A remote waypoint takes priority over AshitaGuide and uses the

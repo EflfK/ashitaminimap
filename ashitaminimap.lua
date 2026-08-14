@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.4';
+addon.version   = '1.30.5';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -188,6 +188,12 @@ local state = {
         drag_mouse_x = 0,
         drag_mouse_y = 0,
         search = { '' },
+        filters = {
+            waypoint_ready = false,
+            has_pathing = false,
+            multiple_pages = false,
+        },
+        filter_metadata = {},
         window_x = nil,
         window_y = nil,
         window_width = nil,
@@ -6291,6 +6297,100 @@ local function available_zone_ids()
     return result;
 end
 
+local function atlas_zone_filter_metadata(zone_id)
+    local atlas = state.atlas;
+    local cached = atlas.filter_metadata[zone_id];
+    if (cached ~= nil) then
+        return cached;
+    end
+
+    local page_ids = available_page_ids(zone_id);
+    local catalog_entry = state.path_catalog[zone_id];
+    local has_pathing = type(catalog_entry) == 'string'
+        or (type(catalog_entry) == 'table' and next(catalog_entry) ~= nil);
+    cached = {
+        page_count = #page_ids,
+        waypoint_ready = nil,
+        has_pathing = has_pathing,
+    };
+    atlas.filter_metadata[zone_id] = cached;
+    return cached;
+end
+
+local function atlas_zone_waypoint_ready(zone_id, metadata)
+    if (metadata.waypoint_ready ~= nil) then
+        return metadata.waypoint_ready;
+    end
+    metadata.waypoint_ready = false;
+    for _, page_id in ipairs(available_page_ids(zone_id)) do
+        local map = map_for_catalog_page(zone_id, page_id);
+        if (map ~= nil and map.waypoint_calibrated == true) then
+            metadata.waypoint_ready = true;
+            break;
+        end
+    end
+    return metadata.waypoint_ready;
+end
+
+local function atlas_search_matches(label, search)
+    label = tostring(label or ''):lower();
+    search = tostring(search or ''):lower();
+    local compact_label = label:gsub('[^%w]', '');
+    for term in search:gmatch('%S+') do
+        local compact_term = term:gsub('[^%w]', '');
+        if (label:find(term, 1, true) == nil
+                and (compact_term == ''
+                    or compact_label:find(compact_term, 1, true) == nil)) then
+            return false;
+        end
+    end
+    return true;
+end
+
+local function atlas_filtered_zone_ids()
+    local atlas = state.atlas;
+    local filters = atlas.filters;
+    local search = atlas.search[1];
+    local result = {};
+    for _, zone_id in ipairs(available_zone_ids()) do
+        local metadata = atlas_zone_filter_metadata(zone_id);
+        local candidate_label = string.format(
+            '%s %d',
+            zone_name(zone_id),
+            zone_id);
+        if (atlas_search_matches(candidate_label, search)
+                and (filters.waypoint_ready ~= true
+                    or atlas_zone_waypoint_ready(zone_id, metadata))
+                and (filters.has_pathing ~= true or metadata.has_pathing)
+                and (filters.multiple_pages ~= true
+                    or metadata.page_count > 1)) then
+            result[#result + 1] = zone_id;
+        end
+    end
+    table.sort(result, function (left, right)
+        local left_name = zone_name(left):lower();
+        local right_name = zone_name(right):lower();
+        return left_name == right_name and left < right
+            or left_name < right_name;
+    end);
+    return result;
+end
+
+local function atlas_filter_checkbox(label, key)
+    local filters = state.atlas.filters;
+    local value = filters[key] == true;
+    if (imgui.Checkbox(label, { value })) then
+        filters[key] = not value;
+    end
+end
+
+local function atlas_clear_filters()
+    state.atlas.search[1] = '';
+    state.atlas.filters.waypoint_ready = false;
+    state.atlas.filters.has_pathing = false;
+    state.atlas.filters.multiple_pages = false;
+end
+
 local function atlas_select_page(page_id)
     local atlas = state.atlas;
     local page_ids = available_page_ids(atlas.zone_id);
@@ -6439,7 +6539,7 @@ local function render_atlas_window()
 
     local first_use = rawget(_G, 'ImGuiCond_FirstUseEver') or 0;
     local canvas_size = 600;
-    imgui.SetNextWindowSize({ canvas_size + 32, canvas_size + 116 }, first_use);
+    imgui.SetNextWindowSize({ canvas_size + 32, canvas_size + 170 }, first_use);
     local flags = bit.bor(
         bit.lshift(1, 1),  -- NoResize
         bit.lshift(1, 5)); -- NoCollapse
@@ -6449,12 +6549,54 @@ local function render_atlas_window()
             flags)) then
         atlas.window_x, atlas.window_y = imgui.GetWindowPos();
         atlas.window_width, atlas.window_height = imgui.GetWindowSize();
-        local zones = available_zone_ids();
+        imgui.Text('Find map');
+        imgui.SameLine(0, 6);
+        if (type(imgui.SetNextItemWidth) == 'function') then
+            imgui.SetNextItemWidth(250);
+        end
+        if (type(imgui.InputText) == 'function') then
+            imgui.InputText(
+                '##ashitaminimap_atlas_search',
+                atlas.search,
+                64);
+        end
+        imgui.SameLine(0, 8);
+        local player = current_player();
+        if (imgui.Button('Current zone##ashitaminimap_atlas_current', { 94, 0 })
+                and player ~= nil) then
+            atlas_clear_filters();
+            atlas_select_zone(player.zone_id);
+        end
+        imgui.SameLine(0, 8);
+        if (imgui.Button('Clear filters##ashitaminimap_atlas_clear_filters', { 88, 0 })) then
+            atlas_clear_filters();
+        end
+
+        atlas_filter_checkbox(
+            'Waypoint ready##ashitaminimap_atlas_filter_waypoint',
+            'waypoint_ready');
+        imgui.SameLine(0, 14);
+        atlas_filter_checkbox(
+            'Has pathing##ashitaminimap_atlas_filter_pathing',
+            'has_pathing');
+        imgui.SameLine(0, 14);
+        atlas_filter_checkbox(
+            'Multiple pages##ashitaminimap_atlas_filter_pages',
+            'multiple_pages');
+
+        local all_zones = available_zone_ids();
+        local zones = atlas_filtered_zone_ids();
+        imgui.SameLine(0, 18);
+        imgui.Text(string.format('%d of %d maps', #zones, #all_zones));
+
         if (imgui.Button('<##ashitaminimap_atlas_zone_prev', { 28, 0 })) then
-            atlas_select_zone(atlas_step_selection(
+            local selected = atlas_step_selection(
                 zones,
                 atlas.zone_id,
-                -1));
+                -1);
+            if (selected ~= nil) then
+                atlas_select_zone(selected);
+            end
         end
         imgui.SameLine(0, 6);
         local zone_label = string.format(
@@ -6465,33 +6607,26 @@ local function render_atlas_window()
                 and imgui.BeginCombo(
                     'Zone##ashitaminimap_atlas_zone',
                     zone_label)) then
-            if (type(imgui.InputText) == 'function') then
-                imgui.InputText(
-                    'Search##ashitaminimap_atlas_zone_search',
-                    atlas.search,
-                    64);
-            end
-            local filter = tostring(atlas.search[1] or ''):lower();
             for _, zone_id in ipairs(zones) do
                 local selected = zone_id == atlas.zone_id;
+                local metadata = atlas_zone_filter_metadata(zone_id);
                 local candidate_label = string.format(
-                    '%s (%d)',
+                    '%s (%d)%s',
                     zone_name(zone_id),
-                    zone_id);
-                if (filter == ''
-                        or candidate_label:lower():find(
-                            filter,
-                            1,
-                            true) ~= nil) then
-                    if (imgui.Selectable(candidate_label, selected)) then
-                        atlas_select_zone(zone_id);
-                        atlas.search[1] = '';
-                    end
-                    if (selected
-                            and type(imgui.SetItemDefaultFocus) == 'function') then
-                        imgui.SetItemDefaultFocus();
-                    end
+                    zone_id,
+                    metadata.page_count > 1
+                        and string.format(' - %d pages', metadata.page_count)
+                        or '');
+                if (imgui.Selectable(candidate_label, selected)) then
+                    atlas_select_zone(zone_id);
                 end
+                if (selected
+                        and type(imgui.SetItemDefaultFocus) == 'function') then
+                    imgui.SetItemDefaultFocus();
+                end
+            end
+            if (#zones == 0) then
+                imgui.Text('No maps match the current filters.');
             end
             imgui.EndCombo();
         elseif (type(imgui.BeginCombo) ~= 'function') then
@@ -6499,10 +6634,13 @@ local function render_atlas_window()
         end
         imgui.SameLine(0, 6);
         if (imgui.Button('>##ashitaminimap_atlas_zone_next', { 28, 0 })) then
-            atlas_select_zone(atlas_step_selection(
+            local selected = atlas_step_selection(
                 zones,
                 atlas.zone_id,
-                1));
+                1);
+            if (selected ~= nil) then
+                atlas_select_zone(selected);
+            end
         end
 
         local page_ids = available_page_ids(atlas.zone_id);
