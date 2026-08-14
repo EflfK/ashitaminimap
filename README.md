@@ -195,7 +195,9 @@ multiple pages. Filters can be combined, and the previous/next buttons move
 through the alphabetized filtered results. Choose a page independently, drag
 to pan, use the mouse wheel to zoom, and toggle **NM spawns** to show or hide
 the selected map's authored notorious-monster spawn ranges. Hover a visible
-range for its name and spawn details. `/aminimap atlas <zone-id>` opens a
+range for its name and spawn details. Atlas browsing shows the full authored
+catalog independently of any active AshitaGuide hunt filter.
+`/aminimap atlas <zone-id>` opens a
 zone directly, and `/aminimap atlas hide` closes the window. The minimap button
 highlights while Atlas is open.
 

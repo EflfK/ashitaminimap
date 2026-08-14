@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.30.8';
+addon.version   = '1.30.9';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -3753,7 +3753,8 @@ local function draw_nm_spawn_ranges(
         map,
         scale,
         player,
-        visible)
+        visible,
+        apply_hunt_filter)
     if (visible ~= true or type(map.nm_spawn_ranges) ~= 'table') then
         return;
     end
@@ -3775,7 +3776,8 @@ local function draw_nm_spawn_ranges(
             z = type(reference) == 'table' and reference.z or nil,
         };
         if (type(points) == 'table'
-                and state.nm_hunt_reference_visible(player, reference)
+                and (apply_hunt_filter ~= true
+                    or state.nm_hunt_reference_visible(player, reference))
                 and position_matches_active_stock_page(
                     player.zone_id,
                     map,
@@ -3793,7 +3795,7 @@ local function draw_nm_spawn_ranges(
                 { 0.820, 0.080, 0.130, 0.280 },
                 floor_opacity);
             local border = color_with_opacity(
-                'nm_spawn_range_border',
+                'nm_spawn_border',
                 { 1.000, 0.300, 0.340, 0.900 },
                 floor_opacity);
             local radius = clamp(
@@ -5751,7 +5753,8 @@ local function render_minimap()
             map,
             scale,
             player,
-            state.settings.show_nm_spawn_ranges);
+            state.settings.show_nm_spawn_ranges,
+            true);
         state.draw_all_pathing(
             draw_list,
             left,
@@ -6813,7 +6816,8 @@ local function render_atlas_window()
                 map,
                 atlas.pixels_per_yalm,
                 atlas_player,
-                atlas.show_nm_spawn_ranges);
+                atlas.show_nm_spawn_ranges,
+                false);
             draw_grid(
                 draw_list,
                 left,
