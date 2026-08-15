@@ -102,8 +102,9 @@ state.
 
 The minimap temporarily uses its battle-safe vertical position while the
 native player, magic, or ability command menu is open, including while the
-player is not engaged. It returns to the configured position when the menu
-closes.
+player is not engaged. That position includes a small final upward lift after
+chat-frame avoidance so the enlarged map stays clear of the combat selector.
+It returns to the configured position when the menu closes.
 
 While the native inventory is open, the minimap moves only far enough upward
 to remain above the item-description preview, then returns to its configured

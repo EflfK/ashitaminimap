@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.5';
+addon.version   = '1.31.6';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -34,6 +34,7 @@ local DECISION_SELECTOR_TOP = 1230;
 local DECISION_SELECTOR_GUTTER = 16;
 local COMBAT_SELECTOR_TOP = 1130;
 local COMBAT_SELECTOR_GUTTER = 16;
+local COMBAT_EXTRA_LIFT = 96;
 local INVENTORY_PREVIEW_TOP = 1290;
 local INVENTORY_PREVIEW_GUTTER = 16;
 local POSITION_ANIMATION_RESPONSE = 22;
@@ -6214,17 +6215,22 @@ local function render_minimap()
 
     local window_x = tonumber(state.settings.x) or 18;
     local window_y = tonumber(state.settings.y) or 128;
-    if (spectralfocus_modal.is_decision()) then
+    local decision_open = spectralfocus_modal.is_decision();
+    local inventory_open = spectralfocus_modal.is_inventory();
+    local combat_layout = not decision_open
+        and not inventory_open
+        and (player_is_engaged(player) or spectralfocus_modal.is_command_menu());
+    if (decision_open) then
         window_y = math.max(
             tonumber(state.settings.x) or 10,
             DECISION_SELECTOR_TOP - DECISION_SELECTOR_GUTTER - (size + 16));
-    elseif (spectralfocus_modal.is_inventory()) then
+    elseif (inventory_open) then
         window_y = math.min(
             window_y,
             math.max(
                 tonumber(state.settings.x) or 10,
                 INVENTORY_PREVIEW_TOP - INVENTORY_PREVIEW_GUTTER - (size + 16)));
-    elseif (player_is_engaged(player) or spectralfocus_modal.is_command_menu()) then
+    elseif (combat_layout) then
         window_y = math.max(
             tonumber(state.settings.x) or 10,
             COMBAT_SELECTOR_TOP - COMBAT_SELECTOR_GUTTER - (size + 16));
@@ -6238,6 +6244,9 @@ local function render_minimap()
         window_y = math.max(
             10,
             math.min(window_y, native_chat_top - 8 - (size + 8)));
+    end
+    if (combat_layout) then
+        window_y = window_y - COMBAT_EXTRA_LIFT;
     end
     window_y = animated_window_y(window_y);
     imgui.SetNextWindowPos({ window_x, window_y }, 0);
