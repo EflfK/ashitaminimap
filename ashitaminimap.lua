@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.4';
+addon.version   = '1.31.5';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -2780,7 +2780,8 @@ local function fallback_page(
         stock_offset_x = record ~= nil and record.offset_x or nil,
         stock_offset_y = record ~= nil and record.offset_y or nil,
         stock_record_origin = record_origin,
-        waypoint_calibrated = record_origin,
+        waypoint_calibrated = record_origin
+            or (has_runtime_origin and has_live_scale),
     };
 end
 
@@ -2927,6 +2928,18 @@ local function map_for_catalog_page(zone_id, page_id)
             nil,
             math.floor(page_id),
             false));
+end
+
+local function map_for_atlas_page(zone_id, page_id, player)
+    local live_map = player ~= nil
+        and tonumber(player.zone_id) == tonumber(zone_id)
+        and map_for_player(player)
+        or nil;
+    if (live_map ~= nil
+            and tonumber(live_map.page_id) == tonumber(page_id)) then
+        return live_map;
+    end
+    return map_for_catalog_page(zone_id, page_id);
 end
 
 local function custom_image_for(zone_id, map)
@@ -7337,7 +7350,10 @@ local function render_atlas_window()
             atlas.show_nm_spawn_ranges = not show_nm_spawn_ranges;
         end
 
-        local map = map_for_catalog_page(atlas.zone_id, atlas.page_id);
+        local map = map_for_atlas_page(
+            atlas.zone_id,
+            atlas.page_id,
+            player);
         if (map ~= nil) then
             if (atlas.camera_x == nil
                     or atlas.camera_y == nil
