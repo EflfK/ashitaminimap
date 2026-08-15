@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.6';
+addon.version   = '1.31.7';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -1397,6 +1397,111 @@ state.path_find = function (graph, start_index, target_index)
     return nil;
 end
 
+state.path_route_action = function (graph, from_index, to_index)
+    if (type(graph) ~= 'table') then
+        return nil;
+    end
+    if (type(graph._route_action_by_edge) ~= 'table') then
+        graph._route_action_by_edge = {};
+        for _, action in ipairs(
+                type(graph.route_actions) == 'table'
+                    and graph.route_actions
+                    or {}) do
+            local from = tonumber(action.from);
+            local to = tonumber(action.to);
+            if (from ~= nil and to ~= nil
+                    and type(action.instruction) == 'string'
+                    and action.instruction ~= '') then
+                graph._route_action_by_edge[
+                    string.format('%d:%d', from, to)] = action;
+            end
+        end
+    end
+    return graph._route_action_by_edge[
+        string.format('%d:%d', from_index, to_index)];
+end
+
+state.path_route_steps = function (graph, indices)
+    local steps = {};
+    local walking_points = {};
+    local function point_for(index)
+        local node = graph.nodes[index];
+        return {
+            x = node[1],
+            y = node[2],
+            z = state.path_node_live_z(graph, node),
+        };
+    end
+    local function append_walk()
+        if (#walking_points > 1) then
+            local distance = 0;
+            for index = 1, #walking_points - 1 do
+                local left = walking_points[index];
+                local right = walking_points[index + 1];
+                local delta_x = right.x - left.x;
+                local delta_y = right.y - left.y;
+                local delta_z = (tonumber(right.z) or 0)
+                    - (tonumber(left.z) or 0);
+                distance = distance + math.sqrt(
+                    (delta_x * delta_x)
+                        + (delta_y * delta_y)
+                        + (delta_z * delta_z));
+            end
+            steps[#steps + 1] = {
+                kind = 'walk',
+                cost = distance,
+                distance = distance,
+                points = walking_points,
+            };
+        end
+        walking_points = {};
+    end
+
+    if (#indices > 0) then
+        walking_points[1] = point_for(indices[1]);
+    end
+    for position = 1, #indices - 1 do
+        local from_index = indices[position];
+        local to_index = indices[position + 1];
+        local action = state.path_route_action(graph, from_index, to_index);
+        local destination_point = point_for(to_index);
+        if (action ~= nil) then
+            append_walk();
+            steps[#steps + 1] = {
+                kind = 'route_action',
+                cost = 0,
+                instruction = action.instruction,
+                name = action.name,
+                from_node = point_for(from_index),
+                to_node = destination_point,
+            };
+            walking_points[1] = destination_point;
+        else
+            walking_points[#walking_points + 1] = destination_point;
+        end
+    end
+    append_walk();
+    return steps;
+end
+
+state.route_action_passed = function (action, player)
+    if (action == nil or action.kind ~= 'route_action'
+            or action.from_node == nil or action.to_node == nil) then
+        return false;
+    end
+    local function distance_squared(point)
+        local delta_x = player.x - point.x;
+        local delta_y = player.y - point.y;
+        local delta_z = (tonumber(player.z) or 0)
+            - (tonumber(point.z) or 0);
+        return (delta_x * delta_x)
+            + (delta_y * delta_y)
+            + (delta_z * delta_z);
+    end
+    return distance_squared(action.to_node)
+        < distance_squared(action.from_node);
+end
+
 state.path_projection = function (route, x, y, z)
     local best = nil;
     local traveled = 0;
@@ -1533,11 +1638,13 @@ state.world_local_leg = function (left, right)
         end
         points[#points + 1] = point;
     end
+    local route_steps = state.path_route_steps(left.graph, indices);
     return {
         kind = 'walk',
         cost = distance,
         distance = distance,
         points = points,
+        route_steps = route_steps,
     };
 end
 
@@ -1740,11 +1847,14 @@ state.ensure_world_path = function (player, destination)
                 player.x,
                 player.y,
                 player.z);
-            if (projection ~= nil and projection.distance <= 12) then
+            local next_action = cached.world_steps[2];
+            if (projection ~= nil and projection.distance <= 12
+                    and not state.route_action_passed(next_action, player)) then
                 cached.projection = projection;
                 return cached;
             end
-        elseif (leg ~= nil) then
+        elseif (leg ~= nil
+                and not state.route_action_passed(leg, player)) then
             return cached;
         end
     end
@@ -1903,6 +2013,7 @@ state.ensure_world_path = function (player, destination)
                             cost = leg.cost,
                             distance = leg.distance,
                             points = leg.points,
+                            route_steps = leg.route_steps,
                         });
                     end
                 end
@@ -1995,6 +2106,17 @@ state.ensure_world_path = function (player, destination)
         table.insert(steps, 1, step);
         cursor = parent;
     end
+    local expanded_steps = {};
+    for _, step in ipairs(steps) do
+        if (step.kind == 'walk' and type(step.route_steps) == 'table') then
+            for _, route_step in ipairs(step.route_steps) do
+                expanded_steps[#expanded_steps + 1] = route_step;
+            end
+        else
+            expanded_steps[#expanded_steps + 1] = step;
+        end
+    end
+    steps = expanded_steps;
     local first = steps[1];
     local points = first ~= nil and first.kind == 'walk'
         and first.points
@@ -2106,13 +2228,24 @@ state.ensure_guide_path = function (player, map)
                 and destination_z ~= nil
                 and math.abs(route.destination_z - destination_z) < 0.1));
     if (same_destination) then
-        local projection = state.path_projection(
-            route,
-            player.x,
-            player.y,
-            player.z);
-        if (projection ~= nil and projection.distance <= 12) then
-            route.projection = projection;
+        local first = type(route.route_steps) == 'table'
+            and route.route_steps[1]
+            or nil;
+        if (first == nil or first.kind == 'walk') then
+            local projection = state.path_projection(
+                route,
+                player.x,
+                player.y,
+                player.z);
+            local next_action = type(route.route_steps) == 'table'
+                and route.route_steps[2]
+                or nil;
+            if (projection ~= nil and projection.distance <= 12
+                    and not state.route_action_passed(next_action, player)) then
+                route.projection = projection;
+                return route;
+            end
+        elseif (not state.route_action_passed(first, player)) then
             return route;
         end
     end
@@ -2146,15 +2279,11 @@ state.ensure_guide_path = function (player, map)
         state.guide_path.last_error = 'no connected path';
         return nil;
     end
-    local points = {};
-    for _, index in ipairs(indices) do
-        local node = graph.nodes[index];
-        points[#points + 1] = {
-            x = node[1],
-            y = node[2],
-            z = state.path_node_live_z(graph, node),
-        };
-    end
+    local route_steps = state.path_route_steps(graph, indices);
+    local first_step = route_steps[1];
+    local points = first_step ~= nil and first_step.kind == 'walk'
+        and first_step.points
+        or {};
     route = {
         zone_id = player.zone_id,
         page_id = tonumber(map.page_id),
@@ -2163,12 +2292,15 @@ state.ensure_guide_path = function (player, map)
         destination_z = destination_z,
         destination_source = custom_waypoint ~= nil and 'custom' or 'guide',
         points = points,
+        route_steps = route_steps,
     };
-    route.projection = state.path_projection(
-        route,
-        player.x,
-        player.y,
-        player.z);
+    if (#points > 1) then
+        route.projection = state.path_projection(
+            route,
+            player.x,
+            player.y,
+            player.z);
+    end
     state.guide_path.route = route;
     state.guide_path.last_error = nil;
     return route;
@@ -4657,7 +4789,11 @@ local function world_step_target_name(step, next_action)
             and metadata.name ~= '') then
         return metadata.name;
     end
-    if (next_action ~= nil and next_action.kind == 'zone_line') then
+    if (next_action ~= nil and next_action.kind == 'route_action'
+            and type(next_action.name) == 'string'
+            and next_action.name ~= '') then
+        return next_action.name;
+    elseif (next_action ~= nil and next_action.kind == 'zone_line') then
         return 'zone exit';
     elseif (next_action ~= nil and next_action.kind == 'home_point') then
         return 'Home Point';
@@ -4731,6 +4867,8 @@ end
 local function world_action_instruction(action)
     if (action == nil) then
         return nil;
+    elseif (action.kind == 'route_action') then
+        return action.instruction;
     elseif (action.kind == 'zone_line') then
         return string.format(
             'enter %s',
@@ -4766,7 +4904,10 @@ end
 
 state.draw_guide_path_status = function (draw_list, left, top, size, route)
     if (route == nil or size < 180
-            or (route.world ~= true and route.projection == nil)) then
+            or (route.world ~= true
+                and route.projection == nil
+                and (type(route.route_steps) ~= 'table'
+                    or route.route_steps[1] == nil))) then
         return;
     end
     local height = route.world == true and 54 or 38;
@@ -4847,15 +4988,44 @@ state.draw_guide_path_status = function (draw_list, left, top, size, route)
                 or 'Guide destination reached';
         end
     else
-        title = string.format(
-            '%s   %.0fy remaining',
-            route.destination_source == 'custom'
-                and 'CUSTOM WAYPOINT'
-                or 'GUIDE PATH',
-            route.projection.remaining);
-        instruction = route.destination_source == 'custom'
-            and 'Right-click waypoint to clear'
-            or 'Shortest route from map navigation graph';
+        local first = type(route.route_steps) == 'table'
+            and route.route_steps[1]
+            or nil;
+        if (first ~= nil and first.kind == 'walk') then
+            local action = route.route_steps[2];
+            local target_name = world_step_target_name(first, action);
+            title = string.format(
+                '%s   %.0fy to %s',
+                route.destination_source == 'custom'
+                    and 'CUSTOM WAYPOINT'
+                    or 'GUIDE PATH',
+                route.projection ~= nil
+                    and route.projection.remaining
+                    or first.distance
+                    or 0,
+                target_name);
+            instruction = action ~= nil
+                and capitalize_instruction(world_action_instruction(action))
+                or (route.destination_source == 'custom'
+                    and 'Right-click waypoint to clear'
+                    or 'Shortest route from map navigation graph');
+        elseif (first ~= nil) then
+            title = route.destination_source == 'custom'
+                and 'CUSTOM WAYPOINT   next action'
+                or 'GUIDE PATH   next action';
+            instruction = capitalize_instruction(
+                world_action_instruction(first));
+        else
+            title = string.format(
+                '%s   %.0fy remaining',
+                route.destination_source == 'custom'
+                    and 'CUSTOM WAYPOINT'
+                    or 'GUIDE PATH',
+                route.projection.remaining);
+            instruction = route.destination_source == 'custom'
+                and 'Right-click waypoint to clear'
+                or 'Shortest route from map navigation graph';
+        end
         if (route.elevation_passage_direction ~= nil) then
             instruction = string.format(
                 'Full route; amber %s point is required',

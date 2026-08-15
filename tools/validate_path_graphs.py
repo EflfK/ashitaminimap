@@ -23,6 +23,9 @@ NODE_PATTERN = re.compile(
 ONE_WAY_PATTERN = re.compile(
     r"^\s*\{\s*(\d+)\s*,\s*(\d+)\s*\},\s*$"
 )
+ROUTE_ACTION_PATTERN = re.compile(
+    r"^\s*\{\s*from\s*=\s*(\d+)\s*,\s*to\s*=\s*(\d+)\s*,"
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -75,6 +78,11 @@ def validate(path: Path, require_connected: bool = False) -> tuple[int, int]:
         for line in path.read_text(encoding="utf-8").splitlines()
         if (match := ONE_WAY_PATTERN.match(line))
     }
+    route_action_edges = {
+        (int(match.group(1)), int(match.group(2)))
+        for line in path.read_text(encoding="utf-8").splitlines()
+        if (match := ROUTE_ACTION_PATTERN.match(line))
+    }
     if zone_id <= 0:
         raise ValueError(f"{path}: invalid zone_id {zone_id}")
     if page_id is not None and page_id < 0:
@@ -115,6 +123,11 @@ def validate(path: Path, require_connected: bool = False) -> tuple[int, int]:
                 f"{path}: edge {edge[0]} -> {edge[1]} is neither "
                 "bidirectional nor declared one-way"
             )
+    for edge in route_action_edges:
+        if edge not in edges:
+            raise ValueError(
+                f"{path}: route action {edge[0]} -> {edge[1]} is not an edge"
+            )
     if require_connected:
         undirected = [set(node[3]) for node in nodes]
         for left, neighbors in enumerate(nodes, start=1):
@@ -143,14 +156,18 @@ def validate(path: Path, require_connected: bool = False) -> tuple[int, int]:
 def main() -> None:
     for path in args.graphs:
         nodes, edges = validate(path, args.require_connected)
+        text = path.read_text(encoding="utf-8").splitlines()
         one_way_count = sum(
             1
-            for line in path.read_text(encoding="utf-8").splitlines()
+            for line in text
             if ONE_WAY_PATTERN.match(line)
+        )
+        route_action_count = sum(
+            1 for line in text if ROUTE_ACTION_PATTERN.match(line)
         )
         print(
             f"{path}: {nodes} nodes, {edges} connections "
-            f"({one_way_count} one-way)"
+            f"({one_way_count} one-way, {route_action_count} route actions)"
         )
 
 

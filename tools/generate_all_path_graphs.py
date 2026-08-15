@@ -423,6 +423,12 @@ JOBS = (
             "--one-way-transition=571.555,304.500,3.733:555.096,-752.875,18.200",
             "--transition=545.871,-815.300,19.920:495.971,-867.250,39.800",
             "--transition=383.971,-819.333,39.200:328.096,-814.875,31.500",
+            "--route-action=659.471,-463.833,-32.800:652.859,588.567,-0.392|Use the Spatial Displacement.|Spatial Displacement",
+            "--route-action=571.555,304.500,3.733:555.096,-752.875,18.200|Use the Spatial Displacement.|Spatial Displacement",
+            "--route-action=545.871,-815.300,19.920:495.971,-867.250,39.800|Use the Spatial Displacement.|Spatial Displacement",
+            "--route-action=495.971,-867.250,39.800:545.871,-815.300,19.920|Trade one Giant Scale to the Unstable Displacement.|Unstable Displacement",
+            "--route-action=383.971,-819.333,39.200:328.096,-814.875,31.500|Use the Spatial Displacement.|Spatial Displacement",
+            "--route-action=328.096,-814.875,31.500:383.971,-819.333,39.200|Trade one Giant Scale to the Unstable Displacement.|Unstable Displacement",
         ),
     ),
     GraphJob(

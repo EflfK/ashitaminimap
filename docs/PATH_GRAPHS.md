@@ -150,6 +150,40 @@ destination. Generated graphs record the resolved node pair in
 requires every asymmetric edge to have that declaration and rejects a declared
 one-way edge if its reverse adjacency is present.
 
+## Attended actions on a route
+
+Every retained edge that requires a finite player action must declare that
+action. This includes opening a door or gate, standing on a Dangruf Wadi
+geyser, using an island Spatial Displacement, trading an item to activate a
+portal, operating an elevator, and similar mechanisms. Ordinary walking edges,
+stairs, ramps, drops, and automatic zone thresholds do not receive action
+metadata.
+
+Annotate an existing directed edge with `--route-action`:
+
+```text
+--route-action=<start-x>,<start-y>,<start-live-z>:<end-x>,<end-y>,<end-live-z>|<instruction>|<mechanism name>
+```
+
+The edge must already exist through native topology, `--transition`, or
+`--one-way-transition`; the generator fails rather than allowing an action to
+invent connectivity. Add one declaration per direction. This permits a portal
+to say `Use the Spatial Displacement.` in one direction and `Trade one Giant
+Scale to the Unstable Displacement.` in the other.
+
+At runtime, AshitaMiniMap splits the path at each declared action. The panel
+first routes to the mechanism, then shows the action as the next step, and
+recalculates the remaining walking leg after the player crosses or uses it.
+This applies to both same-zone and multi-zone destinations. AshitaMiniMap only
+displays the instruction; it never interacts with the mechanism or supplies
+input on the player's behalf.
+
+Action metadata needs the same evidence as its edge and must be included when
+reviewing doors, geysers, portals, elevators, and other route mechanisms. If a
+mechanism's endpoints or directionality are unresolved, keep the connection
+partial or marker-only until attended evidence proves it; do not add an action
+label to a guessed edge.
+
 When live verification proves that a source-navmesh adjacency crosses a wall,
 door, railing, or other impassable boundary, remove only that edge with:
 

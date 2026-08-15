@@ -7,6 +7,14 @@ return {
         { 1698, 2390 },
         { 1818, 388 },
     },
+    route_actions = {
+        { from = 1698, to = 2390, instruction = 'Use the Spatial Displacement.', name = 'Spatial Displacement' },
+        { from = 1818, to = 388, instruction = 'Use the Spatial Displacement.', name = 'Spatial Displacement' },
+        { from = 2564, to = 2567, instruction = 'Trade one Giant Scale to the Unstable Displacement.', name = 'Unstable Displacement' },
+        { from = 2567, to = 2564, instruction = 'Use the Spatial Displacement.', name = 'Spatial Displacement' },
+        { from = 2588, to = 2780, instruction = 'Use the Spatial Displacement.', name = 'Spatial Displacement' },
+        { from = 2780, to = 2588, instruction = 'Trade one Giant Scale to the Unstable Displacement.', name = 'Unstable Displacement' },
+    },
     nodes = {
         { -86.029, 769.000, -0.300, { 2, 4 } },
         { -84.279, 769.000, -0.300, { 1, 10 } },

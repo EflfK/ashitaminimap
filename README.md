@@ -79,6 +79,8 @@ Run `/aminimap config` to open the in-game configuration window. It controls:
   edge-clamped off-map markers;
 - optional map-owned shortest paths from the player to AshitaGuide's current
   destination when the zone provides a navigation graph;
+- attended mid-route action steps for authored doors, geysers, portals,
+  elevators, and similar mechanisms, including direction-specific item gates;
 - optionally zoom-scaled entity dots, target rings, and player arrow;
 - independently adjustable entity-dot and target-ring size.
 - per-zone, per-page X/Y origin calibration with live preview and explicit save.
@@ -182,10 +184,13 @@ The handoff contains no commands, routes, or player actions. AshitaGuide
 remains the source of guide state and supplies only destination coordinates.
 AshitaMinimap owns the reusable zone navigation graph, snaps the player and
 destination to that graph, computes the shortest connected route with A*, and
-renders the active cyan and traveled slate segments. Moving more than 12 yalms
-away from the displayed route triggers a new shortest-path calculation. The
-compact map status strip reports remaining route distance. Turning the
-**AshitaGuide shortest path** setting off leaves the destination marker intact.
+renders the active cyan and traveled slate segments. When an authored edge
+requires an attended action, the compact strip routes to that mechanism, shows
+the required action, then resumes from the observed result. Moving more than
+12 yalms away from the displayed route triggers a new shortest-path
+calculation. The compact map status strip reports remaining route distance.
+Turning the **AshitaGuide shortest path** setting off leaves the destination
+marker intact.
 
 Right-click an empty location on the map to place a temporary cyan custom
 waypoint. Its shortest path takes priority over the current AshitaGuide

@@ -47,6 +47,33 @@ def parse_transition(
     return start, end
 
 
+def parse_route_action(
+    value: str,
+) -> tuple[
+    tuple[float, float, float],
+    tuple[float, float, float],
+    str,
+    str,
+]:
+    try:
+        edge_text, instruction, *name_parts = value.split("|")
+        start, end = parse_transition(edge_text)
+    except (ValueError, argparse.ArgumentTypeError) as exception:
+        raise argparse.ArgumentTypeError(
+            "route action must be start-x,start-y,start-live-z:"
+            "end-x,end-y,end-live-z|instruction[|name]"
+        ) from exception
+    instruction = instruction.strip()
+    name = "|".join(name_parts).strip()
+    if not instruction or "\n" in instruction or "\r" in instruction:
+        raise argparse.ArgumentTypeError(
+            "route action instruction must be one non-empty line"
+        )
+    if "\n" in name or "\r" in name:
+        raise argparse.ArgumentTypeError("route action name must be one line")
+    return start, end, instruction, name
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("nav", type=Path, help="compiled Detour .nav file")
@@ -125,6 +152,18 @@ def parse_args() -> argparse.Namespace:
         help=(
             "maximum 3D distance from an authored transition endpoint to a "
             "polygon centroid (default: 2)"
+        ),
+    )
+    parser.add_argument(
+        "--route-action",
+        action="append",
+        type=parse_route_action,
+        default=[],
+        help=(
+            "attended player action required before traversing an existing "
+            "directed graph edge, expressed as start-x,start-y,start-live-z:"
+            "end-x,end-y,end-live-z|instruction[|name]; repeat once per "
+            "direction when instructions differ"
         ),
     )
     parser.add_argument(
@@ -539,10 +578,50 @@ def remove_blocked_links(
         adjacency[end_index].remove(start_index)
 
 
+def resolve_route_actions(
+    polygons: list[list[tuple[float, ...]]],
+    adjacency: list[set[int]],
+    route_actions: list[
+        tuple[
+            tuple[float, float, float],
+            tuple[float, float, float],
+            str,
+            str,
+        ]
+    ],
+    snap_radius: float,
+) -> dict[tuple[int, int], tuple[str, str]]:
+    centroids = [centroid(polygon) for polygon in polygons]
+    resolved = {}
+    for start, end, instruction, name in route_actions:
+        start_index = nearest_centroid(
+            centroids, start, snap_radius, "route action"
+        )
+        end_index = nearest_centroid(
+            centroids, end, snap_radius, "route action"
+        )
+        if end_index not in adjacency[start_index]:
+            raise ValueError(
+                f"route action {start} to {end} does not match an existing "
+                "directed graph edge"
+            )
+        edge = (start_index, end_index)
+        if edge in resolved:
+            raise ValueError(
+                f"route action {start} to {end} duplicates an existing action"
+            )
+        resolved[edge] = (instruction, name)
+    return resolved
+
+
 def lua_number(value: float) -> str:
     if not math.isfinite(value):
         raise ValueError("graph contains a non-finite coordinate")
     return f"{value:.3f}"
+
+
+def lua_string(value: str) -> str:
+    return "'" + value.replace("\\", "\\\\").replace("'", "\\'") + "'"
 
 
 def write_graph(
@@ -554,6 +633,7 @@ def write_graph(
     adjacency: list[set[int]],
     indices: list[int],
     directed_edges: set[tuple[int, int]],
+    route_actions: dict[tuple[int, int], tuple[str, str]],
 ) -> None:
     remap = {source: target + 1 for target, source in enumerate(indices)}
     lines = [
@@ -572,6 +652,22 @@ def write_graph(
         lines.append("    one_way_edges = {")
         for start, end in retained_directed_edges:
             lines.append(f"        {{ {start}, {end} }},")
+        lines.append("    },")
+    retained_route_actions = sorted(
+        (remap[start], remap[end], instruction, name)
+        for (start, end), (instruction, name) in route_actions.items()
+        if start in remap and end in remap
+    )
+    if retained_route_actions:
+        lines.append("    route_actions = {")
+        for start, end, instruction, name in retained_route_actions:
+            name_text = f", name = {lua_string(name)}" if name else ""
+            lines.append(
+                "        { "
+                f"from = {start}, to = {end}, "
+                f"instruction = {lua_string(instruction)}{name_text} "
+                "},"
+            )
         lines.append("    },")
     lines.append("    nodes = {")
     for source_index in indices:
@@ -639,6 +735,12 @@ def main() -> None:
         args.one_way_transition,
         args.transition_snap_radius,
     )
+    route_actions = resolve_route_actions(
+        polygons,
+        adjacency,
+        args.route_action,
+        args.transition_snap_radius,
+    )
     indices = selected_indices(polygons, adjacency, args.seed, args.snap_radius)
     selected = set(indices)
     write_graph(
@@ -650,6 +752,7 @@ def main() -> None:
         adjacency,
         indices,
         directed_edges,
+        route_actions,
     )
     connections = {
         tuple(sorted((index, neighbor)))
