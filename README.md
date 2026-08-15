@@ -382,6 +382,10 @@ The compact **VANILLA / GUIDE** button inside the minimap switches artwork for
 the active page without changing calibration, markers, guide routing, or zoom.
 Guide artwork defaults to 100% opacity so its fine labels stay readable over the
 game world, and its printed coordinate grid replaces the duplicate Lua grid.
+Because these dense Atlas pages were authored for the fullscreen map, Guide
+mode keeps the live minimap on a local crop instead of squeezing the entire
+page into the minimap square. Vanilla mode can still zoom out to the full page,
+and Atlas remains the full-page guide-map browser.
 The button is disabled when the custom catalog has no safe stock-calibrated
 image for that page. Custom PNGs and their generated catalog remain local and
 Git-ignored for the same reason as the stock artwork.

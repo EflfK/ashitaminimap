@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.3';
+addon.version   = '1.31.4';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -18,6 +18,7 @@ local commands = T{
 
 local ZOOM_MIN = 0.25;
 local ZOOM_MAX = 20.00;
+local GUIDE_MINIMUM_ZOOM_RATIO = 3.00;
 local ZOOM_STEP = 1.12;
 local TRANSITION_OVERVIEW_OPACITY = 0.28;
 local TRANSITION_CLOSE_OPACITY = 0.64;
@@ -3191,6 +3192,18 @@ local function zoom_minimum_for_map(map, size)
     return clamp((size * image_scale) / maximum_span, ZOOM_MIN, ZOOM_MAX);
 end
 
+local function zoom_minimum_for_source(map, size, custom_active)
+    local minimum = zoom_minimum_for_map(map, size);
+    if (custom_active ~= true) then
+        return minimum;
+    end
+    -- The guide artwork is a dense full-page atlas intended for the native
+    -- fullscreen map. At fit-to-page scale its labels and overlapping floor
+    -- detail collapse into visual noise. Keep the live minimap on a local crop;
+    -- Atlas remains available for a whole-page overview.
+    return clamp(minimum * GUIDE_MINIMUM_ZOOM_RATIO, ZOOM_MIN, ZOOM_MAX);
+end
+
 local function grid_coordinate(x, y, map)
     local grid_yalms = map_grid_yalms(map);
     local half_cell = grid_yalms / 2;
@@ -5989,14 +6002,21 @@ local function handle_custom_waypoint_input(
             or 'unknown'));
 end
 
-local function handle_map_input(left, top, size, map, suppress_input)
+local function handle_map_input(
+        left,
+        top,
+        size,
+        map,
+        suppress_input,
+        minimum_zoom_override)
     local hovered, mouse_x, mouse_y = mouse_over_map(left, top, size);
     local wheel = hovered and suppress_input ~= true
         and safe_read(function () return tonumber(imgui.GetIO().MouseWheel) or 0; end, 0)
         or 0;
     if (wheel ~= 0) then
         local factor = ZOOM_STEP ^ math.abs(wheel);
-        local minimum_zoom = zoom_minimum_for_map(map, size);
+        local minimum_zoom = tonumber(minimum_zoom_override)
+            or zoom_minimum_for_map(map, size);
         local current = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
         state.settings.pixels_per_yalm = clamp(
             wheel > 0 and (current * factor) or (current / factor),
@@ -6161,7 +6181,10 @@ local function render_minimap()
     end
 
     local size = clamp(state.settings.size, 120, 700);
-    local minimum_zoom = zoom_minimum_for_map(map, size);
+    local minimum_zoom = zoom_minimum_for_source(
+        map,
+        size,
+        custom_map_active);
     local scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
     local window_flags = bit.bor(
         bit.lshift(1, 0),  -- NoTitleBar
@@ -6230,11 +6253,16 @@ local function render_minimap()
             top,
             size,
             map,
-            toolbar_hovered);
+            toolbar_hovered,
+            minimum_zoom);
         local hover_focus = update_hover_focus(hovered);
-        minimum_zoom = zoom_minimum_for_map(map, size);
+        minimum_zoom = zoom_minimum_for_source(
+            map,
+            size,
+            custom_map_active);
         scale = clamp(state.settings.pixels_per_yalm, minimum_zoom, ZOOM_MAX);
-        if (state.settings.pixels_per_yalm ~= scale) then
+        if (state.settings.pixels_per_yalm ~= scale
+                and not custom_map_active) then
             state.settings.pixels_per_yalm = scale;
             mark_configuration_changed();
         end
@@ -6496,9 +6524,14 @@ local function render_config_window()
 
         local config_player = current_player();
         local config_map = map_for_player(config_player);
-        local config_zoom_minimum = zoom_minimum_for_map(
+        local config_custom_active = config_player ~= nil
+            and config_map ~= nil
+            and state.settings.map_source == 'custom'
+            and custom_image_for(config_player.zone_id, config_map) ~= nil;
+        local config_zoom_minimum = zoom_minimum_for_source(
             config_map,
-            clamp(state.settings.size, 120, 700));
+            clamp(state.settings.size, 120, 700),
+            config_custom_active);
         local zoom_buffer = {
             clamp(state.settings.pixels_per_yalm, config_zoom_minimum, ZOOM_MAX),
         };
@@ -7519,7 +7552,14 @@ end
 local function current_zoom_minimum()
     local player = current_player();
     local map = map_for_player(player);
-    return zoom_minimum_for_map(map, clamp(state.settings.size, 120, 700));
+    local custom_active = player ~= nil
+        and map ~= nil
+        and state.settings.map_source == 'custom'
+        and custom_image_for(player.zone_id, map) ~= nil;
+    return zoom_minimum_for_source(
+        map,
+        clamp(state.settings.size, 120, 700),
+        custom_active);
 end
 
 local function handle_command(e)
