@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.7';
+addon.version   = '1.31.8';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -2184,9 +2184,10 @@ state.ensure_guide_path = function (player, map)
         return state.ensure_world_path(player, destination);
     end
     destination = custom_waypoint or markers[1];
-    if (destination == nil
-            or (destination.map_id ~= nil
-                and tonumber(map.page_id) ~= destination.map_id)) then
+    -- A guide map id controls marker visibility, but it must not suppress a
+    -- same-zone route. Multi-page maps commonly use pages as floors, and the
+    -- live page's authored graph can lead toward a destination on another one.
+    if (destination == nil) then
         state.guide_path.route = nil;
         return nil;
     end

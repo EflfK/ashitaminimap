@@ -152,10 +152,13 @@ AshitaGuide publishes the focused step's destination coordinates to
 `config/addons/ashitaguide/ashitaminimap_markers.lua`. AshitaMiniMap polls this
 versioned, display-only handoff and renders valid markers through its own live
 camera transform. A marker is shown only in the matching zone and, when
-specified, on the matching map page. Off-map destinations clamp to the viewport
-edge, approximate destinations use a diamond, and handoffs older than three
-seconds are discarded so a crashed or unloaded guide cannot leave stale
-markers behind.
+specified, on the matching map page. For a same-zone destination on another
+page, AshitaMiniMap still attempts a walking route on the active page's authored
+graph and recalculates when the game's live page changes; the page id remains a
+marker-visibility hint rather than suppressing valid cross-floor pathing.
+Off-map destinations clamp to the viewport edge, approximate destinations use a
+diamond, and handoffs older than three seconds are discarded so a crashed or
+unloaded guide cannot leave stale markers behind.
 
 Version 2 of the handoff retains a destination in another zone. AshitaMiniMap
 combines verified map-owned walking graphs with the generated physical
