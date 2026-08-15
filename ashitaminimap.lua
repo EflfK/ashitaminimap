@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.8';
+addon.version   = '1.31.9';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -4752,8 +4752,10 @@ state.draw_guide_path = function (
                 break;
             end
         end
+        -- These route points contain Ashita live Z, whose elevation axis is
+        -- inverted: a more-negative destination is physically higher.
         local direction = (tonumber(next_point.z) or 0)
-                > (tonumber(transition.z) or 0)
+                < (tonumber(transition.z) or 0)
             and 'UP'
             or 'DN';
         local marker_fill = continuous_surface

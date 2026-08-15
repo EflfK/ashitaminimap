@@ -133,6 +133,10 @@ best deterministic graph, inspect it in game, and report concrete defects for
 targeted correction instead of requiring a manual checkpoint for every
 possible seam.
 
+Floor-change markers follow FFXI's live-coordinate convention: more-negative Z
+is physically higher and displays `UP`; more-positive Z is physically lower and
+displays `DN`.
+
 Structure-rendering implementation, settings, assets, and provenance remain
 preserved in the repository, but normal operation neither loads nor renders
 structure textures and exposes no structure controls.

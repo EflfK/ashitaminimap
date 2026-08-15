@@ -179,6 +179,13 @@ otherwise it remains marker-only as floor-ambiguous. Route projection must
 remain three-dimensional so walking above or below a route cannot count as
 following it.
 
+FFXI/Ashita live Z is inverted for physical elevation: a more-negative live Z
+is higher/up, and a more-positive live Z is lower/down. Any floor-transition
+label or icon derived from converted live Z must therefore use
+`destinationZ < sourceZ` for up and `destinationZ > sourceZ` for down. Raw
+Detour graph elevation has the opposite sign and must be converted through
+`state.path_node_live_z` before applying this rule.
+
 ## Dormant structure subsystem
 
 Preserve all existing structure-rendering implementation, generated assets,
