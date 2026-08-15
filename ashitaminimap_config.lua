@@ -20,6 +20,9 @@ return {
     show_map_vanilla = true,
     show_map_structure = false,
     vanilla_opacity = 0.35,
+    -- Guide maps contain fine text and printed grids; keep them substantially
+    -- more opaque than the sparse vanilla artwork.
+    custom_map_opacity = 1.00,
     structure_opacity = 0.82,
     inactive_floor_opacity = 0.14,
     -- Re-render each alpha layer to strengthen faint extracted lines.

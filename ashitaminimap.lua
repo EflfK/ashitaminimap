@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.2';
+addon.version   = '1.31.3';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -58,6 +58,7 @@ local DEFAULTS = {
     show_map_vanilla = true,
     show_map_structure = false,
     vanilla_opacity = 0.35,
+    custom_map_opacity = 1.00,
     structure_opacity = 0.82,
     inactive_floor_opacity = 0.14,
     structure_visibility_boost = 4,
@@ -378,6 +379,9 @@ local function config_text()
         string.format('    show_map_vanilla = %s,', bool_text(settings.show_map_vanilla)),
         string.format('    show_map_structure = %s,', bool_text(settings.show_map_structure)),
         string.format('    vanilla_opacity = %.3f,', clamp(settings.vanilla_opacity, 0, 1)),
+        string.format(
+            '    custom_map_opacity = %.3f,',
+            clamp(settings.custom_map_opacity, 0, 1)),
         string.format('    structure_opacity = %.3f,', clamp(settings.structure_opacity, 0, 1)),
         string.format(
             '    inactive_floor_opacity = %.3f,',
@@ -584,6 +588,14 @@ local function load_configuration()
         and 'custom'
         or 'vanilla';
     state.settings.vanilla_opacity = clamp(state.settings.vanilla_opacity, 0, 1);
+    local migrate_initial_custom_opacity =
+        tonumber(settings.custom_map_opacity) == 0.92;
+    state.settings.custom_map_opacity = clamp(
+        migrate_initial_custom_opacity
+            and DEFAULTS.custom_map_opacity
+            or state.settings.custom_map_opacity,
+        0,
+        1);
     state.settings.structure_opacity = clamp(state.settings.structure_opacity, 0, 1);
     state.settings.inactive_floor_opacity =
         clamp(state.settings.inactive_floor_opacity, 0, 1);
@@ -598,6 +610,7 @@ local function load_configuration()
         and state.settings.origin_adjustments
         or {};
     state.config_dirty = loaded_zoom ~= state.settings.pixels_per_yalm
+        or migrate_initial_custom_opacity
         or obsolete_layer_settings
         or legacy_coffer_color;
     state.config_changed_at = 0;
@@ -5333,7 +5346,7 @@ local function map_source_toggle_width()
     local vanilla_width = select(1, imgui.CalcTextSize('VANILLA'));
     local guide_width = select(1, imgui.CalcTextSize('GUIDE'));
     local text_width = math.max(vanilla_width, guide_width);
-    return math.max(82, math.ceil(text_width + 31));
+    return math.max(68, math.ceil(text_width + 16));
 end
 
 local function weather_badge_layout(left, top, size)
@@ -5867,29 +5880,17 @@ local function draw_map_source_toggle_button(
         3.0,
         0,
         1.0);
-    local icon_color = available == true
+    local text_color = available == true
         and (active
             and imgui.GetColorU32({ 0.92, 1.00, 1.00, 1.00 })
             or color('grid_text', { 0.82, 0.71, 0.51, 0.88 }))
         or imgui.GetColorU32({ 0.48, 0.50, 0.52, 0.72 });
-    local icon_x = x + 12;
-    local icon_y = y + (height / 2);
-    draw_list:AddRect(
-        { icon_x - 6, icon_y - 5 },
-        { icon_x + 6, icon_y + 5 },
-        icon_color,
-        1.0,
-        0,
-        1.0);
-    draw_list:AddLine(
-        { icon_x, icon_y - 5 },
-        { icon_x, icon_y + 5 },
-        icon_color,
-        1.0);
+    local label = active and 'GUIDE' or 'VANILLA';
+    local text_width = select(1, imgui.CalcTextSize(label));
     draw_list:AddText(
-        { x + 24, y + 3 },
-        icon_color,
-        active and 'GUIDE' or 'VANILLA');
+        { x + ((width - text_width) / 2), y + 3 },
+        text_color,
+        label);
 end
 
 state.custom_waypoint_screen = function (
@@ -6262,7 +6263,11 @@ local function render_minimap()
                 map,
                 map_texture,
                 scale,
-                focused_opacity(state.settings.vanilla_opacity, hover_focus),
+                focused_opacity(
+                    custom_map_active
+                        and state.settings.custom_map_opacity
+                        or state.settings.vanilla_opacity,
+                    hover_focus),
                 1);
         end
         for _, layer in ipairs(structure_layers) do
@@ -6308,7 +6313,12 @@ local function render_minimap()
             camera,
             map,
             scale);
-        draw_grid(draw_list, left, top, size, camera, map, scale);
+        -- Custom guide maps already contain their own printed grid and edge
+        -- labels. Drawing the Lua grid over them doubles every line and makes
+        -- the annotated artwork muddy at minimap scale.
+        if (not custom_map_active) then
+            draw_grid(draw_list, left, top, size, camera, map, scale);
+        end
         draw_treasure_spawns(
             draw_list,
             left,
@@ -6614,7 +6624,7 @@ local function render_config_window()
 
         imgui.Text('Static layers');
         imgui.Separator();
-        config_checkbox('Vanilla map##ashitaminimap_vanilla', 'show_map_vanilla');
+        config_checkbox('Map artwork##ashitaminimap_vanilla', 'show_map_vanilla');
         local vanilla_opacity_buffer = {
             math.floor(clamp(state.settings.vanilla_opacity, 0, 1) * 100 + 0.5),
         };
@@ -6625,6 +6635,18 @@ local function render_config_window()
                 100,
                 '%d%%')) then
             state.settings.vanilla_opacity = vanilla_opacity_buffer[1] / 100;
+            mark_configuration_changed();
+        end
+        local custom_opacity_buffer = {
+            math.floor(clamp(state.settings.custom_map_opacity, 0, 1) * 100 + 0.5),
+        };
+        if (imgui.SliderInt(
+                'Guide-map opacity##ashitaminimap_custom_map_opacity',
+                custom_opacity_buffer,
+                0,
+                100,
+                '%d%%')) then
+            state.settings.custom_map_opacity = custom_opacity_buffer[1] / 100;
             mark_configuration_changed();
         end
 
