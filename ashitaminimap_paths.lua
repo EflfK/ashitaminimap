@@ -27,6 +27,7 @@ return {
     [33] = 'assets/paths/33.lua',
     [34] = 'assets/paths/34.lua',
     [35] = 'assets/paths/35.lua',
+    [50] = 'assets/paths/50.lua',
     [51] = 'assets/paths/51.lua',
     [52] = 'assets/paths/52.lua',
     [54] = 'assets/paths/54.lua',
