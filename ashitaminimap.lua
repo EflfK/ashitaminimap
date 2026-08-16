@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.12';
+addon.version   = '1.32.0';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -164,6 +164,19 @@ local state = {
         last_poll = 0,
         last_request_id = nil,
         last_error = nil,
+    },
+    link_capture = {
+        points = {},
+        zone_id = nil,
+        page_id = nil,
+        completed = false,
+        one_way = false,
+        action_kind = 'walk',
+        action_name = { '' },
+        action_note = { '' },
+        reverse_action_note = { '' },
+        status = 'Press Start Link while standing at the first side of a gap.',
+        saved_id = nil,
     },
     guide_path = {
         route = nil,
@@ -923,6 +936,85 @@ local function json_quoted(value)
         :gsub('\n', '\\n')
         :gsub('\t', '\\t');
     return '"' .. text .. '"';
+end
+
+local function json_number(value)
+    value = tonumber(value);
+    if (value == nil or value ~= value or math.abs(value) == math.huge) then
+        return 'null';
+    end
+    return string.format('%.6f', value);
+end
+
+state.write_link_candidate = function (capture)
+    local path = state.mcp_waypoint_file_path('link_candidate.json');
+    if (path == nil) then
+        return false, 'Ashita configuration path is unavailable.';
+    end
+    if (type(capture) ~= 'table'
+            or type(capture.points) ~= 'table'
+            or #capture.points < 2) then
+        return false, 'A saved link requires a start and end point.';
+    end
+
+    local candidate_id = string.format(
+        '%d-%d-%d',
+        tonumber(capture.zone_id) or 0,
+        tonumber(capture.page_id) or 0,
+        os.time());
+    local point_values = {};
+    for index, point in ipairs(capture.points) do
+        point_values[index] = table.concat({
+            '{"role":' .. json_quoted(point.role),
+            ',"x":' .. json_number(point.x),
+            ',"y":' .. json_number(point.y),
+            ',"z":' .. json_number(point.z),
+            ',"capturedAt":' .. tostring(tonumber(point.captured_at) or os.time()),
+            ',"nodeIndex":' .. tostring(tonumber(point.node_index) or 'null'),
+            ',"componentId":' .. tostring(tonumber(point.component_id) or 'null'),
+            ',"snapDistance":' .. json_number(point.snap_distance),
+            ',"nodeX":' .. json_number(point.node_x),
+            ',"nodeY":' .. json_number(point.node_y),
+            ',"nodeZ":' .. json_number(point.node_z),
+            '}',
+        });
+    end
+    local payload = table.concat({
+        '{"ok":true',
+        ',"version":1',
+        ',"source":"ashitaminimap_developer"',
+        ',"candidateId":' .. json_quoted(candidate_id),
+        ',"state":"pending_validation"',
+        ',"zoneId":' .. tostring(tonumber(capture.zone_id) or 0),
+        ',"mapId":' .. tostring(tonumber(capture.page_id) or 0),
+        ',"direction":' .. json_quoted(
+            capture.one_way == true and 'one_way' or 'bidirectional'),
+        ',"actionKind":' .. json_quoted(capture.action_kind or 'walk'),
+        ',"actionName":' .. json_quoted(
+            type(capture.action_name) == 'table'
+                and capture.action_name[1]
+                or capture.action_name),
+        ',"actionNote":' .. json_quoted(
+            type(capture.action_note) == 'table'
+                and capture.action_note[1]
+                or capture.action_note),
+        ',"reverseActionNote":' .. json_quoted(
+            type(capture.reverse_action_note) == 'table'
+                and capture.reverse_action_note[1]
+                or capture.reverse_action_note),
+        ',"capturedAt":' .. tostring(os.time()),
+        ',"points":[' .. table.concat(point_values, ',') .. ']',
+        ',"safety":"Captured evidence only; production graph unchanged."',
+        '}',
+    });
+    local file, error_message = io.open(path, 'w');
+    if (file == nil) then
+        return false, tostring(error_message or 'open failed');
+    end
+    file:write(payload);
+    file:close();
+    capture.saved_id = candidate_id;
+    return true, candidate_id;
 end
 
 state.write_mcp_waypoint_status = function (
@@ -4757,6 +4849,83 @@ state.draw_all_pathing = function (
     };
 end
 
+state.draw_link_capture = function (
+        draw_list,
+        left,
+        top,
+        size,
+        player,
+        camera,
+        map,
+        scale)
+    local capture = state.link_capture;
+    if (state.settings.developer_mode ~= true
+            or type(capture) ~= 'table'
+            or type(capture.points) ~= 'table'
+            or #capture.points == 0
+            or tonumber(capture.zone_id) ~= tonumber(player.zone_id)
+            or tonumber(capture.page_id) ~= tonumber(map.page_id)) then
+        return;
+    end
+
+    local center_x = left + (size / 2);
+    local center_y = top + (size / 2);
+    local function screen(point)
+        return {
+            center_x + (((tonumber(point.x) or 0) - camera.x) * scale),
+            center_y - (((tonumber(point.y) or 0) - camera.y) * scale),
+        };
+    end
+    local line_color = imgui.GetColorU32({ 1.00, 0.28, 0.82, 0.96 });
+    local point_color = imgui.GetColorU32({ 1.00, 0.72, 0.18, 1.00 });
+    local text_color = imgui.GetColorU32({ 1.00, 0.94, 0.72, 1.00 });
+    local shadow = imgui.GetColorU32({ 0.02, 0.02, 0.03, 0.96 });
+
+    for index = 2, #capture.points do
+        local start_point = screen(capture.points[index - 1]);
+        local end_point = screen(capture.points[index]);
+        draw_list:AddLine(start_point, end_point, line_color, 3.0);
+        if (capture.one_way == true) then
+            local dx = end_point[1] - start_point[1];
+            local dy = end_point[2] - start_point[2];
+            local length = math.sqrt((dx * dx) + (dy * dy));
+            if (length > 0.001) then
+                local ux = dx / length;
+                local uy = dy / length;
+                local mx = (start_point[1] + end_point[1]) / 2;
+                local my = (start_point[2] + end_point[2]) / 2;
+                local tip = { mx + (ux * 7), my + (uy * 7) };
+                local back_x = mx - (ux * 5);
+                local back_y = my - (uy * 5);
+                local left_point = { back_x - (uy * 5), back_y + (ux * 5) };
+                local right_point = { back_x + (uy * 5), back_y - (ux * 5) };
+                draw_list:AddTriangleFilled(
+                    tip,
+                    left_point,
+                    right_point,
+                    line_color);
+            end
+        end
+    end
+    if (capture.completed ~= true) then
+        draw_list:AddLine(
+            screen(capture.points[#capture.points]),
+            screen(player),
+            imgui.GetColorU32({ 1.00, 0.28, 0.82, 0.42 }),
+            1.5);
+    end
+    for index, point in ipairs(capture.points) do
+        local marker = screen(point);
+        draw_list:AddCircleFilled(marker, 8.0, shadow, 16);
+        draw_list:AddCircleFilled(marker, 6.0, point_color, 16);
+        local label = tostring(index);
+        draw_list:AddText(
+            { marker[1] - 3, marker[2] - 7 },
+            text_color,
+            label);
+    end
+end
+
 state.draw_guide_path = function (
         draw_list,
         left,
@@ -6741,6 +6910,15 @@ local function render_minimap()
             camera,
             map,
             scale);
+        state.draw_link_capture(
+            draw_list,
+            left,
+            top,
+            size,
+            player,
+            camera,
+            map,
+            scale);
         -- Custom guide maps already contain their own printed grid and edge
         -- labels. Drawing the Lua grid over them doubles every line and makes
         -- the annotated artwork muddy at minimap scale.
@@ -6880,6 +7058,250 @@ local function config_checkbox(label, key)
         end
         mark_configuration_changed();
     end
+end
+
+local function reset_link_capture(message)
+    local capture = state.link_capture;
+    capture.points = {};
+    capture.zone_id = nil;
+    capture.page_id = nil;
+    capture.completed = false;
+    capture.saved_id = nil;
+    capture.status = message
+        or 'Press Start Link while standing at the first side of a gap.';
+end
+
+local function capture_link_point(role)
+    local capture = state.link_capture;
+    local player = current_player();
+    local map = map_for_player(player);
+    local graph = player ~= nil
+        and map ~= nil
+        and state.path_graph_for(player.zone_id, map.page_id)
+        or nil;
+    if (player == nil or map == nil) then
+        capture.status = 'Live player or map position is unavailable.';
+        return false;
+    end
+    if (role == 'start') then
+        reset_link_capture();
+        capture.zone_id = player.zone_id;
+        capture.page_id = tonumber(map.page_id) or 0;
+    elseif (#capture.points == 0) then
+        capture.status = 'Capture Start Link before adding another point.';
+        return false;
+    elseif (capture.completed == true) then
+        capture.status = 'This link is complete. Start a new link or save it.';
+        return false;
+    elseif (tonumber(capture.zone_id) ~= tonumber(player.zone_id)
+            or tonumber(capture.page_id) ~= tonumber(map.page_id)) then
+        capture.status = 'All link points must remain in the same zone and map page.';
+        return false;
+    end
+
+    local node_index, snap_distance = nil, nil;
+    if (graph ~= nil) then
+        node_index, snap_distance = state.path_nearest_node(
+            graph,
+            player.x,
+            player.y,
+            player.z);
+    end
+    local previous = capture.points[#capture.points];
+    if (previous ~= nil) then
+        local dx = player.x - previous.x;
+        local dy = player.y - previous.y;
+        local dz = player.z - previous.z;
+        if ((dx * dx) + (dy * dy) + (dz * dz) < 0.0625) then
+            capture.status = 'Move at least 0.25 yalms before capturing another point.';
+            return false;
+        end
+    end
+
+    local node = graph ~= nil
+        and node_index ~= nil
+        and graph.nodes[node_index]
+        or nil;
+    local component_ids = graph ~= nil
+        and state.path_component_ids(graph)
+        or {};
+    capture.points[#capture.points + 1] = {
+        role = role,
+        x = player.x,
+        y = player.y,
+        z = player.z,
+        captured_at = os.time(),
+        node_index = node_index,
+        component_id = component_ids[node_index],
+        snap_distance = snap_distance,
+        node_x = node and tonumber(node[1]) or nil,
+        node_y = node and tonumber(node[2]) or nil,
+        node_z = node and state.path_node_live_z(graph, node) or nil,
+    };
+    capture.completed = role == 'end';
+    capture.saved_id = nil;
+    capture.status = string.format(
+        '%s point %d captured at X %.3f, Y %.3f, Z %.3f (node %s, component %s).',
+        role:sub(1, 1):upper() .. role:sub(2),
+        #capture.points,
+        player.x,
+        player.y,
+        player.z,
+        tostring(node_index or 'none'),
+        tostring(component_ids[node_index] or '?'));
+    return true;
+end
+
+local function save_link_capture()
+    local capture = state.link_capture;
+    if (capture.completed ~= true or #capture.points < 2) then
+        capture.status = 'Capture Start Link and End Link before saving.';
+        return;
+    end
+    local action_note = type(capture.action_note) == 'table'
+        and tostring(capture.action_note[1] or '')
+        or tostring(capture.action_note or '');
+    local action_name = type(capture.action_name) == 'table'
+        and tostring(capture.action_name[1] or '')
+        or tostring(capture.action_name or '');
+    if (capture.action_kind ~= 'walk'
+            and (action_name:match('^%s*$') or action_note:match('^%s*$'))) then
+        capture.status = 'Add the mechanism name and forward instruction before saving.';
+        return;
+    end
+    local ok, message = state.write_link_candidate(capture);
+    capture.status = ok
+        and ('Saved candidate ' .. tostring(message)
+            .. '. Tell Codex to process the saved link.')
+        or ('Could not save link candidate: ' .. tostring(message));
+end
+
+local function render_link_capture_controls()
+    local capture = state.link_capture;
+    imgui.Spacing();
+    imgui.Separator();
+    imgui.Text('Connection capture');
+    imgui.TextColored(
+        { 0.65, 0.68, 0.70, 1.00 },
+        'Stand at each point; the numbered magenta preview is evidence only.');
+
+    if (imgui.Button('Start Link##ashitaminimap_link_start', { 96, 0 })) then
+        capture_link_point('start');
+    end
+    imgui.SameLine(0, 5);
+    if (imgui.Button('Checkpoint##ashitaminimap_link_checkpoint', { 96, 0 })) then
+        capture_link_point('checkpoint');
+    end
+    imgui.SameLine(0, 5);
+    if (imgui.Button('End Link##ashitaminimap_link_end', { 96, 0 })) then
+        capture_link_point('end');
+    end
+
+    imgui.Text('Direction');
+    if (imgui.Button(
+            (capture.one_way == true and 'Two-way' or '* Two-way')
+                .. '##ashitaminimap_link_two_way',
+            { 96, 0 })) then
+        capture.one_way = false;
+        capture.saved_id = nil;
+    end
+    imgui.SameLine(0, 5);
+    if (imgui.Button(
+            (capture.one_way == true and '* One-way 1 > N' or 'One-way 1 > N')
+                .. '##ashitaminimap_link_one_way',
+            { 132, 0 })) then
+        capture.one_way = true;
+        capture.saved_id = nil;
+    end
+    imgui.TextColored(
+        { 0.65, 0.68, 0.70, 1.00 },
+        capture.one_way == true
+            and 'One-way travel is recorded from point 1 toward the final point.'
+            or 'Two-way travel is recorded in both directions.');
+
+    imgui.Text('Connection type');
+    local action_kinds = {
+        { 'Walk', 'walk' },
+        { 'Door', 'door' },
+        { 'Geyser', 'geyser' },
+        { 'Elevator', 'elevator' },
+        { 'Portal', 'portal' },
+        { 'Other', 'other' },
+    };
+    for index, option in ipairs(action_kinds) do
+        if (index > 1) then
+            imgui.SameLine(0, 4);
+        end
+        local selected = capture.action_kind == option[2];
+        if (imgui.Button(
+                (selected and '* ' or '') .. option[1]
+                    .. '##ashitaminimap_link_kind_' .. option[2])) then
+            capture.action_kind = option[2];
+            capture.saved_id = nil;
+        end
+    end
+
+    imgui.Text('Mechanism name');
+    if (type(imgui.SetNextItemWidth) == 'function') then
+        imgui.SetNextItemWidth(-1);
+    end
+    if (type(imgui.InputText) == 'function') then
+        if (imgui.InputText(
+            '##ashitaminimap_link_action_name',
+            capture.action_name,
+            96)) then
+            capture.saved_id = nil;
+        end
+    end
+    imgui.Text('Forward instruction (1 > N)');
+    if (type(imgui.SetNextItemWidth) == 'function') then
+        imgui.SetNextItemWidth(-1);
+    end
+    if (type(imgui.InputText) == 'function') then
+        if (imgui.InputText(
+            '##ashitaminimap_link_action_note',
+            capture.action_note,
+            160)) then
+            capture.saved_id = nil;
+        end
+    end
+    if (capture.one_way ~= true) then
+        imgui.Text('Reverse instruction (N > 1; blank uses forward)');
+        if (type(imgui.SetNextItemWidth) == 'function') then
+            imgui.SetNextItemWidth(-1);
+        end
+        if (type(imgui.InputText) == 'function') then
+            if (imgui.InputText(
+                '##ashitaminimap_link_reverse_action_note',
+                capture.reverse_action_note,
+                160)) then
+                capture.saved_id = nil;
+            end
+        end
+    end
+    imgui.TextColored(
+        { 0.65, 0.68, 0.70, 1.00 },
+        'Example name: Door: Neptune\'s Spire. Instruction: Open the door.');
+
+    for index, point in ipairs(capture.points) do
+        imgui.Text(string.format(
+            '%d %s  X %.3f  Y %.3f  Z %.3f  node %s  component %s',
+            index,
+            point.role,
+            point.x,
+            point.y,
+            point.z,
+            tostring(point.node_index or 'none'),
+            tostring(point.component_id or '?')));
+    end
+    if (imgui.Button('Save Candidate##ashitaminimap_link_save', { 124, 0 })) then
+        save_link_capture();
+    end
+    imgui.SameLine(0, 5);
+    if (imgui.Button('Cancel##ashitaminimap_link_cancel', { 76, 0 })) then
+        reset_link_capture('Connection capture cleared; saved evidence was not changed.');
+    end
+    imgui.TextWrapped(tostring(capture.status or ''));
 end
 
 local function render_config_window()
@@ -7230,6 +7652,7 @@ local function render_config_window()
                         { 0.65, 0.68, 0.70, 1.00 },
                         'No navigation graph is authored for the active page.');
                 end
+                render_link_capture_controls();
             else
                 imgui.TextColored(
                     { 0.65, 0.68, 0.70, 1.00 },

@@ -17,7 +17,8 @@ The first prototype includes:
 - a compact Vana'diel environment card with time, elemental day, moon phase,
   moon illumination, and current weather;
 - an in-game configuration window with persistent settings;
-- a Developer tab with an optional full navigation-graph web;
+- a Developer tab with an optional full navigation-graph web and attended
+  connection capture;
 - unlock-and-drag positioning;
 - mouse-wheel zoom while the pointer is over the map;
 - a searchable Atlas for browsing other zones and setting attended waypoints;
@@ -133,6 +134,18 @@ best deterministic graph, inspect it in game, and report concrete defects for
 targeted correction instead of requiring a manual checkpoint for every
 possible seam.
 
+Developer mode also provides an attended **Connection capture** panel. Stand at
+the first side of a real graph gap and press **Start Link**, optionally press
+**Checkpoint** at landings or intermediate points, then press **End Link** on
+the other side. The minimap draws the candidate as a bright magenta line with
+numbered points; one-way candidates also show arrowheads from point 1 toward
+the final point. Choose two-way or one-way explicitly and classify the
+connection as Walk, Door, Geyser, Elevator, Portal, or Other. Manual mechanisms
+require a name and forward instruction, with an optional distinct reverse
+instruction. **Save Candidate** writes the exact live X/Y/Z, graph-node,
+component, page, direction, and action evidence to the private addon
+configuration directory. It does not change the production graph.
+
 Floor-change markers follow FFXI's live-coordinate convention: more-negative Z
 is physically higher and displays `UP`; more-positive Z is physically lower and
 displays `DN`.
@@ -214,7 +227,11 @@ requiring a complete AshitaGuide guide:
   plus an optional map id and Z coordinate;
 - `clear_minimap_waypoint` restores AshitaGuide routing; and
 - `minimap_waypoint_status` reports whether the addon accepted a routed,
-  marker-only, cleared, expired, or rejected request.
+  marker-only, cleared, expired, or rejected request;
+- `minimap_link_candidate_status` returns the latest connection captured with
+  the in-game Developer panel; and
+- `clear_minimap_link_candidate` removes that evidence only after its exact
+  candidate id has been processed.
 
 Remote destinations require `mapId`. When Z is omitted, AshitaMiniMap resolves
 it only when the authored path graph identifies one truthful floor; otherwise
@@ -229,6 +246,12 @@ and writes its display-only acknowledgment to `mcp_waypoint_status.json`.
 Neither file can contain commands, routes, input instructions, or destination
 paths. The addon never moves, targets, interacts, injects packets, or sends a
 game command.
+
+Saved link candidates are evidence, not runtime edits. A maintainer or Codex
+must still compare the ordered capture with navmesh and collision data, author
+the narrowest appropriate `--transition` or `--one-way-transition`, attach
+`--route-action` metadata for doors, geysers, portals, elevators, and other
+manual mechanisms, regenerate and validate the graph, and verify it in game.
 
 Build the stdio server before configuring an MCP client:
 

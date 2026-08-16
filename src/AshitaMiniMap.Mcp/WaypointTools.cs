@@ -87,4 +87,48 @@ public static class WaypointTools
             return JsonSerializer.Serialize(new { ok = false, error = ex.Message }, JsonOptions);
         }
     }
+
+    [McpServerTool]
+    [Description("Returns the latest attended connection candidate saved from AshitaMiniMap Developer mode, including ordered live X/Y/Z points, graph nodes and components, direction, connection type, mechanism name, and forward/reverse action instructions. It does not modify the production graph.")]
+    public static string minimap_link_candidate_status()
+    {
+        try
+        {
+            return WaypointStorage.ReadLinkCandidate();
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new { ok = false, error = ex.Message }, JsonOptions);
+        }
+    }
+
+    [McpServerTool]
+    [Description("Deletes the currently saved attended connection candidate after its exact candidate id has been processed. It does not modify the production graph or game state.")]
+    public static string clear_minimap_link_candidate(
+        [Description("Exact candidateId returned by minimap_link_candidate_status.")] string candidateId)
+    {
+        try
+        {
+            var cleared = WaypointStorage.ClearLinkCandidate(candidateId);
+            return JsonSerializer.Serialize(new
+            {
+                ok = true,
+                cleared,
+                candidateId,
+                safety = "Saved evidence file only; production graph and game state were not changed.",
+            }, JsonOptions);
+        }
+        catch (ArgumentException ex)
+        {
+            return JsonSerializer.Serialize(new { ok = false, error = ex.Message }, JsonOptions);
+        }
+        catch (Exception ex)
+        {
+            return JsonSerializer.Serialize(new
+            {
+                ok = false,
+                error = $"Saved link candidate could not be cleared: {ex.Message}",
+            }, JsonOptions);
+        }
+    }
 }

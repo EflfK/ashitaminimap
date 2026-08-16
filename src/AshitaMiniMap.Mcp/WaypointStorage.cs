@@ -9,6 +9,7 @@ public static class WaypointStorage
 {
     private const string RequestFileName = "mcp_waypoint_request.lua";
     private const string StatusFileName = "mcp_waypoint_status.json";
+    private const string LinkCandidateFileName = "link_candidate.json";
     private const string DefaultAshitaRoot = @"C:\Games\CatsEyeXI\catseyexi-client\Ashita";
     private static readonly UTF8Encoding Utf8NoBom = new(false);
     private static readonly object PublicationLock = new();
@@ -126,6 +127,68 @@ public static class WaypointStorage
         }
     }
 
+    public static string ReadLinkCandidate()
+    {
+        lock (PublicationLock)
+        {
+            var path = Path.Combine(ResolveConfigDirectory(), LinkCandidateFileName);
+            if (!File.Exists(path))
+            {
+                return JsonSerializer.Serialize(new
+                {
+                    ok = true,
+                    available = false,
+                    state = "unavailable",
+                    message = "No in-game link candidate has been saved.",
+                });
+            }
+
+            for (var attempt = 0; attempt < 3; attempt++)
+            {
+                try
+                {
+                    var text = File.ReadAllText(path, Utf8NoBom);
+                    using var document = JsonDocument.Parse(text);
+                    ValidateLinkCandidate(document.RootElement);
+                    return document.RootElement.GetRawText();
+                }
+                catch (JsonException) when (attempt < 2)
+                {
+                    Thread.Sleep(15);
+                }
+            }
+
+            throw new InvalidDataException("AshitaMiniMap link candidate is temporarily unreadable.");
+        }
+    }
+
+    public static bool ClearLinkCandidate(string candidateId)
+    {
+        if (string.IsNullOrWhiteSpace(candidateId)
+            || candidateId.Length > 96
+            || !Regex.IsMatch(candidateId, "^[A-Za-z0-9-]+$"))
+        {
+            throw new ArgumentException("candidateId must be the exact saved candidate identifier.");
+        }
+        lock (PublicationLock)
+        {
+            var path = Path.Combine(ResolveConfigDirectory(), LinkCandidateFileName);
+            if (!File.Exists(path))
+            {
+                return false;
+            }
+            using var document = JsonDocument.Parse(File.ReadAllText(path, Utf8NoBom));
+            ValidateLinkCandidate(document.RootElement);
+            var savedId = document.RootElement.GetProperty("candidateId").GetString();
+            if (!string.Equals(candidateId, savedId, StringComparison.Ordinal))
+            {
+                throw new ArgumentException("candidateId does not match the currently saved candidate.");
+            }
+            File.Delete(path);
+            return true;
+        }
+    }
+
     public static void RunSelfTest()
     {
         var previous = Environment.GetEnvironmentVariable("ASHITAMINIMAP_CONFIG_DIR");
@@ -169,6 +232,25 @@ public static class WaypointStorage
             ExpectArgumentError(() => PublishSet(-1, 0, 0, null, null));
             ExpectArgumentError(() => PublishSet(1, double.NaN, 0, null, null));
             ExpectArgumentError(() => PublishSet(1, 0, 0, 256, null));
+
+            var candidatePath = Path.Combine(directory, LinkCandidateFileName);
+            File.WriteAllText(
+                candidatePath,
+                """
+                {"ok":true,"version":1,"source":"ashitaminimap_developer","candidateId":"245-0-123","state":"pending_validation","zoneId":245,"mapId":0,"direction":"one_way","actionKind":"door","actionName":"Door: Neptune's Spire","actionNote":"Open the door.","reverseActionNote":"","points":[{"role":"start","x":1.0,"y":2.0,"z":3.0},{"role":"end","x":4.0,"y":5.0,"z":6.0}]}
+                """,
+                Utf8NoBom);
+            var candidate = ReadLinkCandidate();
+            if (!candidate.Contains("\"candidateId\":\"245-0-123\"", StringComparison.Ordinal)
+                || !candidate.Contains("\"actionKind\":\"door\"", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Link candidate read self-test failed.");
+            }
+            if (!ClearLinkCandidate("245-0-123") || File.Exists(candidatePath))
+            {
+                throw new InvalidOperationException("Link candidate clear self-test failed.");
+            }
+            ExpectArgumentError(() => ClearLinkCandidate("wrong id!"));
         }
         finally
         {
@@ -218,6 +300,84 @@ public static class WaypointStorage
             ashitaRoot = DefaultAshitaRoot;
         }
         return Path.Combine(Path.GetFullPath(ashitaRoot), "config", "addons", "ashitaminimap");
+    }
+
+    private static void ValidateLinkCandidate(JsonElement root)
+    {
+        if (root.ValueKind != JsonValueKind.Object
+            || !root.TryGetProperty("version", out var version)
+            || version.GetInt32() != 1
+            || !root.TryGetProperty("candidateId", out var candidateId)
+            || string.IsNullOrWhiteSpace(candidateId.GetString())
+            || !root.TryGetProperty("zoneId", out var zoneId)
+            || zoneId.GetInt32() is < 0 or > 999
+            || !root.TryGetProperty("mapId", out var mapId)
+            || mapId.GetInt32() is < 0 or > 255
+            || !root.TryGetProperty("direction", out var direction)
+            || direction.GetString() is not ("bidirectional" or "one_way")
+            || !root.TryGetProperty("actionKind", out var actionKind)
+            || actionKind.GetString() is not (
+                "walk" or "door" or "geyser" or "elevator" or "portal" or "other")
+            || !root.TryGetProperty("points", out var points)
+            || points.ValueKind != JsonValueKind.Array
+            || points.GetArrayLength() < 2)
+        {
+            throw new InvalidDataException("Saved link candidate failed schema validation.");
+        }
+
+        var kind = actionKind.GetString();
+        if (kind != "walk"
+            && (!TryBoundedText(root, "actionName", 96, requireValue: true)
+                || !TryBoundedText(root, "actionNote", 160, requireValue: true)))
+        {
+            throw new InvalidDataException(
+                "A manual route action requires a mechanism name and forward instruction.");
+        }
+        if (!TryBoundedText(root, "reverseActionNote", 160, requireValue: false))
+        {
+            throw new InvalidDataException("Reverse route-action instruction is too long.");
+        }
+
+        var index = 0;
+        foreach (var point in points.EnumerateArray())
+        {
+            var expectedRole = index == 0
+                ? "start"
+                : index == points.GetArrayLength() - 1
+                    ? "end"
+                    : "checkpoint";
+            if (!point.TryGetProperty("role", out var role)
+                || role.GetString() != expectedRole
+                || !TryFiniteCoordinate(point, "x")
+                || !TryFiniteCoordinate(point, "y")
+                || !TryFiniteCoordinate(point, "z"))
+            {
+                throw new InvalidDataException("Saved link candidate contains an invalid ordered point.");
+            }
+            index++;
+        }
+    }
+
+    private static bool TryFiniteCoordinate(JsonElement point, string propertyName) =>
+        point.TryGetProperty(propertyName, out var property)
+        && property.TryGetDouble(out var value)
+        && double.IsFinite(value)
+        && Math.Abs(value) <= 100000;
+
+    private static bool TryBoundedText(
+        JsonElement root,
+        string propertyName,
+        int maximumLength,
+        bool requireValue)
+    {
+        if (!root.TryGetProperty(propertyName, out var property)
+            || property.ValueKind != JsonValueKind.String)
+        {
+            return !requireValue;
+        }
+        var value = property.GetString() ?? string.Empty;
+        return value.Length <= maximumLength
+            && (!requireValue || !string.IsNullOrWhiteSpace(value));
     }
 
     private static void AtomicWrite(string path, string contents)

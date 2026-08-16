@@ -173,6 +173,17 @@ audit, deterministic-regeneration, route, sync, reload, and in-game checks
 required elsewhere in this file, then report exactly how the components were
 connected.
 
+The in-game Developer-mode Connection capture is the preferred equivalent when
+available. Read its latest saved record through
+`minimap_link_candidate_status`; its ordered points replace coordinate
+screenshots as attended traversal evidence. Preserve the captured direction,
+mechanism type, name, and forward/reverse instructions when authoring
+`--transition`, `--one-way-transition`, and `--route-action` entries.
+Treat the numbered magenta preview as a candidate only. Never promote it
+directly into the runtime graph without the normal navmesh/collision review,
+regeneration, validation, deployment, and in-game route verification. Clear
+the saved candidate by exact id only after it has been successfully processed.
+
 Path elevation is authoritative for floor-aware snapping. A guide destination
 without Z may route only when the graph can resolve it to one reachable floor;
 otherwise it remains marker-only as floor-ambiguous. Route projection must
