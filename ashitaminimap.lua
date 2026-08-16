@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.32.0';
+addon.version   = '1.32.1';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -176,6 +176,8 @@ local state = {
         action_note = { '' },
         reverse_action_note = { '' },
         status = 'Press Start Link while standing at the first side of a gap.',
+        status_kind = 'info',
+        show_details = false,
         saved_id = nil,
     },
     guide_path = {
@@ -7067,8 +7069,10 @@ local function reset_link_capture(message)
     capture.page_id = nil;
     capture.completed = false;
     capture.saved_id = nil;
+    capture.show_details = false;
     capture.status = message
         or 'Press Start Link while standing at the first side of a gap.';
+    capture.status_kind = 'info';
 end
 
 local function capture_link_point(role)
@@ -7081,6 +7085,7 @@ local function capture_link_point(role)
         or nil;
     if (player == nil or map == nil) then
         capture.status = 'Live player or map position is unavailable.';
+        capture.status_kind = 'error';
         return false;
     end
     if (role == 'start') then
@@ -7089,13 +7094,16 @@ local function capture_link_point(role)
         capture.page_id = tonumber(map.page_id) or 0;
     elseif (#capture.points == 0) then
         capture.status = 'Capture Start Link before adding another point.';
+        capture.status_kind = 'error';
         return false;
     elseif (capture.completed == true) then
         capture.status = 'This link is complete. Start a new link or save it.';
+        capture.status_kind = 'error';
         return false;
     elseif (tonumber(capture.zone_id) ~= tonumber(player.zone_id)
             or tonumber(capture.page_id) ~= tonumber(map.page_id)) then
         capture.status = 'All link points must remain in the same zone and map page.';
+        capture.status_kind = 'error';
         return false;
     end
 
@@ -7114,6 +7122,7 @@ local function capture_link_point(role)
         local dz = player.z - previous.z;
         if ((dx * dx) + (dy * dy) + (dz * dz) < 0.0625) then
             capture.status = 'Move at least 0.25 yalms before capturing another point.';
+            capture.status_kind = 'error';
             return false;
         end
     end
@@ -7140,13 +7149,11 @@ local function capture_link_point(role)
     };
     capture.completed = role == 'end';
     capture.saved_id = nil;
+    capture.status_kind = 'success';
     capture.status = string.format(
-        '%s point %d captured at X %.3f, Y %.3f, Z %.3f (node %s, component %s).',
+        '%s captured as point %d (node %s, component %s).',
         role:sub(1, 1):upper() .. role:sub(2),
         #capture.points,
-        player.x,
-        player.y,
-        player.z,
         tostring(node_index or 'none'),
         tostring(component_ids[node_index] or '?'));
     return true;
@@ -7156,6 +7163,7 @@ local function save_link_capture()
     local capture = state.link_capture;
     if (capture.completed ~= true or #capture.points < 2) then
         capture.status = 'Capture Start Link and End Link before saving.';
+        capture.status_kind = 'error';
         return;
     end
     local action_note = type(capture.action_note) == 'table'
@@ -7167,6 +7175,7 @@ local function save_link_capture()
     if (capture.action_kind ~= 'walk'
             and (action_name:match('^%s*$') or action_note:match('^%s*$'))) then
         capture.status = 'Add the mechanism name and forward instruction before saving.';
+        capture.status_kind = 'error';
         return;
     end
     local ok, message = state.write_link_candidate(capture);
@@ -7174,34 +7183,176 @@ local function save_link_capture()
         and ('Saved candidate ' .. tostring(message)
             .. '. Tell Codex to process the saved link.')
         or ('Could not save link candidate: ' .. tostring(message));
+    capture.status_kind = ok and 'success' or 'error';
 end
 
 local function render_link_capture_controls()
     local capture = state.link_capture;
+    local point_count = #capture.points;
+    local phase = capture.saved_id ~= nil and 'saved'
+        or capture.completed == true and 'review'
+        or point_count > 0 and 'cross'
+        or 'start';
+    local action_options = {
+        { 'Walking seam', 'walk' },
+        { 'Door or gate', 'door' },
+        { 'Geyser', 'geyser' },
+        { 'Elevator', 'elevator' },
+        { 'Portal or displacement', 'portal' },
+        { 'Other manual action', 'other' },
+    };
+    local action_label = 'Walking seam';
+    for _, option in ipairs(action_options) do
+        if capture.action_kind == option[2] then
+            action_label = option[1];
+        end
+    end
+    local function stage(label, state_value)
+        local stage_color = state_value == 'done'
+            and { 0.36, 0.88, 0.62, 1.00 }
+            or state_value == 'active'
+                and { 1.00, 0.72, 0.18, 1.00 }
+                or { 0.48, 0.51, 0.55, 1.00 };
+        imgui.TextColored(stage_color, label);
+    end
+    local function point_summary()
+        local first = capture.points[1];
+        local last = capture.points[#capture.points];
+        if (first == nil or last == nil) then
+            return '';
+        end
+        local dx = last.x - first.x;
+        local dy = last.y - first.y;
+        local dz = last.z - first.z;
+        local distance = math.sqrt((dx * dx) + (dy * dy) + (dz * dz));
+        if (point_count == 1) then
+            return string.format(
+                'Start: X %.1f  Y %.1f  Z %.1f  |  component %s',
+                first.x,
+                first.y,
+                first.z,
+                tostring(first.component_id or '?'));
+        end
+        return string.format(
+            '%d point%s  |  %.1f yalms  |  component %s > %s',
+            point_count,
+            point_count == 1 and '' or 's',
+            distance,
+            tostring(first.component_id or '?'),
+            tostring(last.component_id or '?'));
+    end
+    local function status_line()
+        if (capture.status == nil or capture.status == '') then
+            return;
+        end
+        local status_color = capture.status_kind == 'error'
+            and { 1.00, 0.40, 0.36, 1.00 }
+            or capture.status_kind == 'success'
+                and { 0.36, 0.88, 0.62, 1.00 }
+                or { 0.65, 0.68, 0.70, 1.00 };
+        imgui.TextColored(status_color, tostring(capture.status));
+    end
+
     imgui.Spacing();
     imgui.Separator();
-    imgui.Text('Connection capture');
+    imgui.Text('Capture a missing connection');
     imgui.TextColored(
         { 0.65, 0.68, 0.70, 1.00 },
-        'Stand at each point; the numbered magenta preview is evidence only.');
+        'Record the real crossing; saving never edits the graph directly.');
 
-    if (imgui.Button('Start Link##ashitaminimap_link_start', { 96, 0 })) then
-        capture_link_point('start');
-    end
+    stage('1  START', phase == 'start' and 'active' or 'done');
     imgui.SameLine(0, 5);
-    if (imgui.Button('Checkpoint##ashitaminimap_link_checkpoint', { 96, 0 })) then
-        capture_link_point('checkpoint');
-    end
+    stage('2  CROSS', phase == 'cross'
+        and 'active'
+        or phase == 'start' and 'future' or 'done');
     imgui.SameLine(0, 5);
-    if (imgui.Button('End Link##ashitaminimap_link_end', { 96, 0 })) then
-        capture_link_point('end');
+    stage('3  SAVE', phase == 'review'
+        and 'active'
+        or phase == 'saved' and 'done' or 'future');
+
+    if (phase == 'start') then
+        imgui.Spacing();
+        imgui.Text('Stand on the connected side of the gap.');
+        if (imgui.Button(
+                '1  Capture start here##ashitaminimap_link_start',
+                { 190, 0 })) then
+            capture_link_point('start');
+        end
+        if (capture.status_kind == 'error') then
+            status_line();
+        end
+        return;
     end
 
-    imgui.Text('Direction');
+    if (phase == 'cross') then
+        imgui.Spacing();
+        imgui.Text(point_summary());
+        imgui.TextColored(
+            { 0.65, 0.68, 0.70, 1.00 },
+            'Walk the real route. Add a checkpoint only at a useful landing.');
+        if (imgui.Button(
+                '2  Capture end here##ashitaminimap_link_end',
+                { 185, 0 })) then
+            capture_link_point('end');
+        end
+        imgui.SameLine(0, 5);
+        if (imgui.Button(
+                '+ Checkpoint##ashitaminimap_link_checkpoint',
+                { 112, 0 })) then
+            capture_link_point('checkpoint');
+        end
+        imgui.SameLine(0, 5);
+        if (imgui.Button('Discard##ashitaminimap_link_cancel', { 70, 0 })) then
+            reset_link_capture('Connection capture discarded.');
+        end
+        if (capture.status_kind == 'error') then
+            status_line();
+        end
+        return;
+    end
+
+    if (phase == 'saved') then
+        imgui.Spacing();
+        imgui.TextColored(
+            { 0.36, 0.88, 0.62, 1.00 },
+            'Saved for Codex: ' .. tostring(capture.saved_id));
+        imgui.Text(point_summary());
+        if (imgui.Button(
+                'Start another connection##ashitaminimap_link_another',
+                { 190, 0 })) then
+            reset_link_capture();
+        end
+        return;
+    end
+
+    imgui.Spacing();
+    imgui.Text(point_summary());
+    if (imgui.Button(
+            capture.show_details == true
+                and 'Hide points##ashitaminimap_link_details'
+                or 'Show points##ashitaminimap_link_details',
+            { 100, 0 })) then
+        capture.show_details = not capture.show_details;
+    end
+    if (capture.show_details == true) then
+        for index, point in ipairs(capture.points) do
+            imgui.Text(string.format(
+                '%d  %-10s X %.3f  Y %.3f  Z %.3f  node %s  comp %s',
+                index,
+                point.role,
+                point.x,
+                point.y,
+                point.z,
+                tostring(point.node_index or 'none'),
+                tostring(point.component_id or '?')));
+        end
+    end
+
+    imgui.Text('Travel direction');
     if (imgui.Button(
             (capture.one_way == true and 'Two-way' or '* Two-way')
                 .. '##ashitaminimap_link_two_way',
-            { 96, 0 })) then
+            { 105, 0 })) then
         capture.one_way = false;
         capture.saved_id = nil;
     end
@@ -7209,99 +7360,83 @@ local function render_link_capture_controls()
     if (imgui.Button(
             (capture.one_way == true and '* One-way 1 > N' or 'One-way 1 > N')
                 .. '##ashitaminimap_link_one_way',
-            { 132, 0 })) then
+            { 140, 0 })) then
         capture.one_way = true;
         capture.saved_id = nil;
     end
-    imgui.TextColored(
-        { 0.65, 0.68, 0.70, 1.00 },
-        capture.one_way == true
-            and 'One-way travel is recorded from point 1 toward the final point.'
-            or 'Two-way travel is recorded in both directions.');
 
-    imgui.Text('Connection type');
-    local action_kinds = {
-        { 'Walk', 'walk' },
-        { 'Door', 'door' },
-        { 'Geyser', 'geyser' },
-        { 'Elevator', 'elevator' },
-        { 'Portal', 'portal' },
-        { 'Other', 'other' },
-    };
-    for index, option in ipairs(action_kinds) do
-        if (index > 1) then
-            imgui.SameLine(0, 4);
-        end
-        local selected = capture.action_kind == option[2];
-        if (imgui.Button(
-                (selected and '* ' or '') .. option[1]
-                    .. '##ashitaminimap_link_kind_' .. option[2])) then
-            capture.action_kind = option[2];
-            capture.saved_id = nil;
-        end
-    end
-
-    imgui.Text('Mechanism name');
+    imgui.Text('What happens at this connection?');
     if (type(imgui.SetNextItemWidth) == 'function') then
         imgui.SetNextItemWidth(-1);
     end
-    if (type(imgui.InputText) == 'function') then
-        if (imgui.InputText(
-            '##ashitaminimap_link_action_name',
-            capture.action_name,
-            96)) then
-            capture.saved_id = nil;
+    if (type(imgui.BeginCombo) == 'function'
+            and imgui.BeginCombo(
+                '##ashitaminimap_link_action_kind',
+                action_label)) then
+        for _, option in ipairs(action_options) do
+            if (imgui.Selectable(option[1], capture.action_kind == option[2])) then
+                capture.action_kind = option[2];
+                capture.saved_id = nil;
+            end
         end
+        imgui.EndCombo();
     end
-    imgui.Text('Forward instruction (1 > N)');
-    if (type(imgui.SetNextItemWidth) == 'function') then
-        imgui.SetNextItemWidth(-1);
-    end
-    if (type(imgui.InputText) == 'function') then
-        if (imgui.InputText(
-            '##ashitaminimap_link_action_note',
-            capture.action_note,
-            160)) then
-            capture.saved_id = nil;
-        end
-    end
-    if (capture.one_way ~= true) then
-        imgui.Text('Reverse instruction (N > 1; blank uses forward)');
+
+    if (capture.action_kind ~= 'walk') then
+        imgui.Text('Mechanism name');
         if (type(imgui.SetNextItemWidth) == 'function') then
             imgui.SetNextItemWidth(-1);
         end
-        if (type(imgui.InputText) == 'function') then
-            if (imgui.InputText(
-                '##ashitaminimap_link_reverse_action_note',
-                capture.reverse_action_note,
-                160)) then
+        if (type(imgui.InputText) == 'function'
+                and imgui.InputText(
+                    '##ashitaminimap_link_action_name',
+                    capture.action_name,
+                    96)) then
+            capture.saved_id = nil;
+        end
+        imgui.Text('Instruction from point 1');
+        if (type(imgui.SetNextItemWidth) == 'function') then
+            imgui.SetNextItemWidth(-1);
+        end
+        if (type(imgui.InputText) == 'function'
+                and imgui.InputText(
+                    '##ashitaminimap_link_action_note',
+                    capture.action_note,
+                    160)) then
+            capture.saved_id = nil;
+        end
+        if (capture.one_way ~= true) then
+            imgui.Text('Instruction from final point (blank uses the first)');
+            if (type(imgui.SetNextItemWidth) == 'function') then
+                imgui.SetNextItemWidth(-1);
+            end
+            if (type(imgui.InputText) == 'function'
+                    and imgui.InputText(
+                        '##ashitaminimap_link_reverse_action_note',
+                        capture.reverse_action_note,
+                        160)) then
                 capture.saved_id = nil;
             end
         end
     end
-    imgui.TextColored(
-        { 0.65, 0.68, 0.70, 1.00 },
-        'Example name: Door: Neptune\'s Spire. Instruction: Open the door.');
 
-    for index, point in ipairs(capture.points) do
-        imgui.Text(string.format(
-            '%d %s  X %.3f  Y %.3f  Z %.3f  node %s  component %s',
-            index,
-            point.role,
-            point.x,
-            point.y,
-            point.z,
-            tostring(point.node_index or 'none'),
-            tostring(point.component_id or '?')));
-    end
-    if (imgui.Button('Save Candidate##ashitaminimap_link_save', { 124, 0 })) then
+    imgui.Spacing();
+    if (imgui.Button(
+            '3  Save evidence for Codex##ashitaminimap_link_save',
+            { 205, 0 })) then
         save_link_capture();
     end
     imgui.SameLine(0, 5);
-    if (imgui.Button('Cancel##ashitaminimap_link_cancel', { 76, 0 })) then
-        reset_link_capture('Connection capture cleared; saved evidence was not changed.');
+    if (imgui.Button('Recapture##ashitaminimap_link_recapture', { 90, 0 })) then
+        reset_link_capture('Ready to recapture the connection.');
     end
-    imgui.TextWrapped(tostring(capture.status or ''));
+    if (capture.status_kind == 'error') then
+        status_line();
+    else
+        imgui.TextColored(
+            { 0.65, 0.68, 0.70, 1.00 },
+            'Saving records evidence only. Tell Codex to process it.');
+    end
 end
 
 local function render_config_window()
@@ -7311,7 +7446,9 @@ local function render_config_window()
 
     local first_use = rawget(_G, 'ImGuiCond_FirstUseEver') or 0;
     imgui.SetNextWindowSize({ 410, 0 }, first_use);
-    local flags = bit.lshift(1, 5); -- NoCollapse
+    local flags = bit.bor(
+        bit.lshift(1, 5),  -- NoCollapse
+        bit.lshift(1, 6)); -- AlwaysAutoResize
     if (imgui.Begin('AshitaMinimap Config###AshitaMinimapConfig', state.config_visible, flags)) then
         local tabs_supported = type(imgui.BeginTabBar) == 'function'
             and type(imgui.BeginTabItem) == 'function'

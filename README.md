@@ -135,9 +135,13 @@ targeted correction instead of requiring a manual checkpoint for every
 possible seam.
 
 Developer mode also provides an attended **Connection capture** panel. Stand at
-the first side of a real graph gap and press **Start Link**, optionally press
-**Checkpoint** at landings or intermediate points, then press **End Link** on
-the other side. The minimap draws the candidate as a bright magenta line with
+the first side of a real graph gap and press **Capture start here**, optionally
+press **Checkpoint** at landings or intermediate points, then press
+**Capture end here** on the other side. The compact panel reveals only the
+controls for its current
+Start, Cross, or Save stage; connection metadata stays hidden until the
+physical capture is complete, and ordinary walking seams never show irrelevant
+mechanism fields. The minimap draws the candidate as a bright magenta line with
 numbered points; one-way candidates also show arrowheads from point 1 toward
 the final point. Choose two-way or one-way explicitly and classify the
 connection as Walk, Door, Geyser, Elevator, Portal, or Other. Manual mechanisms

@@ -251,6 +251,32 @@ public static class WaypointStorage
                 throw new InvalidOperationException("Link candidate clear self-test failed.");
             }
             ExpectArgumentError(() => ClearLinkCandidate("wrong id!"));
+
+            File.WriteAllText(
+                candidatePath,
+                """
+                {"ok":true,"version":1,"source":"ashitaminimap_developer","candidateId":"245-0-456","state":"pending_validation","zoneId":245,"mapId":0,"direction":"bidirectional","actionKind":"walk","actionName":"","actionNote":"","reverseActionNote":"","points":[{"role":"start","x":1.0,"y":2.0,"z":3.0},{"role":"checkpoint","x":2.0,"y":3.0,"z":3.5},{"role":"end","x":4.0,"y":5.0,"z":6.0}]}
+                """,
+                Utf8NoBom);
+            candidate = ReadLinkCandidate();
+            if (!candidate.Contains("\"direction\":\"bidirectional\"", StringComparison.Ordinal)
+                || !candidate.Contains("\"role\":\"checkpoint\"", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("Checkpoint candidate self-test failed.");
+            }
+            ExpectArgumentError(() => ClearLinkCandidate("245-0-stale"));
+            if (!ClearLinkCandidate("245-0-456"))
+            {
+                throw new InvalidOperationException("Checkpoint candidate clear self-test failed.");
+            }
+
+            File.WriteAllText(
+                candidatePath,
+                """
+                {"ok":true,"version":1,"source":"ashitaminimap_developer","candidateId":"245-0-789","state":"pending_validation","zoneId":245,"mapId":0,"direction":"one_way","actionKind":"geyser","actionName":"","actionNote":"","reverseActionNote":"","points":[{"role":"start","x":1.0,"y":2.0,"z":3.0},{"role":"end","x":4.0,"y":5.0,"z":6.0}]}
+                """,
+                Utf8NoBom);
+            ExpectInvalidData(() => ReadLinkCandidate());
         }
         finally
         {
@@ -419,6 +445,19 @@ public static class WaypointStorage
             return;
         }
         throw new InvalidOperationException("Expected input validation to reject the self-test value.");
+    }
+
+    private static void ExpectInvalidData(Action action)
+    {
+        try
+        {
+            action();
+        }
+        catch (InvalidDataException)
+        {
+            return;
+        }
+        throw new InvalidOperationException("Expected schema validation to reject the self-test value.");
     }
 }
 
