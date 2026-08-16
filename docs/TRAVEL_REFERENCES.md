@@ -69,6 +69,7 @@ structure maps use `z` to dim references that belong to another authored floor.
 | 244 | Upper Jeuno | 3 | 0 |
 | 245 | Lower Jeuno | 2 | 0 |
 | 246 | Port Jeuno | 2 | 0 |
+| 252 | Norg | 2 | 1 |
 
 Davoi is included when its authored map is installed and contributes one
 Survival Guide reference from the same pinned source.

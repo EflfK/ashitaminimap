@@ -156,6 +156,7 @@ return {
     [246] = 'assets/paths/246.lua',
     [249] = 'assets/paths/249.lua',
     [251] = 'assets/paths/251.lua',
+    [252] = 'assets/paths/252.lua',
     [258] = 'assets/paths/258.lua',
     [260] = 'assets/paths/260.lua',
     [261] = 'assets/paths/261.lua',

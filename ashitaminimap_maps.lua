@@ -6803,6 +6803,17 @@ return {
         treasure_spawns = {},
         nm_spawn_ranges = {},
     },
+    [252] = {
+        name = 'Norg',
+        stock_calibration = true,
+        travel_references = travel_reference_set({
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 41, x = -26.910, y = -47.164, z = 0.296 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 104, x = -65.000, y = 54.000, z = -5.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 81, x = -13.000, y = -34.000, z = 1.000 },
+        }),
+        treasure_spawns = {},
+        nm_spawn_ranges = {},
+    },
     [258] = {
         name = 'Rala Waterways',
         stock_calibration = true,
