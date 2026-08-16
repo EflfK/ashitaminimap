@@ -44,6 +44,7 @@ structure maps use `z` to dim references that belong to another authored floor.
 | Zone | Map | Home Points | Survival Guides |
 | ---: | --- | ---: | ---: |
 | 50 | Aht Urhgan Whitegate | 4 | 1 |
+| 51 | Wajaom Woodlands | 0 | 1 |
 | 107 | South Gustaberg | 0 | 0 |
 | 115 | West Sarutabaruta | 0 | 1 |
 | 116 | East Sarutabaruta | 0 | 0 |

@@ -43,7 +43,10 @@ For a destination in another zone, the router:
 6. adds Warp only when AshitaCore reports the respawn zone and that zone has
    exactly one authored Home Point candidate, avoiding an invented landing
    position; and
-7. runs Dijkstra across the combined walking and travel graph.
+7. applies a fixed fast-travel penalty so short routes through adjacent physical
+   zone lines outrank unrelated Home Point and Survival Guide transfer chains;
+   and
+8. runs Dijkstra across the combined walking and travel graph.
 
 Only the current-zone walking leg is drawn. After zoning, the route is rebuilt
 from the player's actual arrival position. When the destination cannot be

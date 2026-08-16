@@ -783,6 +783,13 @@ return {
             { name = "Ix'aern (DRG)", level = '82-87', z = 5.000, floor = 'UNASSIGNED', spawn_type = 'Lottery', placeholder_count = 12, points = { { x = -520.000, y = -520.000 }, { x = -520.000, y = -359.000 }, { x = -319.000, y = -359.000 }, { x = -319.000, y = -520.000 } } },
         },
     },
+    [48] = {
+        name = 'Al Zahbi',
+        stock_calibration = true,
+        travel_references = travel_reference_set({}),
+        treasure_spawns = {},
+        nm_spawn_ranges = {},
+    },
     [50] = {
         name = 'Aht Urhgan Whitegate',
         stock_calibration = true,
@@ -791,7 +798,7 @@ return {
             { kind = 'home_point', name = 'Home Point #2', unlock_index = 106, x = 130.000, y = -16.000, z = 0.001 },
             { kind = 'home_point', name = 'Home Point #3', unlock_index = 107, x = -108.000, y = 108.000, z = -6.000 },
             { kind = 'home_point', name = 'Home Point #4', unlock_index = 108, x = -99.000, y = -68.000, z = 0.001 },
-            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 5, x = 133.130, y = 16.170, z = 0.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 84, x = 133.130, y = 16.170, z = 0.000 },
         }),
         treasure_spawns = {},
         nm_spawn_ranges = {},
@@ -800,7 +807,7 @@ return {
         name = 'Wajaom Woodlands',
         stock_calibration = true,
         travel_references = travel_reference_set({
-            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 28, x = -839.000, y = 98.000, z = -20.000 },
+            { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 60, x = -839.000, y = 98.000, z = -20.000 },
         }),
         treasure_spawns = {},
         nm_spawn_ranges = {

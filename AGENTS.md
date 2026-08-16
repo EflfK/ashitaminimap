@@ -150,6 +150,11 @@ marker-only result. A valid route may need to leave the zone and re-enter
 through a different threshold. Keep that responsibility in AshitaMiniMap;
 never require AshitaGuide to duplicate the transition sequence.
 
+World-route costs must include a meaningful fixed penalty for each Home Point,
+Survival Guide, or Warp transfer. A short route through adjacent physical zone
+lines must outrank a geographically unrelated chain of unlocked fast-travel
+menus; do not make AshitaGuide warn users away from a bad route choice.
+
 ## Missing-connection screenshot shorthand
 
 When the user attaches coordinate screenshots and says `fix connection` (or

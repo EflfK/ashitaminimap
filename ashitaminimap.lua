@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.32.4';
+addon.version   = '1.32.5';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -26,6 +26,11 @@ local TRANSITION_CLOSE_ZOOM_RATIO = 3.00;
 local MARKER_REFERENCE_ZOOM = 4.41;
 local ENTITY_FLOOR_TOLERANCE = 8.0;
 local PATH_FLOOR_TOLERANCE = 4.0;
+-- Fast travel is useful for long world routes, but each transfer also costs
+-- menu navigation, loading, and a discontinuous region change. Without a
+-- meaningful fixed penalty, chains of Home Point and Survival Guide transfers
+-- incorrectly outrank short routes through adjacent physical zone lines.
+local WORLD_FAST_TRAVEL_COST = 3000;
 local MAP_CORNER_RADIUS = 7.0;
 local HUD_INSET = 6;
 local HUD_CONTROL_GAP = 4;
@@ -2206,7 +2211,7 @@ state.ensure_world_path = function (player, destination)
                             relax(current, current_cost, {
                                 to = right_index,
                                 kind = current_node.kind,
-                                cost = 55,
+                                cost = WORLD_FAST_TRAVEL_COST,
                                 destination_zone =
                                     nodes[right_index].zone_id,
                                 destination_name = marker.name,
@@ -2219,7 +2224,7 @@ state.ensure_world_path = function (player, destination)
                 relax(current, current_cost, {
                     to = respawn_target,
                     kind = 'warp',
-                    cost = 70,
+                    cost = WORLD_FAST_TRAVEL_COST,
                     destination_zone = respawn_zone,
                 });
             end
