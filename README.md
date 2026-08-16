@@ -265,11 +265,14 @@ truthful handoff. If the selected zone or destination is not covered by a
 complete graph, the waypoint remains visible without inventing a route. Click
 **Clear waypoint** in Atlas to restore AshitaGuide routing.
 
-Atlas pages use their imported or authored stored calibration. They never use
-the current zone's live map center, and dynamic entities are not projected onto
-remote zones. Overlapping floors must resolve unambiguously on the selected
-page; otherwise the waypoint is retained as marker-only. Placement is disabled
-when an exact stored calibration is not available.
+Atlas pages use their imported, authored, or previously observed exact stock
+calibration. While a stock page is active, the addon remembers its exact live
+scale and origin so that page can later accept remote Atlas waypoints. Dynamic
+entities are not projected onto remote zones. Overlapping floors must resolve
+unambiguously on the selected page; otherwise the waypoint is retained as
+marker-only. Atlas prefers an exactly calibrated page over an uncalibrated
+import default when opening a zone. Placement is disabled until an exact
+calibration has been authored or observed for the selected page.
 
 Navigation graphs are deterministic build artifacts generated directly from
 verified Detour topology plus live-verified transition and blocked-link

@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.31.9';
+addon.version   = '1.31.10';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -84,6 +84,7 @@ local DEFAULTS = {
     marker_size = 1.00,
     map_pages = {},
     origin_adjustments = {},
+    remembered_stock_calibrations = {},
     colors = {
         border = { 0.67, 0.47, 0.22, 0.90 },
         grid = { 0.48, 0.60, 0.61, 0.25 },
@@ -358,6 +359,75 @@ local function origin_adjustments_text(value)
     return '{ ' .. table.concat(zone_parts, ', ') .. ' }';
 end
 
+local function stock_calibrations_text(value)
+    local zones = {};
+    if (type(value) == 'table') then
+        for zone_key, pages in pairs(value) do
+            local zone_id = tonumber(zone_key);
+            if (zone_id ~= nil and type(pages) == 'table') then
+                local page_entries = {};
+                for page_key, calibration in pairs(pages) do
+                    local page_id = tonumber(page_key);
+                    local scale_raw = type(calibration) == 'table'
+                        and tonumber(calibration.scale_raw)
+                        or nil;
+                    local origin_x = type(calibration) == 'table'
+                        and tonumber(calibration.origin_x)
+                        or nil;
+                    local origin_y = type(calibration) == 'table'
+                        and tonumber(calibration.origin_y)
+                        or nil;
+                    if (page_id ~= nil
+                            and scale_raw ~= nil
+                            and scale_raw > 0
+                            and scale_raw <= 255
+                            and origin_x ~= nil
+                            and origin_x == origin_x
+                            and math.abs(origin_x) < 1000000
+                            and origin_y ~= nil
+                            and origin_y == origin_y
+                            and math.abs(origin_y) < 1000000) then
+                        page_entries[#page_entries + 1] = {
+                            page_id = math.floor(page_id),
+                            scale_raw = math.floor(scale_raw + 0.5),
+                            origin_x = origin_x,
+                            origin_y = origin_y,
+                        };
+                    end
+                end
+                table.sort(page_entries, function (left, right)
+                    return left.page_id < right.page_id;
+                end);
+                if (#page_entries > 0) then
+                    zones[#zones + 1] = {
+                        zone_id = math.floor(zone_id),
+                        pages = page_entries,
+                    };
+                end
+            end
+        end
+    end
+    table.sort(zones, function (left, right) return left.zone_id < right.zone_id; end);
+
+    local zone_parts = {};
+    for _, zone in ipairs(zones) do
+        local page_parts = {};
+        for _, page in ipairs(zone.pages) do
+            page_parts[#page_parts + 1] = string.format(
+                '[%d] = { scale_raw = %d, origin_x = %.6f, origin_y = %.6f }',
+                page.page_id,
+                page.scale_raw,
+                page.origin_x,
+                page.origin_y);
+        end
+        zone_parts[#zone_parts + 1] = string.format(
+            '[%d] = { %s }',
+            zone.zone_id,
+            table.concat(page_parts, ', '));
+    end
+    return '{ ' .. table.concat(zone_parts, ', ') .. ' }';
+end
+
 local function config_text()
     local settings = state.settings;
     local colors = settings.colors or DEFAULTS.colors;
@@ -424,6 +494,11 @@ local function config_text()
         string.format(
             '    origin_adjustments = %s,',
             origin_adjustments_text(settings.origin_adjustments)),
+        '',
+        '    -- Exact stock calibration learned while each page is active.',
+        string.format(
+            '    remembered_stock_calibrations = %s,',
+            stock_calibrations_text(settings.remembered_stock_calibrations)),
         '',
         '    colors = {',
         string.format('        border = %s,', color_text(colors.border, DEFAULTS.colors.border)),
@@ -610,6 +685,10 @@ local function load_configuration()
         or {};
     state.settings.origin_adjustments = type(state.settings.origin_adjustments) == 'table'
         and state.settings.origin_adjustments
+        or {};
+    state.settings.remembered_stock_calibrations =
+        type(state.settings.remembered_stock_calibrations) == 'table'
+        and state.settings.remembered_stock_calibrations
         or {};
     state.config_dirty = loaded_zoom ~= state.settings.pixels_per_yalm
         or migrate_initial_custom_opacity
@@ -2557,6 +2636,87 @@ local function stock_minimap_info()
     };
 end
 
+local function remembered_stock_calibration(zone_id, page_id)
+    local zones = state.settings.remembered_stock_calibrations;
+    local pages = type(zones) == 'table' and zones[zone_id] or nil;
+    local calibration = type(pages) == 'table' and pages[page_id] or nil;
+    local scale_raw = type(calibration) == 'table'
+        and tonumber(calibration.scale_raw)
+        or nil;
+    local origin_x = type(calibration) == 'table'
+        and tonumber(calibration.origin_x)
+        or nil;
+    local origin_y = type(calibration) == 'table'
+        and tonumber(calibration.origin_y)
+        or nil;
+    if (scale_raw == nil
+            or scale_raw <= 0
+            or scale_raw > 255
+            or origin_x == nil
+            or origin_x ~= origin_x
+            or math.abs(origin_x) >= 1000000
+            or origin_y == nil
+            or origin_y ~= origin_y
+            or math.abs(origin_y) >= 1000000) then
+        return nil;
+    end
+    return {
+        scale_raw = math.floor(scale_raw + 0.5),
+        origin_x = origin_x,
+        origin_y = origin_y,
+    };
+end
+
+local function remember_stock_calibration(
+        zone_id,
+        page_id,
+        scale_raw,
+        origin_x,
+        origin_y)
+    zone_id = tonumber(zone_id);
+    page_id = tonumber(page_id);
+    scale_raw = tonumber(scale_raw);
+    origin_x = tonumber(origin_x);
+    origin_y = tonumber(origin_y);
+    if (zone_id == nil
+            or page_id == nil
+            or scale_raw == nil
+            or scale_raw <= 0
+            or scale_raw > 255
+            or origin_x == nil
+            or origin_x ~= origin_x
+            or math.abs(origin_x) >= 1000000
+            or origin_y == nil
+            or origin_y ~= origin_y
+            or math.abs(origin_y) >= 1000000) then
+        return;
+    end
+
+    zone_id = math.floor(zone_id);
+    page_id = math.floor(page_id);
+    scale_raw = math.floor(scale_raw + 0.5);
+    local existing = remembered_stock_calibration(zone_id, page_id);
+    if (existing ~= nil
+            and existing.scale_raw == scale_raw
+            and math.abs(existing.origin_x - origin_x) < 0.01
+            and math.abs(existing.origin_y - origin_y) < 0.01) then
+        return;
+    end
+
+    local zones = state.settings.remembered_stock_calibrations;
+    zones[zone_id] = type(zones[zone_id]) == 'table' and zones[zone_id] or {};
+    zones[zone_id][page_id] = {
+        scale_raw = scale_raw,
+        origin_x = origin_x,
+        origin_y = origin_y,
+    };
+    local metadata = state.atlas.filter_metadata[zone_id];
+    if (type(metadata) == 'table') then
+        metadata.waypoint_ready = nil;
+    end
+    mark_configuration_changed();
+end
+
 local function stock_page_id_for_position(player)
     if (player == nil) then
         return nil;
@@ -2862,9 +3022,22 @@ local function fallback_page(
     local stock_matches_page = stock ~= nil
         and tonumber(stock.page_id) == page_id;
     local record = stock_map_record(zone_id, page_id);
-    local scale_raw = record ~= nil and tonumber(record.scale_raw)
-        or (stock_matches_page and tonumber(stock.scale_raw) or nil);
-    local has_live_scale = scale_raw ~= nil and scale_raw > 0;
+    local remembered = remembered_stock_calibration(zone_id, page_id);
+    local record_scale_raw = record ~= nil and tonumber(record.scale_raw) or nil;
+    local runtime_scale_raw = stock_matches_page and tonumber(stock.scale_raw) or nil;
+    local remembered_scale_raw = remembered ~= nil
+        and tonumber(remembered.scale_raw)
+        or nil;
+    local scale_raw = record_scale_raw ~= nil and record_scale_raw > 0
+        and record_scale_raw
+        or (runtime_scale_raw ~= nil and runtime_scale_raw > 0
+            and runtime_scale_raw
+            or (remembered_scale_raw ~= nil and remembered_scale_raw > 0
+                and remembered_scale_raw
+                or nil));
+    local has_runtime_scale = (record_scale_raw ~= nil and record_scale_raw > 0)
+        or (runtime_scale_raw ~= nil and runtime_scale_raw > 0);
+    local has_exact_scale = scale_raw ~= nil and scale_raw > 0;
     if (scale_raw == nil or scale_raw <= 0) then
         scale_raw = 4;
     end
@@ -2885,15 +3058,32 @@ local function fallback_page(
         and map_y == map_y
         and math.abs(map_x) < 1000000
         and math.abs(map_y) < 1000000;
+    local has_remembered_origin = remembered ~= nil
+        and tonumber(remembered.origin_x) ~= nil
+        and tonumber(remembered.origin_y) ~= nil;
     local origin_x = record_origin and -record.offset_x
         or (has_runtime_origin
             and (map_x - ((tonumber(player.x) or 0) * image_scale))
+            or (has_remembered_origin and remembered.origin_x)
             or 255.0);
     local origin_y = record_origin and -record.offset_y
         or (has_runtime_origin
             and (map_y + ((tonumber(player.y) or 0) * image_scale))
+            or (has_remembered_origin and remembered.origin_y)
             or 256.0);
-    local has_live_origin = record_origin or has_runtime_origin;
+    local has_exact_origin = record_origin
+        or has_runtime_origin
+        or has_remembered_origin;
+    if (player ~= nil
+            and has_runtime_scale
+            and (record_origin or has_runtime_origin)) then
+        remember_stock_calibration(
+            zone_id,
+            page_id,
+            scale_raw,
+            origin_x,
+            origin_y);
+    end
     return {
         name = zone_name(zone_id),
         vanilla_image = image,
@@ -2908,14 +3098,14 @@ local function fallback_page(
         image_pixels_per_yalm = image_scale,
         page_id = page_id,
         fallback = true,
-        live_scale = has_live_scale,
-        live_origin = has_live_origin,
+        live_scale = has_runtime_scale,
+        live_origin = record_origin or has_runtime_origin,
         stock_scale_raw = scale_raw,
         stock_offset_x = record ~= nil and record.offset_x or nil,
         stock_offset_y = record ~= nil and record.offset_y or nil,
         stock_record_origin = record_origin,
-        waypoint_calibrated = record_origin
-            or (has_runtime_origin and has_live_scale),
+        exact_stock_calibration = has_exact_origin and has_exact_scale,
+        waypoint_calibrated = has_exact_origin and has_exact_scale,
     };
 end
 
@@ -2970,7 +3160,7 @@ local function merge_authored_map(zone_id, fallback)
     end
     local merged = merge_table(copy_table(fallback), authored);
     if (authored.stock_calibration == true
-            and fallback.stock_record_origin == true) then
+            and fallback.exact_stock_calibration == true) then
         merged.origin_x = fallback.origin_x;
         merged.origin_y = fallback.origin_y;
         merged.image_pixels_per_yalm = fallback.image_pixels_per_yalm;
@@ -7224,8 +7414,26 @@ local function atlas_select_page(page_id)
         return;
     end
     local zone = state.vanilla_maps[atlas.zone_id];
-    page_id = tonumber(page_id)
+    local requested_page = tonumber(page_id);
+    page_id = requested_page
         or (type(zone) == 'table' and tonumber(zone.default_page) or nil);
+    if (requested_page == nil) then
+        local default_map = page_id ~= nil
+            and map_for_catalog_page(atlas.zone_id, page_id)
+            or nil;
+        if (default_map == nil or default_map.waypoint_calibrated ~= true) then
+            for _, candidate in ipairs(page_ids) do
+                local candidate_map = map_for_catalog_page(
+                    atlas.zone_id,
+                    candidate);
+                if (candidate_map ~= nil
+                        and candidate_map.waypoint_calibrated == true) then
+                    page_id = candidate;
+                    break;
+                end
+            end
+        end
+    end
     local selected = page_ids[1];
     for _, candidate in ipairs(page_ids) do
         if candidate == page_id then
