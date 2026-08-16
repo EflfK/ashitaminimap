@@ -2280,9 +2280,24 @@ state.ensure_guide_path = function (player, map)
     end
     local destination_z = tonumber(destination.z);
     if (destination_z == nil) then
+        -- A guide marker's map id identifies its destination floor even while
+        -- the player is viewing a different page. Resolve the missing Z from
+        -- that page's graph first; the current-page graph may contain
+        -- overlapping geometry from multiple floors and would otherwise make
+        -- a previously valid route disappear as soon as the stock map changes.
+        local destination_graph = graph;
+        local destination_page = custom_waypoint == nil
+            and tonumber(destination.map_id)
+            or nil;
+        if (destination_page ~= nil
+                and destination_page ~= tonumber(map.page_id)) then
+            destination_graph = state.path_graph_for(
+                player.zone_id,
+                destination_page) or graph;
+        end
         local floor_ambiguous = false;
         destination_z, floor_ambiguous = state.path_waypoint_z(
-            graph,
+            destination_graph,
             destination.x,
             destination.y,
             player.x,
