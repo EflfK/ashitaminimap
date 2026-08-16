@@ -184,11 +184,15 @@ directly into the runtime graph without the normal navmesh/collision review,
 regeneration, validation, deployment, and in-game route verification. Clear
 the saved candidate by exact id only after it has been successfully processed.
 
-Path elevation is authoritative for floor-aware snapping. A guide destination
-without Z may route only when the graph can resolve it to one reachable floor;
-otherwise it remains marker-only as floor-ambiguous. Route projection must
-remain three-dimensional so walking above or below a route cannot count as
-following it.
+Path elevation is authoritative for floor-aware snapping. An exact guide
+destination without Z may route only when the graph can resolve it to one
+reachable floor; otherwise it remains marker-only as floor-ambiguous. An
+explicitly approximate guide destination may omit Z when truthful elevation is
+unavailable: resolve it using the shortest connected graph route from the
+player's live three-dimensional position, then the player's current floor as a
+fallback. Never apply that relaxation to exact guide destinations. Route
+projection must remain three-dimensional so walking above or below a route
+cannot count as following it.
 
 FFXI/Ashita live Z is inverted for physical elevation: a more-negative live Z
 is higher/up, and a more-positive live Z is lower/down. Any floor-transition

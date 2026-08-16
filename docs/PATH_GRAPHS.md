@@ -94,9 +94,12 @@ player's present floor. The current floor remains the fallback when no
 candidate route can be evaluated. If lower and upper nodes remain unresolved
 near the click, the waypoint stays visible but marker-only. AshitaGuide
 publishes `targetZ` when an authored destination supplies it or a named live
-entity exposes it. On maps with authored elevation bands, a guide destination
-without truthful Z likewise remains marker-only instead of selecting whichever
-overlapping floor is closest in two dimensions.
+entity exposes it. An exact guide destination without truthful Z remains
+marker-only when its floor is ambiguous. A guide destination explicitly marked
+`approximate` may instead use the same route-aware resolution as a custom
+waypoint: prefer the shortest connected graph route from the player's live
+three-dimensional position, then the player's current floor. This exception
+does not weaken strict floor handling for exact destinations.
 
 Route projection is also three-dimensional. Walking above or below a route no
 longer counts as remaining on it, and route recalculation cannot silently
