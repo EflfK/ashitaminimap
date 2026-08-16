@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.32.1';
+addon.version   = '1.32.2';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -4865,6 +4865,7 @@ state.draw_link_capture = function (
             or type(capture) ~= 'table'
             or type(capture.points) ~= 'table'
             or #capture.points == 0
+            or capture.saved_id ~= nil
             or tonumber(capture.zone_id) ~= tonumber(player.zone_id)
             or tonumber(capture.page_id) ~= tonumber(map.page_id)) then
         return;
@@ -7234,7 +7235,7 @@ local function render_link_capture_controls()
                 tostring(first.component_id or '?'));
         end
         return string.format(
-            '%d point%s  |  %.1f yalms  |  component %s > %s',
+            '%d point%s  |  %.1f yalms  |  graph components %s > %s',
             point_count,
             point_count == 1 and '' or 's',
             distance,
@@ -7315,7 +7316,7 @@ local function render_link_capture_controls()
         imgui.Spacing();
         imgui.TextColored(
             { 0.36, 0.88, 0.62, 1.00 },
-            'Saved for Codex: ' .. tostring(capture.saved_id));
+            'Saved evidence - not active: ' .. tostring(capture.saved_id));
         imgui.Text(point_summary());
         if (imgui.Button(
                 'Start another connection##ashitaminimap_link_another',
