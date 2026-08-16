@@ -144,6 +144,12 @@ Never connect components from two-dimensional proximity, an overview image, or
 a shortest-route result. A missing connection remains marker-only until live
 evidence proves the physical transition.
 
+When the player and a same-zone destination snap to disconnected authored
+components, AshitaMiniMap must attempt its world graph before returning a
+marker-only result. A valid route may need to leave the zone and re-enter
+through a different threshold. Keep that responsibility in AshitaMiniMap;
+never require AshitaGuide to duplicate the transition sequence.
+
 ## Missing-connection screenshot shorthand
 
 When the user attaches coordinate screenshots and says `fix connection` (or

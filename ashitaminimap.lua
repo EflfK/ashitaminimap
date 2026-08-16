@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.32.3';
+addon.version   = '1.32.4';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -2320,6 +2320,17 @@ state.ensure_world_path = function (player, destination)
     return route;
 end
 
+state.ensure_complete_same_zone_world_path = function (player, destination)
+    local route = state.ensure_world_path(player, destination);
+    if (route ~= nil and route.partial == true) then
+        state.world_path.route = nil;
+        state.world_path.last_error =
+            'no complete world route to disconnected same-zone destination';
+        return nil;
+    end
+    return route;
+end
+
 state.ensure_guide_path = function (player, map)
     if (state.settings.show_guide_paths ~= true) then
         state.guide_path.route = nil;
@@ -2344,6 +2355,11 @@ state.ensure_guide_path = function (player, map)
         return nil;
     end
     if (custom_destination ~= nil and custom_waypoint == nil) then
+        if (custom_destination.zone_id == player.zone_id) then
+            return state.ensure_complete_same_zone_world_path(
+                player,
+                custom_destination);
+        end
         return state.ensure_world_path(player, custom_destination);
     end
     local markers = state.active_guide_markers(player);
@@ -2467,7 +2483,21 @@ state.ensure_guide_path = function (player, map)
     local indices = state.path_find(graph, start_index, target_index);
     if (indices == nil) then
         state.guide_path.route = nil;
-        state.guide_path.last_error = 'no connected path';
+        -- A zone can contain physically separate arrival regions. When the
+        -- local graph cannot join the player and destination, let world
+        -- routing leave the zone and re-enter through the correct threshold.
+        -- AshitaGuide owns only the destination; AshitaMiniMap owns this
+        -- route-selection decision.
+        destination.zone_id = player.zone_id;
+        destination.z = destination_z;
+        local world_route = state.ensure_complete_same_zone_world_path(
+            player,
+            destination);
+        if (world_route ~= nil) then
+            state.guide_path.last_error = nil;
+            return world_route;
+        end
+        state.guide_path.last_error = state.world_path.last_error or 'no connected path';
         return nil;
     end
     local route_steps = state.path_route_steps(graph, indices);

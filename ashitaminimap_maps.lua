@@ -822,7 +822,7 @@ return {
         name = 'Bhaflau Thickets',
         stock_calibration = true,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', unlock_index = 73, x = -98.000, y = -493.000, z = -10.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 74, x = -98.000, y = -493.000, z = -10.000 },
         }),
         treasure_spawns = {},
         nm_spawn_ranges = {
