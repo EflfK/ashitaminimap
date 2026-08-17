@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.32.9';
+addon.version   = '1.32.10';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -2000,13 +2000,11 @@ state.world_route_local_leg = function (
     return leg;
 end
 
-state.ensure_world_path = function (player, destination)
-    local now = os.clock();
-    local cached = state.world_path.route;
+state.world_path_matches_destination = function (cached, player, destination)
     local destination_source = destination.source == 'custom'
         and 'custom'
         or 'guide';
-    local same_destination = cached ~= nil
+    return cached ~= nil
         and cached.start_zone == player.zone_id
         and cached.destination_zone == destination.zone_id
         and cached.destination_page == tonumber(destination.map_id)
@@ -2017,6 +2015,18 @@ state.ensure_world_path = function (player, destination)
             or (cached.destination_z ~= nil
                 and destination.z ~= nil
                 and math.abs(cached.destination_z - destination.z) < 0.1));
+end
+
+state.ensure_world_path = function (player, destination)
+    local now = os.clock();
+    local cached = state.world_path.route;
+    local destination_source = destination.source == 'custom'
+        and 'custom'
+        or 'guide';
+    local same_destination = state.world_path_matches_destination(
+        cached,
+        player,
+        destination);
     if (same_destination) then
         local leg = cached.world_steps[1];
         if (leg ~= nil and leg.kind == 'walk') then
@@ -2464,7 +2474,33 @@ state.ensure_guide_path = function (player, map)
 
     local now = os.clock();
     if (now - state.guide_path.last_attempt < 0.5) then
-        return same_destination and route or nil;
+        if (same_destination) then
+            return route;
+        end
+        -- A disconnected same-zone destination is owned by the world router.
+        -- Keep its valid cached route visible between local graph retries;
+        -- otherwise the 0.5s local throttle blanks a route that the 0.75s
+        -- world throttle is intentionally retaining.
+        local cached_world = state.world_path.route;
+        local world_destination = {
+            zone_id = player.zone_id,
+            map_id = destination.map_id,
+            x = destination.x,
+            y = destination.y,
+            z = destination_z,
+            source = custom_waypoint ~= nil and 'custom' or 'guide',
+        };
+        if (cached_world ~= nil
+                and cached_world.partial ~= true
+                and state.world_path_matches_destination(
+                    cached_world,
+                    player,
+                    world_destination)) then
+            return state.ensure_complete_same_zone_world_path(
+                player,
+                world_destination);
+        end
+        return nil;
     end
     state.guide_path.last_attempt = now;
 
@@ -2493,11 +2529,17 @@ state.ensure_guide_path = function (player, map)
         -- routing leave the zone and re-enter through the correct threshold.
         -- AshitaGuide owns only the destination; AshitaMiniMap owns this
         -- route-selection decision.
-        destination.zone_id = player.zone_id;
-        destination.z = destination_z;
+        local world_destination = {
+            zone_id = player.zone_id,
+            map_id = destination.map_id,
+            x = destination.x,
+            y = destination.y,
+            z = destination_z,
+            source = custom_waypoint ~= nil and 'custom' or 'guide',
+        };
         local world_route = state.ensure_complete_same_zone_world_path(
             player,
-            destination);
+            world_destination);
         if (world_route ~= nil) then
             state.guide_path.last_error = nil;
             return world_route;
