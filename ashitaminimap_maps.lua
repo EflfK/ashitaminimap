@@ -1060,7 +1060,7 @@ return {
         name = 'Caedarva Mire',
         stock_calibration = true,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', unlock_index = 74, x = -449.000, y = -497.000, z = 13.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 75, x = -449.000, y = -497.000, z = 13.000 },
             { kind = 'survival_guide', name = 'Survival Guide', unlock_bit = 25, x = -660.000, y = 342.780, z = -13.360 },
         }),
         treasure_spawns = {},
@@ -3564,8 +3564,8 @@ return {
         name = 'Fei\'Yin',
         stock_calibration = true,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', unlock_index = 54, x = 243.000, y = 62.000, z = -24.500 },
-            { kind = 'home_point', name = 'Home Point #2', unlock_index = 93, x = 102.000, y = 269.000, z = 0.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 55, x = 243.000, y = 62.000, z = -24.500 },
+            { kind = 'home_point', name = 'Home Point #2', unlock_index = 94, x = 102.000, y = 269.000, z = 0.000 },
         }),
         treasure_spawns = {
             { kind = 'chest', x = 170.680, y = 210.826, z = -24.000 },
@@ -5161,7 +5161,7 @@ return {
         name = 'Castle Zvahl Keep',
         stock_calibration = true,
         travel_references = travel_reference_set({
-            { kind = 'home_point', name = 'Home Point #1', unlock_index = 57, x = -554.000, y = 66.000, z = -70.000 },
+            { kind = 'home_point', name = 'Home Point #1', unlock_index = 58, x = -554.000, y = 66.000, z = -70.000 },
         }),
         treasure_spawns = {
             { kind = 'chest', x = -299.787, y = 24.873, z = -48.000 },
