@@ -1,6 +1,6 @@
 addon.name      = 'ashitaminimap';
 addon.author    = 'EflfK';
-addon.version   = '1.32.7';
+addon.version   = '1.32.8';
 addon.desc      = 'Display-only directional minimap and guide pathing for Ashita v4.';
 
 require('common');
@@ -5287,6 +5287,10 @@ local function world_action_instruction(action)
     elseif (action.kind == 'route_action') then
         return action.instruction;
     elseif (action.kind == 'zone_line') then
+        if (type(action.connection.instruction) == 'string'
+                and action.connection.instruction ~= '') then
+            return action.connection.instruction;
+        end
         return string.format(
             'enter %s',
             zone_name(action.connection.to_zone));

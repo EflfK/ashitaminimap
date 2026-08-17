@@ -848,8 +848,10 @@ JOBS = (
             "--seed=-553.000,-486.000,-1.000",
             "--seed=-606.500,-486.000,-1.000",
             "--seed=446.000,-553.500,-1.000",
-            "--one-way-transition=596.333,-287.416,-1.096:20.833,-20.166,-5.296",
-            "--route-action=596.333,-287.416,-1.096:20.833,-20.166,-5.296|Use the west porter to return to the main map.|West porter",
+            "--one-way-transition=445.667,-553.916,-1.162:611.125,-303.875,-0.296",
+            "--one-way-transition=596.333,-287.416,-1.096:-100.000,50.250,-8.496",
+            "--route-action=445.667,-553.916,-1.162:611.125,-303.875,-0.296|Use the white porter.|White porter",
+            "--route-action=596.333,-287.416,-1.096:-100.000,50.250,-8.496|Use the west porter to return to the main map.|West porter",
         ),
     ),
     GraphJob(

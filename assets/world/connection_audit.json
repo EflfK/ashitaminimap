@@ -1,13 +1,32 @@
 {
+  "attended_connections": [
+    {
+      "destination_mode": "observed_variant",
+      "evidence": "attended 2026-08-16 traversal; pinned CatsEyeXI Runic Portal NPC and toChamberOfPassage helper",
+      "from_x": 206.5,
+      "from_y": 33.5,
+      "from_z": -1.22,
+      "from_zone": 72,
+      "id": "attended-zone72-northern-runic-portal-right-arrival",
+      "instruction": "Use the northern Runic Portal.",
+      "mechanism": "runic_portal",
+      "name": "Northern Runic Portal",
+      "to_x": 116.669983,
+      "to_y": 47.426991,
+      "to_z": 1.485,
+      "to_zone": 50
+    }
+  ],
   "counts": {
     "arrival_coordinate_mismatches_preserving_catseye": 86,
+    "attended_connections": 1,
     "cats_records": 844,
     "land_sand_boat_records": 844,
-    "published_connections": 820,
+    "published_connections": 821,
     "source_coordinate_overrides": 3,
     "unresolved_records": 25
   },
-  "schema": 1,
+  "schema": 2,
   "source_coordinate_overrides": [
     {
       "evidence": "paired East Sarutabaruta arrival threshold",

@@ -157,6 +157,15 @@ menus; do not make AshitaGuide warn users away from a bad route choice.
 
 ## Missing-connection screenshot shorthand
 
+All path-graph creation, correction, or connection work must be delegated to a
+subagent so the primary agent remains available for live guidance and other
+tasks. The graph subagent owns source inspection, deterministic graph
+regeneration (including native/native/inferred comparison), validation,
+provenance and version updates, deployment into the active CatsEyeXI install,
+in-game reload, commit, and push. The primary agent may continue giving the
+player attended directions while that work runs, but must not duplicate or
+race the subagent's repository changes.
+
 When the user attaches coordinate screenshots and says `fix connection` (or
 equivalent), treat that as a request to repair one reported missing routing
 link without requiring them to restate this workflow. The screenshots are an
